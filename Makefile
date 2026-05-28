@@ -1,8 +1,14 @@
+install:
+	python -m pip install -r requirements.txt
+
 run:
-	uvicorn app.main:app --reload
+	python -m uvicorn app.main:app --reload
+
+docker-up:
+	docker compose up --build
+
+docker-down:
+	docker compose down
 
 test:
-	pytest
-
-install:
-	pip install -r requirements.txt
+	python -m pytest
