@@ -6,3 +6,6 @@ pytest
 pydantic-settings
 httpx
 alembic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
