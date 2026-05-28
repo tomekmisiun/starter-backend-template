@@ -1,0 +1,212 @@
+------
+description: Git workflow, branching, commits and maintainable code rules
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Development Workflow Rules
+
+Act like a careful backend engineer working in a real Git repository.
+
+## Core principles
+
+- Keep code maintainable, readable and easy to change.
+- Prefer simple solutions over clever abstractions.
+- Do not over-engineer.
+- Follow the existing project structure.
+- Do not make unrelated changes.
+- Before large changes, explain the planned approach briefly.
+- After changes, summarize what changed and why.
+
+## Branch workflow
+
+Before starting any meaningful change, suggest creating a dedicated branch.
+
+Use branch names based on the task type:
+
+- feature/<short-description>
+- fix/<short-description>
+- refactor/<short-description>
+- docs/<short-description>
+- chore/<short-description>
+- test/<short-description>
+
+Examples:
+
+- feature/add-jwt-auth
+- fix/database-connection
+- refactor-user-service
+- docs-update-readme
+- chore-update-gitignore
+- test-add-api-tests
+
+Do not commit feature work directly to main unless explicitly requested.
+
+## Branch commands
+
+When starting a task, suggest:
+
+git checkout -b feature/<short-description>
+
+If the branch already exists, suggest:
+
+git checkout feature/<short-description>
+
+## Commit rules
+
+Use Conventional Commits.
+
+Commit message format:
+
+type(scope): short description
+
+Allowed types:
+
+- feat: new feature
+- fix: bug fix
+- refactor: code restructuring without behavior change
+- docs: documentation only
+- test: adding or updating tests
+- chore: maintenance, tooling, config
+- style: formatting only
+- perf: performance improvement
+- ci: CI/CD changes
+- build: build system or dependencies
+
+Examples:
+
+- feat(auth): add JWT login flow
+- fix(database): handle missing connection string
+- refactor(api): split user routes into separate router
+- docs(readme): add local development setup
+- chore(gitignore): update ignored files
+- test(auth): add login endpoint tests
+- ci(github): add backend test workflow
+
+## Commit behavior
+
+After completing a logical unit of work:
+
+1. Show the files changed.
+2. Suggest a clear Conventional Commit message.
+3. Do not commit automatically unless explicitly requested.
+4. If asked to commit, commit only related files.
+5. Never include secrets, .env files, virtual environments, caches or node_modules in commits.
+
+Before suggesting a commit, run or suggest:
+
+git status
+git diff --stat
+
+## Push workflow
+
+After a commit, suggest pushing the current branch:
+
+git push -u origin <branch-name>
+
+Do not push directly to main unless explicitly requested.
+
+## Pull request workflow
+
+When work is ready, suggest creating a pull request from the feature branch into main.
+
+PR summary should include:
+
+- What changed
+- Why it changed
+- How to test it
+- Any risks or follow-up tasks
+
+## Maintainable code rules
+
+Write code that is:
+
+- readable
+- explicit
+- modular
+- easy to test
+- easy to refactor
+- consistent with the existing codebase
+
+Avoid:
+
+- large files with mixed responsibilities
+- business logic hidden inside route handlers
+- duplicated logic
+- unclear variable names
+- unnecessary abstractions
+- magic values
+- hardcoded configuration
+- silent error handling
+- broad try/except blocks without purpose
+
+## Backend structure
+
+For FastAPI projects:
+
+- Keep routers separated by domain.
+- Keep route handlers thin.
+- Move business logic into services when appropriate.
+- Use Pydantic schemas for validation.
+- Use clear database models.
+- Keep database access logic separated from API routes.
+- Use environment variables for configuration.
+- Return proper HTTP status codes.
+- Handle errors explicitly.
+
+## Refactoring rules
+
+When refactoring:
+
+- Preserve existing behavior unless requested otherwise.
+- Keep changes small and reviewable.
+- Explain the reason for the refactor.
+- Do not rename files, functions or modules unless it improves clarity.
+- Update tests and documentation when needed.
+
+## Testing rules
+
+When adding or changing behavior:
+
+- Suggest relevant tests.
+- Prefer pytest for backend tests.
+- Test important business logic and API behavior.
+- Do not skip tests unless explicitly requested.
+
+## Documentation rules
+
+Update README or docs when changes affect:
+
+- setup
+- environment variables
+- commands
+- deployment
+- API behavior
+- project structure
+
+## Security rules
+
+Never commit:
+
+- .env files
+- secrets
+- API keys
+- credentials
+- private certificates
+- database dumps
+- local SQLite databases
+
+If secrets are detected, stop and warn immediately.
+
+## Final response after changes
+
+After completing work, always provide:
+
+- branch name used or suggested
+- summary of changes
+- files changed
+- suggested commit message
+- suggested push command
+alwaysApply: true
+---
