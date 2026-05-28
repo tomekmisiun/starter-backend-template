@@ -1,19 +1,8 @@
-from fastapi import Depends, FastAPI
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
 
-from app.db.session import get_db
+from app.api.routes.health import router as health_router
 
 
 app = FastAPI(title="Starter Backend Template")
 
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-
-@app.get("/db-health")
-def db_health_check(db: Session = Depends(get_db)):
-    db.execute(text("SELECT 1"))
-    return {"database": "ok"}
+app.include_router(health_router)
