@@ -13,8 +13,8 @@ from app.main import app  # noqa: E402
 from tests.database import TestingSessionLocal, engine  # noqa: E402
 
 
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
-
 
 @pytest.fixture()
 def db():
