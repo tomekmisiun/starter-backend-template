@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     secret_key: str = "change-me"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    
+    test_database_url: str = Field(
+    default="postgresql://app_user:app_password@test_db:5432/app_test_db"
+)
 
 
 @lru_cache

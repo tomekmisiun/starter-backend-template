@@ -1,5 +1,6 @@
 from logging.config import fileConfig
 
+from app.models import user  # noqa: F401
 from app.db.base import Base
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
