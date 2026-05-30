@@ -13,3 +13,4 @@ email-validator
 bcrypt==4.0.1
 ruff
 pre-commit
+redis==8.0.0
