@@ -88,3 +88,103 @@ def test_admin_can_get_any_user(db, client):
     )
 
     assert response.status_code == 200
+
+
+def test_user_can_update_himself(db, client):
+    token, user_id = create_user_and_login(db, client, "patch@example.com")
+
+    response = client.patch(
+        f"/users/{user_id}",
+        json={"email": "updated@example.com"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["email"] == "updated@example.com"
+
+
+def test_user_cannot_update_other_user(db, client):
+    token, _ = create_user_and_login(db, client, "usera@example.com")
+
+    _, other_user_id = create_user_and_login(
+        db,
+        client,
+        "userb@example.com",
+    )
+
+    response = client.patch(
+        f"/users/{other_user_id}",
+        json={"email": "hacked@example.com"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_can_update_any_user(db, client):
+    token, _ = create_user_and_login(
+        db,
+        client,
+        "admin3@example.com",
+    )
+
+    make_admin(db, "admin3@example.com")
+
+    _, user_id = create_user_and_login(
+        db,
+        client,
+        "victim@example.com",
+    )
+
+    response = client.patch(
+        f"/users/{user_id}",
+        json={"email": "updated-admin@example.com"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["email"] == "updated-admin@example.com"
+
+
+def test_admin_can_delete_user(db, client):
+    token, _ = create_user_and_login(
+        db,
+        client,
+        "admin-delete@example.com",
+    )
+
+    make_admin(db, "admin-delete@example.com")
+
+    _, user_id = create_user_and_login(
+        db,
+        client,
+        "victim-delete@example.com",
+    )
+
+    response = client.delete(
+        f"/users/{user_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 204
+
+
+def test_user_cannot_delete_other_user(db, client):
+    token, _ = create_user_and_login(
+        db,
+        client,
+        "user-delete@example.com",
+    )
+
+    _, other_user_id = create_user_and_login(
+        db,
+        client,
+        "victim-delete@example.com",
+    )
+
+    response = client.delete(
+        f"/users/{other_user_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 403
