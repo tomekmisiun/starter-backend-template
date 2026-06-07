@@ -26,9 +26,11 @@ def get_users(
     if role is not None:
         query = query.filter(User.role == role)
 
-    if is_active is not None:
+    if is_active is None:
+        query = query.filter(User.is_active.is_(True))
+    else:
         query = query.filter(User.is_active == is_active)
-
+    
     sort_column = allowed_sort_fields.get(sort_by, User.id)
 
     if sort_order == "desc":

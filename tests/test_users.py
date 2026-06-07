@@ -503,3 +503,27 @@ def test_regular_user_cannot_activate_user(
     )
 
     assert response.status_code == 403
+
+
+def test_list_users_returns_only_active_users_by_default(
+    client,
+    admin_user,
+    regular_user,
+):
+    client.patch(
+        f"/users/{regular_user['id']}/deactivate",
+        headers=admin_user["headers"],
+    )
+
+    response = client.get(
+        "/users",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+
+    users = response.json()
+
+    user_ids = [user["id"] for user in users]
+
+    assert regular_user["id"] not in user_ids
