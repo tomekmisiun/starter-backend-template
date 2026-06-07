@@ -309,3 +309,78 @@ def test_invalid_sort_by_returns_422(client, admin_user):
     )
 
     assert response.status_code == 422
+
+
+def test_admin_can_filter_users_by_role(db, client, admin_user):
+    create_user_and_login(
+        db,
+        client,
+        "normal-user@example.com",
+    )
+
+    create_user_and_login(
+        db,
+        client,
+        "admin-filter@example.com",
+    )
+
+    make_admin(db, "admin-filter@example.com")
+
+    response = client.get(
+        "/users/?role=admin&page=1&size=100",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+
+    roles = [user["role"] for user in response.json()]
+
+    assert all(role == "admin" for role in roles)
+
+
+def test_admin_can_filter_users_by_is_active(
+    db,
+    client,
+    admin_user,
+):
+    create_user_and_login(
+        db,
+        client,
+        "active-user@example.com",
+    )
+
+    create_user_and_login(
+        db,
+        client,
+        "inactive-user@example.com",
+    )
+
+    inactive_user = (
+        db.query(User)
+        .filter(User.email == "inactive-user@example.com")
+        .first()
+    )
+
+    inactive_user.is_active = False
+    db.commit()
+
+    response = client.get(
+        "/users/?is_active=false&page=1&size=100",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+
+    users = response.json()
+
+    assert len(users) > 0
+    assert all(user["is_active"] is False for user in users)
+
+
+def test_invalid_role_filter_returns_422(client, admin_user):
+    response = client.get(
+        "/users/?role=banana",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 422

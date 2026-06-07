@@ -10,6 +10,8 @@ def get_users(
     limit: int,
     sort_by: str = "id",
     sort_order: str = "asc",
+    role: str | None = None,
+    is_active: bool | None = None,
 ):
     allowed_sort_fields = {
         "id": User.id,
@@ -17,6 +19,14 @@ def get_users(
         "role": User.role,
         "is_active": User.is_active,
     }
+
+    query = db.query(User)
+
+    if role is not None:
+        query = query.filter(User.role == role)
+
+    if is_active is not None:
+        query = query.filter(User.is_active == is_active)
 
     sort_column = allowed_sort_fields.get(sort_by, User.id)
 
@@ -26,7 +36,7 @@ def get_users(
         sort_column = sort_column.asc()
 
     return (
-        db.query(User)
+        query
         .order_by(sort_column)
         .offset(skip)
         .limit(limit)
