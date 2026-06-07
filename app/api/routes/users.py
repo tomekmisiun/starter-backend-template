@@ -27,6 +27,11 @@ class SortOrder(str, Enum):
     desc = "desc"
 
 
+class UserRole(str, Enum):
+    admin = "admin"
+    user = "user"
+
+
 router = APIRouter(prefix="/users", tags=["users"])
 
 
@@ -36,18 +41,22 @@ def list_users(
     size: int = Query(10, ge=1, le=100),
     sort_by: UserSortBy = Query(UserSortBy.id),
     sort_order: SortOrder = Query(SortOrder.asc),
+    role: UserRole | None = None,
+    is_active: bool | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
 ):
     skip = (page - 1) * size
 
     return get_users(
-        db=db,
-        skip=skip,
-        limit=size,
-        sort_by=sort_by.value,
-        sort_order=sort_order.value,
-    )
+    db=db,
+    skip=skip,
+    limit=size,
+    sort_by=sort_by.value,
+    sort_order=sort_order.value,
+    role=role.value if role else None,
+    is_active=is_active,
+)
 
 
 @router.get("/{user_id}", response_model=UserRead)
@@ -79,6 +88,7 @@ def patch_user(
     user_update: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    
 ):
     user = get_user_by_id(db, user_id)
 
