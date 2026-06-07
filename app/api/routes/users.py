@@ -19,6 +19,8 @@ router = APIRouter(prefix="/users", tags=["users"])
 def list_users(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
+    sort_by: str = Query("id"),
+    sort_order: str = Query("asc"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role("admin")),
 ):
@@ -28,6 +30,8 @@ def list_users(
         db=db,
         skip=skip,
         limit=size,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
 
 @router.get("/{user_id}", response_model=UserRead)

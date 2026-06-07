@@ -260,3 +260,20 @@ def test_pagination_size_must_not_exceed_limit(client, admin_user):
     )
 
     assert response.status_code == 422
+
+
+def test_admin_can_sort_users_by_email_asc(db, client, admin_user):
+    create_user_and_login(db, client, "c-user@example.com")
+    create_user_and_login(db, client, "a-user@example.com")
+    create_user_and_login(db, client, "b-user@example.com")
+
+    response = client.get(
+        "/users/?sort_by=email&sort_order=asc",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+
+    emails = [user["email"] for user in response.json()]
+
+    assert emails == sorted(emails)

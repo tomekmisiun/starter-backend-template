@@ -4,9 +4,30 @@ from app.models.user import User
 from app.schemas.user import UserUpdate
 
 
-def get_users(db: Session, skip: int, limit: int):
+def get_users(
+    db: Session,
+    skip: int,
+    limit: int,
+    sort_by: str = "id",
+    sort_order: str = "asc",
+):
+    allowed_sort_fields = {
+        "id": User.id,
+        "email": User.email,
+        "role": User.role,
+        "is_active": User.is_active,
+    }
+
+    sort_column = allowed_sort_fields.get(sort_by, User.id)
+
+    if sort_order == "desc":
+        sort_column = sort_column.desc()
+    else:
+        sort_column = sort_column.asc()
+
     return (
         db.query(User)
+        .order_by(sort_column)
         .offset(skip)
         .limit(limit)
         .all()
