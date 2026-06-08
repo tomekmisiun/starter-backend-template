@@ -1,57 +1,12 @@
 ---
-description: Backend development rules for FastAPI projects
+description: Wrapper for backend AI rules
 globs:
   - "app/**/*.py"
   - "tests/**/*.py"
 alwaysApply: true
 ---
 
-# Backend Rules
+Source of truth: `.ai-rules/backend.md`.
 
-Follow clean, maintainable backend development practices.
-
-## General
-
-- Keep code simple and readable.
-- Prefer explicit names over clever abstractions.
-- Do not over-engineer early.
-- Do not introduce unnecessary dependencies.
-- Follow existing project structure and style.
-
-## FastAPI
-
-- Keep routers separated by domain.
-- Keep business logic out of route handlers when possible.
-- Use Pydantic schemas for request/response validation.
-- Use proper HTTP status codes.
-- Raise HTTPException for API errors.
-- Keep endpoints predictable and REST-oriented.
-
-## Database
-
-- Use SQLAlchemy consistently.
-- Keep models, schemas and CRUD/service logic separated.
-- Do not hardcode credentials.
-- Use environment variables for database configuration.
-
-## Testing
-
-- Add tests for important behavior.
-- Prefer simple pytest tests.
-- Do not break existing tests.
-- If changing behavior, update tests accordingly.
-
-## Security
-
-- Never hardcode secrets.
-- Never expose internal errors directly to users.
-- Validate user input.
-- Keep auth-related logic explicit and reviewable.
-
-## AI assistant behavior
-
-Before making large changes:
-- analyze current structure
-- explain planned changes briefly
-- keep changes minimal
-- update README if setup or behavior changes
+Also read `.ai-rules/architecture.md`, `.ai-rules/security.md`, and
+`.ai-rules/testing.md` when changing backend behavior.

@@ -1,3 +1,9 @@
 ---
+description: Wrapper for testing AI rules
+globs:
+  - "tests/**/*.py"
+  - "pytest.ini"
 alwaysApply: true
 ---
+
+Source of truth: `.ai-rules/testing.md`.

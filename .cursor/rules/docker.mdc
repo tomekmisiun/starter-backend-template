@@ -1,3 +1,13 @@
 ---
+description: Wrapper for Docker AI rules
+globs:
+  - "dockerfile"
+  - "Dockerfile"
+  - "docker-compose.yml"
+  - ".env.example"
 alwaysApply: true
 ---
+
+Source of truth: `.ai-rules/docker.md`.
+
+Also read `.ai-rules/documentation.md` when Docker, config, or setup changes.
