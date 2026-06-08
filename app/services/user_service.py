@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.user import User
-from app.schemas.user import UserUpdate
+from app.schemas.user import UserAdminUpdate, UserSelfUpdate
 
 
 def get_users(
@@ -57,7 +57,7 @@ def get_user_by_id(db: Session, user_id: int) -> User | None:
 def update_user(
     db: Session,
     user: User,
-    user_update: UserUpdate,
+    user_update: UserAdminUpdate | UserSelfUpdate,
 ) -> User:
     update_data = user_update.model_dump(exclude_unset=True)
 

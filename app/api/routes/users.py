@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.dependencies.auth import get_current_user, require_role
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.user import UserRead, UserUpdate
+from app.schemas.user import UserAdminUpdate, UserRead, UserSelfUpdate
 from app.services.audit_log_service import create_audit_log
 from app.services.user_service import (
     activate_user,
@@ -90,7 +90,7 @@ def get_user(
 @router.patch("/{user_id}", response_model=UserRead)
 def patch_user(
     user_id: int,
-    user_update: UserUpdate,
+    user_update: UserAdminUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -108,7 +108,12 @@ def patch_user(
             detail="Insufficient permissions",
         )
 
-    updated_user = update_user(db, user, user_update)
+    if current_user.role == "admin":
+        update_data = user_update
+    else:
+        update_data = UserSelfUpdate(**user_update.model_dump(exclude_unset=True))
+
+    updated_user = update_user(db, user, update_data)
 
     if current_user.role == "admin":
         create_audit_log(

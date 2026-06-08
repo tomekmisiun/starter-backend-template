@@ -10,6 +10,11 @@ class UserRead(BaseModel):
     class Config:
         from_attributes = True
 
-class UserUpdate(BaseModel):
+
+class UserSelfUpdate(BaseModel):
+    email: EmailStr | None = None
+
+
+class UserAdminUpdate(BaseModel):
     email: EmailStr | None = None
     is_active: bool | None = None

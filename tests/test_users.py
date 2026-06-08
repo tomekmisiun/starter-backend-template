@@ -1,4 +1,5 @@
 import pytest
+from uuid import uuid4
 
 from app.models.user import User
 
@@ -24,7 +25,7 @@ def regular_user(db, client):
     token, user_id = create_user_and_login(
         db,
         client,
-        "regular-user@example.com",
+        f"regular-user-{uuid4().hex}@example.com",
     )
 
     return {
@@ -36,7 +37,7 @@ def regular_user(db, client):
 
 @pytest.fixture
 def admin_user(db, client):
-    email = "admin-user@example.com"
+    email = f"admin-user-{uuid4().hex}@example.com"
 
     token, user_id = create_user_and_login(
         db,
@@ -136,6 +137,28 @@ def test_user_can_update_himself(client, regular_user):
 
     assert response.status_code == 200
     assert response.json()["email"] == "updated@example.com"
+
+
+def test_user_cannot_update_self_is_active(client, regular_user):
+    response = client.patch(
+        f"/users/{regular_user['id']}",
+        json={"is_active": False},
+        headers=regular_user["headers"],
+    )
+
+    assert response.status_code == 200
+    assert response.json()["is_active"] is True
+
+
+def test_admin_can_update_user_is_active(client, admin_user, regular_user):
+    response = client.patch(
+        f"/users/{regular_user['id']}",
+        json={"is_active": False},
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+    assert response.json()["is_active"] is False
 
 
 def test_user_cannot_update_other_user(db, client, regular_user):

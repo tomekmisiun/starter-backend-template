@@ -1,4 +1,5 @@
 import pytest
+from uuid import uuid4
 
 from app.models.audit_log import AuditLog
 from app.models.user import User
@@ -35,7 +36,7 @@ def admin_user(db, client):
     token, user_id = create_user_and_login(
         db,
         client,
-        "audit-admin@example.com",
+        f"audit-admin-{uuid4().hex}@example.com",
     )
 
     make_admin(db, user_id)
@@ -51,7 +52,7 @@ def regular_user(db, client):
     token, user_id = create_user_and_login(
         db,
         client,
-        "audit-user@example.com",
+        f"audit-user-{uuid4().hex}@example.com",
     )
 
     return {
