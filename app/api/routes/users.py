@@ -7,6 +7,7 @@ from app.api.dependencies.auth import get_current_user, require_role
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.user import UserRead, UserUpdate
+from app.services.audit_log_service import create_audit_log
 from app.services.user_service import (
     activate_user,
     deactivate_user,
@@ -52,15 +53,15 @@ def list_users(
     skip = (page - 1) * size
 
     return get_users(
-    db=db,
-    skip=skip,
-    limit=size,
-    sort_by=sort_by.value,
-    sort_order=sort_order.value,
-    role=role.value if role else None,
-    is_active=is_active,
-    search=search,
-)
+        db=db,
+        skip=skip,
+        limit=size,
+        sort_by=sort_by.value,
+        sort_order=sort_order.value,
+        role=role.value if role else None,
+        is_active=is_active,
+        search=search,
+    )
 
 
 @router.get("/{user_id}", response_model=UserRead)
@@ -92,7 +93,6 @@ def patch_user(
     user_update: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    
 ):
     user = get_user_by_id(db, user_id)
 
@@ -108,7 +108,17 @@ def patch_user(
             detail="Insufficient permissions",
         )
 
-    return update_user(db, user, user_update)
+    updated_user = update_user(db, user, user_update)
+
+    if current_user.role == "admin":
+        create_audit_log(
+            db=db,
+            admin_id=current_user.id,
+            action="user.updated",
+            target_user_id=user_id,
+        )
+
+    return updated_user
 
 
 @router.patch("/{user_id}/deactivate", response_model=UserRead)
@@ -124,6 +134,13 @@ def deactivate_user_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+
+    create_audit_log(
+        db=db,
+        admin_id=current_user.id,
+        action="user.deactivated",
+        target_user_id=user_id,
+    )
 
     return user
 
@@ -142,9 +159,16 @@ def activate_user_endpoint(
             detail="User not found",
         )
 
+    create_audit_log(
+        db=db,
+        admin_id=current_user.id,
+        action="user.activated",
+        target_user_id=user_id,
+    )
+
     return user
 
-    
+
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_user(
     user_id: int,
@@ -160,3 +184,9 @@ def remove_user(
         )
 
     delete_user(db, user)
+    create_audit_log(
+        db=db,
+        admin_id=current_user.id,
+        action="user.deleted",
+        target_user_id=user_id,
+    )
