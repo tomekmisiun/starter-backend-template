@@ -5,6 +5,7 @@ globs:
 alwaysApply: true
 ---
 
-Source of truth: `.ai-rules/git.md`.
+Source of truth:
 
-Also read `.ai-rules/repository.md` before making broad repository changes.
+- `.ai-rules/git.md`
+- `.ai-rules/repository.md`
