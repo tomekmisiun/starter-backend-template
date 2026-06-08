@@ -5,4 +5,7 @@ globs:
 alwaysApply: true
 ---
 
-Source of truth: `.ai-rules/repository.md` and `.ai-rules/architecture.md`.
+Source of truth:
+
+- `.ai-rules/repository.md`
+- `.ai-rules/architecture.md`

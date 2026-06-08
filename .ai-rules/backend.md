@@ -2,33 +2,15 @@
 
 The backend stack is FastAPI, SQLAlchemy, Alembic, PostgreSQL, and Redis.
 
-## FastAPI
+## Backend
 
-- Keep routers separated by domain.
-- Keep route handlers thin and predictable.
-- Use dependencies for authentication, authorization, DB sessions, and shared
-  request concerns.
-- Use Pydantic schemas for request and response validation.
-- Use clear response models.
-- Use proper HTTP status codes.
-- Raise `HTTPException` for API errors.
-- Do not expose internal implementation errors to API clients.
-
-## Services
-
+- Keep backend code simple, explicit, and consistent with existing patterns.
 - Put business logic in `app/services`.
 - Keep services explicit and easy to test.
 - Avoid hidden side effects unless they are part of the feature contract.
 - Do not duplicate business logic across route handlers.
-
-## Database
-
-- Use SQLAlchemy consistently.
-- Keep models in `app/models`.
-- Keep schema validation in `app/schemas`.
-- Use the existing SQLAlchemy session dependency for database access.
-- Any schema change requires an Alembic migration.
-- Do not hardcode database credentials.
+- Use dependencies for authentication, authorization, DB sessions, and shared
+  request concerns.
 
 ## Redis
 

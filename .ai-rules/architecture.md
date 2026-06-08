@@ -23,11 +23,7 @@ task requires changing it.
 
 ## Rules
 
-- Keep route handlers thin.
 - Put business logic in services.
-- Put request and response validation in schemas.
-- Access the database through SQLAlchemy sessions.
-- Any database schema change requires an Alembic migration.
 - Do not mix authentication/session logic with unrelated business logic.
 - Keep auth dependencies reusable and explicit.
 - Do not add new libraries without explicit approval.
