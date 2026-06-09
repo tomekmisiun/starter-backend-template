@@ -192,9 +192,19 @@ Current default:
 - limit: 5 requests
 - window: 60 seconds
 
+## Observability
+
+Every response includes:
+
+- `X-Request-ID`
+- `X-Process-Time`
+
+If a client sends `X-Request-ID`, the API preserves it. Otherwise, the API
+generates a UUID request ID. Request start and finish events are logged with the
+request ID, method, path, status code, and processing time.
+
 ## Known Production Gaps
 
-- Structured logging/request IDs are not implemented.
 - Health/readiness checks are basic.
 - Redis-backed rate limiting needs stronger configuration and tests.
 - Error response standardization is not implemented.
