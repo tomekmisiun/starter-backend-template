@@ -7,14 +7,18 @@ from fastapi.testclient import TestClient
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR))
 
-from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402
 from app.main import app  # noqa: E402
-from tests.database import TestingSessionLocal, engine  # noqa: E402
+from tests.database import (  # noqa: E402
+    TestingSessionLocal,
+    reset_test_database,
+    run_test_migrations,
+)
 
 
-Base.metadata.drop_all(bind=engine)
-Base.metadata.create_all(bind=engine)
+reset_test_database()
+run_test_migrations()
+
 
 @pytest.fixture()
 def db():
