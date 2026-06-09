@@ -8,7 +8,7 @@ sessions can continue without losing context.
 The project is a FastAPI backend template using SQLAlchemy, Alembic,
 PostgreSQL, Redis, Docker Compose, pytest, Ruff, and GitHub Actions.
 
-Current branch for active feature work: `feature/request-id-logging`.
+Current branch for active feature work: `feature/logging-config`.
 
 Current architecture:
 
@@ -61,6 +61,9 @@ Current documentation/rules setup:
 - Redis-backed example rate-limited endpoint.
 - Request ID middleware that generates or preserves `X-Request-ID`, adds it to
   responses, keeps `X-Process-Time`, and logs request start/finish events.
+- Configured stdout logging with request context fields visible in Docker logs.
+- Local observability stack with Promtail, Loki, and Grafana for Docker log
+  collection and inspection.
 - Pytest test suite for auth, users, admin, audit logs, and basic health.
 - Migration-aware pytest setup that resets the test database and applies
   Alembic migrations before running application tests.

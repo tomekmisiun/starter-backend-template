@@ -15,6 +15,7 @@ env/
 .env
 .env.*
 !.env.example
+!.env.observability.example
 
 node_modules/
 .cache/
