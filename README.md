@@ -126,6 +126,8 @@ docker compose run --rm api ruff check .
 Health:
 
 - `GET /health`
+- `GET /health/live`
+- `GET /health/ready`
 - `GET /health/db`
 - `GET /health/redis`
 - `GET /health/limited`
@@ -194,6 +196,21 @@ Current default:
 - limit: 5 requests
 - window: 60 seconds
 
+## Health Checks
+
+Health endpoints are separated by deployment purpose:
+
+- `GET /health`: backward-compatible basic process health check.
+- `GET /health/live`: liveness check for process-level health.
+- `GET /health/ready`: readiness check for dependencies required to serve
+  traffic.
+- `GET /health/db`: database dependency check.
+- `GET /health/redis`: Redis dependency check.
+
+Readiness and dependency endpoints return `200` with `status: ok` when checks
+pass. Dependency failures return `503` with a consistent response body and do
+not expose internal exception details.
+
 ## Observability
 
 Every response includes:
@@ -258,7 +275,6 @@ to log only to stdout/stderr and does not write log files.
 
 ## Known Production Gaps
 
-- Health/readiness checks are basic.
 - Redis-backed rate limiting needs stronger configuration and tests.
 - Error response standardization is not implemented.
 - Docker image is development-oriented and not hardened.

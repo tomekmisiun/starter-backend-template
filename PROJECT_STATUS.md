@@ -8,7 +8,7 @@ sessions can continue without losing context.
 The project is a FastAPI backend template using SQLAlchemy, Alembic,
 PostgreSQL, Redis, Docker Compose, pytest, Ruff, and GitHub Actions.
 
-Current branch for active feature work: `feature/logging-config`.
+Current branch for active feature work: `feature/health-readiness-checks`.
 
 Current architecture:
 
@@ -56,8 +56,9 @@ Current documentation/rules setup:
 - Audit log model, migration, service, admin listing endpoint, and audit writes
   for admin user update/deactivate/activate/delete actions.
 - Basic app health check.
-- Database health check.
-- Redis health check.
+- Dedicated liveness endpoint.
+- Readiness endpoint that checks database and Redis dependencies.
+- Database and Redis health checks with consistent `503` failure responses.
 - Redis-backed example rate-limited endpoint.
 - Request ID middleware that generates or preserves `X-Request-ID`, adds it to
   responses, keeps `X-Process-Time`, and logs request start/finish events.
@@ -78,83 +79,77 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. Better health/readiness checks
-   - Health endpoints exist, but liveness/readiness are not clearly separated.
-   - Dependency failures are not wrapped in consistent responses.
-
-2. Redis-backed rate limit tests/config
+1. Redis-backed rate limit tests/config
    - Redis rate limiting exists, but it is not configurable through settings and
      has little/no regression coverage.
 
-3. Error response standardization
+2. Error response standardization
     - API errors do not use a consistent response envelope.
 
-4. Docker production hardening
+3. Docker production hardening
     - Docker image is development-oriented.
     - It does not use a non-root runtime user or production-focused image
       hardening.
 
-5. CI improvements
+4. CI improvements
     - CI does not explicitly start Redis for Redis-backed behavior tests.
 
-6. Audit log hardening
+5. Audit log hardening
     - Audit actions are raw strings.
     - Audit log listing has minimal filtering.
     - Audit behavior could be made more consistent and queryable.
 
-7. Dependency/version management
+6. Dependency/version management
     - Most dependencies in `requirements.txt` are unpinned.
     - Reproducibility is weaker than expected for production templates.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. Better health/readiness checks
-   - Goal: separate liveness from readiness and make dependency checks robust.
-   - Why: improves deployment/runtime operations.
-
-2. Redis-backed rate limit tests/config
+1. Redis-backed rate limit tests/config
    - Goal: make rate limiting configurable and covered by tests.
    - Why: strengthens existing Redis usage and prepares for session logic.
 
-3. Error response standardization
+2. Error response standardization
     - Goal: provide consistent API error responses.
     - Why: improves client experience and API professionalism.
 
-4. Docker production hardening
+3. Docker production hardening
     - Goal: improve image/runtime safety.
     - Why: aligns local template with production expectations.
 
-5. CI improvements
+4. CI improvements
     - Goal: validate Redis-backed tests explicitly in CI.
     - Why: catches more production-relevant failures before merge.
 
-6. Audit log hardening
+5. Audit log hardening
     - Goal: add action constants/enums, filtering, and stronger audit query
       behavior.
     - Why: makes admin/audit behavior more maintainable.
 
-7. Dependency/version management
+6. Dependency/version management
     - Goal: pin or constrain dependencies and define an update process.
     - Why: improves reproducibility.
 
 ## 5. Next Immediate Task
 
-Recommended next branch after `feature/request-id-logging`:
+Recommended next branch after `feature/health-readiness-checks`:
 
 ```text
-feature/health-readiness
+feature/rate-limit-config-tests
 ```
 
 Recommended scope:
 
-- Separate liveness and readiness endpoints.
-- Make DB and Redis readiness failures return consistent responses.
-- Add tests for healthy and failed dependency states.
-- Update README if health endpoint behavior changes.
+- Move rate limit values into settings.
+- Add Redis-backed rate limit regression tests.
+- Keep rate limit dependency explicit and reusable.
+- Update README if rate limit configuration changes.
 
 Expected files likely to change:
 
-- `app/api/routes/health.py`
+- `app/api/dependencies/rate_limit.py`
+- `app/core/config.py`
+- `.env.example`
 - `tests`
 - `README.md`
 
