@@ -8,7 +8,7 @@ sessions can continue without losing context.
 The project is a FastAPI backend template using SQLAlchemy, Alembic,
 PostgreSQL, Redis, Docker Compose, pytest, Ruff, and GitHub Actions.
 
-Current branch for active feature work: `feature/migration-aware-tests`.
+Current branch for active feature work: `feature/request-id-logging`.
 
 Current architecture:
 
@@ -59,6 +59,8 @@ Current documentation/rules setup:
 - Database health check.
 - Redis health check.
 - Redis-backed example rate-limited endpoint.
+- Request ID middleware that generates or preserves `X-Request-ID`, adds it to
+  responses, keeps `X-Process-Time`, and logs request start/finish events.
 - Pytest test suite for auth, users, admin, audit logs, and basic health.
 - Migration-aware pytest setup that resets the test database and applies
   Alembic migrations before running application tests.
@@ -73,93 +75,83 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. Structured logging/request IDs
-   - There is no request ID/correlation ID middleware.
-   - Logging is not structured for production debugging.
-
-2. Better health/readiness checks
+1. Better health/readiness checks
    - Health endpoints exist, but liveness/readiness are not clearly separated.
    - Dependency failures are not wrapped in consistent responses.
 
-3. Redis-backed rate limit tests/config
+2. Redis-backed rate limit tests/config
    - Redis rate limiting exists, but it is not configurable through settings and
      has little/no regression coverage.
 
-4. Error response standardization
+3. Error response standardization
     - API errors do not use a consistent response envelope.
 
-5. Docker production hardening
+4. Docker production hardening
     - Docker image is development-oriented.
     - It does not use a non-root runtime user or production-focused image
       hardening.
 
-6. CI improvements
+5. CI improvements
     - CI does not explicitly start Redis for Redis-backed behavior tests.
 
-7. Audit log hardening
+6. Audit log hardening
     - Audit actions are raw strings.
     - Audit log listing has minimal filtering.
     - Audit behavior could be made more consistent and queryable.
 
-8. Dependency/version management
+7. Dependency/version management
     - Most dependencies in `requirements.txt` are unpinned.
     - Reproducibility is weaker than expected for production templates.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. Structured logging/request IDs
-   - Goal: add request correlation and production-readable logs.
-   - Why: improves debugging and incident response.
-
-2. Better health/readiness checks
+1. Better health/readiness checks
    - Goal: separate liveness from readiness and make dependency checks robust.
    - Why: improves deployment/runtime operations.
 
-3. Redis-backed rate limit tests/config
+2. Redis-backed rate limit tests/config
    - Goal: make rate limiting configurable and covered by tests.
    - Why: strengthens existing Redis usage and prepares for session logic.
 
-4. Error response standardization
+3. Error response standardization
     - Goal: provide consistent API error responses.
     - Why: improves client experience and API professionalism.
 
-5. Docker production hardening
+4. Docker production hardening
     - Goal: improve image/runtime safety.
     - Why: aligns local template with production expectations.
 
-6. CI improvements
+5. CI improvements
     - Goal: validate Redis-backed tests explicitly in CI.
     - Why: catches more production-relevant failures before merge.
 
-7. Audit log hardening
+6. Audit log hardening
     - Goal: add action constants/enums, filtering, and stronger audit query
       behavior.
     - Why: makes admin/audit behavior more maintainable.
 
-8. Dependency/version management
+7. Dependency/version management
     - Goal: pin or constrain dependencies and define an update process.
     - Why: improves reproducibility.
 
 ## 5. Next Immediate Task
 
-Recommended next branch after `feature/migration-aware-tests`:
+Recommended next branch after `feature/request-id-logging`:
 
 ```text
-feature/request-id-logging
+feature/health-readiness
 ```
 
 Recommended scope:
 
-- Add request ID/correlation ID middleware.
-- Include request ID in responses.
-- Add structured logging for request lifecycle.
-- Add tests for request ID behavior.
-- Update README if observability behavior changes.
+- Separate liveness and readiness endpoints.
+- Make DB and Redis readiness failures return consistent responses.
+- Add tests for healthy and failed dependency states.
+- Update README if health endpoint behavior changes.
 
 Expected files likely to change:
 
-- `app/core/middleware.py`
-- `app/main.py`
+- `app/api/routes/health.py`
 - `tests`
 - `README.md`
 
