@@ -1,11 +1,14 @@
 from fastapi import FastAPI
 
+from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.api.routes.admin import router as admin_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.health import router as health_router
 from app.core.config import settings
 from app.api.routes import users
+
+configure_logging()
 
 app = FastAPI(title=settings.app_name)
 

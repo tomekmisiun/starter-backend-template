@@ -63,9 +63,10 @@ Services:
 
 ## Environment Variables
 
-See `.env.example`.
+See `.env.example` for application variables and
+`.env.observability.example` for the local Grafana/Loki stack.
 
-Required or supported variables:
+Required or supported application variables:
 
 ```text
 DATABASE_URL=postgresql://app_user:app_password@db:5432/app_db
@@ -75,6 +76,7 @@ ENVIRONMENT=development
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_DB=0
+LOG_LEVEL=INFO
 ```
 
 `SECRET_KEY` is required. Known weak placeholder values such as `change-me` are
@@ -202,6 +204,57 @@ Every response includes:
 If a client sends `X-Request-ID`, the API preserves it. Otherwise, the API
 generates a UUID request ID. Request start and finish events are logged with the
 request ID, method, path, status code, and processing time.
+
+Logs are written to stdout/stderr, so Docker users can inspect them with:
+
+```bash
+docker compose logs api
+```
+
+Use `LOG_LEVEL` to control the logging level.
+
+### Local Loki/Grafana Stack
+
+The local observability flow is:
+
+```text
+FastAPI -> stdout/stderr -> Docker logs -> Promtail -> Loki -> Grafana
+```
+
+Start the app stack and observability stack together:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+```
+
+Open Grafana:
+
+```text
+http://localhost:3000
+```
+
+Default local credentials from `.env.observability`:
+
+```text
+GF_SECURITY_ADMIN_USER=admin
+GF_SECURITY_ADMIN_PASSWORD=admin
+GF_AUTH_ANONYMOUS_ENABLED=false
+```
+
+The observability compose file loads these values from `.env.observability`.
+They are not hardcoded in `docker-compose.observability.yml` and are not passed
+to the API container.
+
+Grafana provisions Loki automatically as the default datasource.
+
+Example LogQL query:
+
+```text
+{job="fastapi"}
+```
+
+Promtail reads Docker logs from the `api` container. The application continues
+to log only to stdout/stderr and does not write log files.
 
 ## Known Production Gaps
 

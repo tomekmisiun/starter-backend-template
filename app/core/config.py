@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     redis_host: str = "redis"
     redis_port: int = 6379
     redis_db: int = 0
+    log_level: str = "INFO"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
@@ -50,6 +51,11 @@ class Settings(BaseSettings):
             )
 
         return self
+
+    @field_validator("log_level")
+    @classmethod
+    def normalize_log_level(cls, value: str) -> str:
+        return value.upper()
 
 
 @lru_cache
