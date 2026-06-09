@@ -109,6 +109,10 @@ Run the test suite:
 docker compose run --rm api pytest -v
 ```
 
+The pytest setup resets the test database and applies Alembic migrations before
+running tests. This validates that migrations can build the schema used by the
+application tests.
+
 Run lint:
 
 ```bash
@@ -190,8 +194,6 @@ Current default:
 
 ## Known Production Gaps
 
-- Migration-aware tests: pytest creates tables with SQLAlchemy metadata instead
-  of validating Alembic migrations.
 - Structured logging/request IDs are not implemented.
 - Health/readiness checks are basic.
 - Redis-backed rate limiting needs stronger configuration and tests.
