@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlparse
+from types import SimpleNamespace
 
 from app.core.security import verify_password
 from app.models.password_reset_token import PasswordResetToken
 from app.models.user import User
 from app.services.email_templates import build_password_reset_url
+from app.services.password_reset_service import create_password_reset_token_and_send_email
 
 
 class FakeEmailService:
@@ -25,6 +27,14 @@ def deactivate_user_by_email(db, email: str) -> None:
     user = db.query(User).filter(User.email == email).first()
     user.is_active = False
     db.commit()
+
+
+def create_reset_token_for_user(db, email: str, email_service: FakeEmailService) -> str:
+    user = db.query(User).filter(User.email == email).one()
+
+    create_password_reset_token_and_send_email(db, user.id)
+
+    return email_service.sent_password_reset_emails[-1]["raw_token"]
 
 
 def test_register(client):
@@ -308,21 +318,24 @@ def test_refresh_with_invalid_token(client):
     assert response.status_code == 401
 
 
-def test_password_reset_request_for_active_user_creates_token_and_sends_email(
+def test_password_reset_request_for_active_user_enqueues_email_job(
     db,
     client,
     monkeypatch,
 ):
-    email_service = FakeEmailService()
-    monkeypatch.setattr(
-        "app.services.password_reset_service.get_email_service",
-        lambda: email_service,
-    )
+    enqueued_jobs = []
+
+    def fake_enqueue_job(job_type: str, payload: dict):
+        enqueued_jobs.append({"type": job_type, "payload": payload})
+        return SimpleNamespace(id="job-id")
+
+    monkeypatch.setattr("app.services.password_reset_service.enqueue_job", fake_enqueue_job)
     register_data = {
         "email": "reset-active@example.com",
         "password": "password123",
     }
     client.post("/auth/register", json=register_data)
+    token_count_before = db.query(PasswordResetToken).count()
 
     response = client.post(
         "/auth/password-reset/request",
@@ -338,17 +351,14 @@ def test_password_reset_request_for_active_user_creates_token_and_sends_email(
     }
 
     user = db.query(User).filter(User.email == register_data["email"]).one()
-    reset_token = (
-        db.query(PasswordResetToken)
-        .filter(PasswordResetToken.user_id == user.id)
-        .one()
-    )
-    sent_email = email_service.sent_password_reset_emails[0]
 
-    assert sent_email["recipient"] == register_data["email"]
-    assert sent_email["raw_token"] in sent_email["reset_url"]
-    assert reset_token.token_hash != sent_email["raw_token"]
-    assert reset_token.used_at is None
+    assert enqueued_jobs == [
+        {
+            "type": "send_password_reset_email",
+            "payload": {"user_id": user.id},
+        }
+    ]
+    assert db.query(PasswordResetToken).count() == token_count_before
 
 
 def test_password_reset_request_for_missing_user_does_not_leak_account_status(
@@ -430,11 +440,11 @@ def test_password_reset_confirm_updates_password_and_marks_token_used(
         "password": "password123",
     }
     client.post("/auth/register", json=register_data)
-    client.post(
-        "/auth/password-reset/request",
-        json={"email": register_data["email"]},
+    raw_token = create_reset_token_for_user(
+        db,
+        register_data["email"],
+        email_service,
     )
-    raw_token = email_service.sent_password_reset_emails[0]["raw_token"]
 
     response = client.post(
         "/auth/password-reset/confirm",
@@ -494,11 +504,11 @@ def test_password_reset_confirm_rejects_expired_token(
         "password": "password123",
     }
     client.post("/auth/register", json=register_data)
-    client.post(
-        "/auth/password-reset/request",
-        json={"email": register_data["email"]},
+    raw_token = create_reset_token_for_user(
+        db,
+        register_data["email"],
+        email_service,
     )
-    raw_token = email_service.sent_password_reset_emails[0]["raw_token"]
     user = db.query(User).filter(User.email == register_data["email"]).one()
     reset_token = (
         db.query(PasswordResetToken)
@@ -517,6 +527,7 @@ def test_password_reset_confirm_rejects_expired_token(
 
 
 def test_password_reset_confirm_rejects_reused_token(
+    db,
     client,
     monkeypatch,
 ):
@@ -530,11 +541,11 @@ def test_password_reset_confirm_rejects_reused_token(
         "password": "password123",
     }
     client.post("/auth/register", json=register_data)
-    client.post(
-        "/auth/password-reset/request",
-        json={"email": register_data["email"]},
+    raw_token = create_reset_token_for_user(
+        db,
+        register_data["email"],
+        email_service,
     )
-    raw_token = email_service.sent_password_reset_emails[0]["raw_token"]
 
     first_response = client.post(
         "/auth/password-reset/confirm",
@@ -564,11 +575,11 @@ def test_password_reset_confirm_rejects_inactive_user(
         "password": "password123",
     }
     client.post("/auth/register", json=register_data)
-    client.post(
-        "/auth/password-reset/request",
-        json={"email": register_data["email"]},
+    raw_token = create_reset_token_for_user(
+        db,
+        register_data["email"],
+        email_service,
     )
-    raw_token = email_service.sent_password_reset_emails[0]["raw_token"]
     deactivate_user_by_email(db, register_data["email"])
 
     response = client.post(
@@ -579,7 +590,7 @@ def test_password_reset_confirm_rejects_inactive_user(
     assert response.status_code == 400
 
 
-def test_password_reset_email_reset_url_contains_valid_token(client, monkeypatch):
+def test_password_reset_email_reset_url_contains_valid_token(db, client, monkeypatch):
     email_service = FakeEmailService()
     monkeypatch.setattr(
         "app.services.password_reset_service.get_email_service",
@@ -590,11 +601,7 @@ def test_password_reset_email_reset_url_contains_valid_token(client, monkeypatch
         "password": "password123",
     }
     client.post("/auth/register", json=register_data)
-
-    client.post(
-        "/auth/password-reset/request",
-        json={"email": register_data["email"]},
-    )
+    create_reset_token_for_user(db, register_data["email"], email_service)
 
     reset_url = email_service.sent_password_reset_emails[0]["reset_url"]
     token = parse_qs(urlparse(reset_url).query)["token"][0]

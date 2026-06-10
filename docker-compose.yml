@@ -17,6 +17,22 @@ services:
     volumes:
       - .:/app
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - .env
+    environment:
+      RUFF_CACHE_DIR: /tmp/.ruff_cache
+      PYTEST_ADDOPTS: "-o cache_dir=/tmp/.pytest_cache"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+
   db:
     image: postgres:17
     environment:
