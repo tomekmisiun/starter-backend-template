@@ -80,6 +80,9 @@ Current documentation/rules setup:
 - Configured stdout logging with request context fields visible in Docker logs.
 - Local observability stack with Promtail, Loki, and Grafana for Docker log
   collection and inspection.
+- Prometheus-compatible `/metrics` endpoint, request metrics collection,
+  Prometheus service in the local observability stack, Grafana Prometheus
+  datasource provisioning, and a local FastAPI overview dashboard.
 - Pytest test suite for auth, users, admin, audit logs, and basic health.
 - Migration-aware pytest setup that resets the test database and applies
   Alembic migrations before running application tests.
@@ -95,36 +98,19 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. Prometheus Metrics + Grafana dashboard
-    - The project has logs through Promtail/Loki/Grafana, but no Prometheus
-      metrics endpoint, scrape config, or dashboard for request and dependency
-      metrics.
-2. Redis Caching for selected read endpoints
+1. Redis Caching for selected read endpoints
     - Redis exists, but read endpoint caching is not implemented for selected
       low-risk queries.
-3. File Upload with S3-compatible storage / MinIO
+2. File Upload with S3-compatible storage / MinIO
     - The project does not support file uploads, object storage configuration,
       local MinIO development, or upload validation.
-4. Password reset hardening follow-ups
+3. Password reset hardening follow-ups
     - Password reset does not yet include dedicated reset rate limiting, audit
       log integration, or automatic cleanup of expired tokens.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. Prometheus Metrics + Grafana dashboard
-    - Goal: add operational metrics alongside the existing log stack.
-    - Recommended scope: metrics middleware, `/metrics` endpoint, Prometheus
-      service in local observability Compose, Grafana datasource/dashboard
-      provisioning, and tests that verify metrics are exposed without leaking
-      sensitive data.
-    - Files likely to change: `app/core`, `app/main.py`, `app/api/routes`,
-      `docker-compose.observability.yml`, `observability`, `README.md`,
-      `tests`, `pyproject.toml`, and `uv.lock`.
-    - Validation: `docker compose config`,
-      `docker compose -f docker-compose.yml -f docker-compose.observability.yml config`,
-      `docker compose run --rm api ruff check .`, and
-      `docker compose run --rm api pytest -v`.
-2. Redis Caching for selected read endpoints
+1. Redis Caching for selected read endpoints
     - Goal: add explicit, testable caching for selected safe read paths.
     - Recommended scope: pick low-risk read endpoints, define cache keys and
       TTLs, add invalidation on writes, keep behavior opt-in and
@@ -135,7 +121,7 @@ Current documentation/rules setup:
       `README.md`, and `PROJECT_STATUS.md`.
     - Validation: `docker compose run --rm api ruff check .` and
       `docker compose run --rm api pytest -v`.
-3. File Upload with S3-compatible storage / MinIO
+2. File Upload with S3-compatible storage / MinIO
     - Goal: support validated file uploads using local MinIO and
       S3-compatible storage configuration.
     - Recommended scope: storage service abstraction, upload endpoint, file
@@ -159,36 +145,30 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/prometheus-metrics
+feature/redis-read-caching
 ```
 
 Recommended scope:
 
-- Add a Prometheus metrics endpoint.
-- Add request metrics middleware or instrumentation.
-- Add Prometheus to the local observability Compose stack.
-- Provision Prometheus as a Grafana datasource.
-- Add a basic Grafana dashboard for request and dependency metrics.
-- Add tests that verify metrics are exposed without sensitive values.
-- Update README because the feature changes observability setup.
+- Add explicit Redis-backed caching for selected safe read endpoints.
+- Define cache keys, TTLs, and invalidation behavior.
+- Keep caching opt-in and environment-driven.
+- Add regression tests for hits, misses, expiry, and invalidation.
+- Update README because the feature changes Redis-backed API behavior.
 - Update `PROJECT_STATUS.md` after the feature is completed.
 
 Expected files likely to change:
 
+- `app/api/dependencies`
+- `app/services`
 - `app/core`
-- `app/main.py`
-- `app/api/routes`
-- `docker-compose.observability.yml`
-- `observability`
+- `.env.example`
 - `README.md`
 - `PROJECT_STATUS.md`
 - `tests`
-- `pyproject.toml` and `uv.lock` if a metrics library is approved
 
 Expected validation:
 
-- `docker compose config`
-- `docker compose -f docker-compose.yml -f docker-compose.observability.yml config`
 - `docker compose run --rm api ruff check .`
 - `docker compose run --rm api pytest -v`
 
