@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     redis_db: int = 0
     log_level: str = "INFO"
+    rate_limit_default_limit: int = Field(default=5, gt=0)
+    rate_limit_default_window_seconds: int = Field(default=60, gt=0)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

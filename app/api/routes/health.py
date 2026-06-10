@@ -70,6 +70,6 @@ def redis_health():
     )
 
 
-@router.get("/limited", dependencies=[Depends(rate_limit(limit=5, window_seconds=60))])
+@router.get("/limited", dependencies=[Depends(rate_limit())])
 def limited_endpoint():
     return {"message": "ok"}

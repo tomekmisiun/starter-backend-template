@@ -8,7 +8,7 @@ sessions can continue without losing context.
 The project is a FastAPI backend template using SQLAlchemy, Alembic,
 PostgreSQL, Redis, Docker Compose, pytest, Ruff, and GitHub Actions.
 
-Current branch for active feature work: `feature/health-readiness-checks`.
+Current branch for active feature work: `feature/rate-limit-config-tests`.
 
 Current architecture:
 
@@ -59,7 +59,9 @@ Current documentation/rules setup:
 - Dedicated liveness endpoint.
 - Readiness endpoint that checks database and Redis dependencies.
 - Database and Redis health checks with consistent `503` failure responses.
-- Redis-backed example rate-limited endpoint.
+- Redis-backed example rate-limited endpoint with environment-driven defaults
+  and regression coverage for limit enforcement, Redis TTLs, and per-IP
+  counters.
 - Request ID middleware that generates or preserves `X-Request-ID`, adds it to
   responses, keeps `X-Process-Time`, and logs request start/finish events.
 - Configured stdout logging with request context fields visible in Docker logs.
@@ -79,77 +81,69 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. Redis-backed rate limit tests/config
-   - Redis rate limiting exists, but it is not configurable through settings and
-     has little/no regression coverage.
-
-2. Error response standardization
+1. Error response standardization
     - API errors do not use a consistent response envelope.
 
-3. Docker production hardening
+2. Docker production hardening
     - Docker image is development-oriented.
     - It does not use a non-root runtime user or production-focused image
       hardening.
 
-4. CI improvements
+3. CI improvements
     - CI does not explicitly start Redis for Redis-backed behavior tests.
 
-5. Audit log hardening
+4. Audit log hardening
     - Audit actions are raw strings.
     - Audit log listing has minimal filtering.
     - Audit behavior could be made more consistent and queryable.
 
-6. Dependency/version management
+5. Dependency/version management
     - Most dependencies in `requirements.txt` are unpinned.
     - Reproducibility is weaker than expected for production templates.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. Redis-backed rate limit tests/config
-   - Goal: make rate limiting configurable and covered by tests.
-   - Why: strengthens existing Redis usage and prepares for session logic.
-
-2. Error response standardization
+1. Error response standardization
     - Goal: provide consistent API error responses.
     - Why: improves client experience and API professionalism.
 
-3. Docker production hardening
+2. Docker production hardening
     - Goal: improve image/runtime safety.
     - Why: aligns local template with production expectations.
 
-4. CI improvements
+3. CI improvements
     - Goal: validate Redis-backed tests explicitly in CI.
     - Why: catches more production-relevant failures before merge.
 
-5. Audit log hardening
+4. Audit log hardening
     - Goal: add action constants/enums, filtering, and stronger audit query
       behavior.
     - Why: makes admin/audit behavior more maintainable.
 
-6. Dependency/version management
+5. Dependency/version management
     - Goal: pin or constrain dependencies and define an update process.
     - Why: improves reproducibility.
 
 ## 5. Next Immediate Task
 
-Recommended next branch after `feature/health-readiness-checks`:
+Recommended next branch after `feature/rate-limit-config-tests`:
 
 ```text
-feature/rate-limit-config-tests
+feature/error-response-standardization
 ```
 
 Recommended scope:
 
-- Move rate limit values into settings.
-- Add Redis-backed rate limit regression tests.
-- Keep rate limit dependency explicit and reusable.
-- Update README if rate limit configuration changes.
+- Add consistent error response schemas.
+- Add exception handlers for common API errors.
+- Keep internal exception details out of API responses.
+- Add regression tests for validation, auth, not found, and rate limit errors.
 
 Expected files likely to change:
 
-- `app/api/dependencies/rate_limit.py`
-- `app/core/config.py`
-- `.env.example`
+- `app/main.py`
+- `app/schemas`
+- `app/api`
 - `tests`
 - `README.md`
 

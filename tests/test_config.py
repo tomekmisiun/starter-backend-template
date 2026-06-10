@@ -46,3 +46,31 @@ def test_settings_accepts_strong_production_secret_key():
 
     assert settings.environment == "production"
     assert settings.secret_key == "strong-production-secret-key-value"
+
+
+def test_settings_accepts_rate_limit_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        rate_limit_default_limit=10,
+        rate_limit_default_window_seconds=30,
+    )
+
+    assert settings.rate_limit_default_limit == 10
+    assert settings.rate_limit_default_window_seconds == 30
+
+
+def test_settings_rejects_non_positive_rate_limit_config():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            secret_key="development-secret",
+            rate_limit_default_limit=0,
+        )
+
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            secret_key="development-secret",
+            rate_limit_default_window_seconds=0,
+        )
