@@ -54,6 +54,44 @@ uv run uvicorn app.main:app --reload
 
 The app starts on `http://localhost:8000`.
 
+## Dependency Management
+
+Python dependencies are managed with uv:
+
+- `pyproject.toml` defines top-level dependency constraints.
+- `uv.lock` stores the resolved, reproducible dependency graph.
+- Runtime dependencies belong in `[project].dependencies`.
+- Test, lint, and developer tooling belongs in `[dependency-groups].dev`.
+
+Top-level dependencies should use compatible version ranges for the current
+minor line, for example `package>=1.2,<1.3`. Use exact pins only when the
+project needs a known compatibility or security constraint.
+
+When adding or updating dependencies:
+
+1. Update `pyproject.toml`.
+2. Regenerate the lockfile:
+
+   ```bash
+   uv lock
+   ```
+
+3. Sync locally if needed:
+
+   ```bash
+   uv sync
+   ```
+
+4. Run validation:
+
+   ```bash
+   docker compose build api
+   docker compose run --rm api ruff check .
+   docker compose run --rm api pytest -v
+   ```
+
+Commit `pyproject.toml` and `uv.lock` together after dependency changes.
+
 ## Docker Setup
 
 Start the full local stack:

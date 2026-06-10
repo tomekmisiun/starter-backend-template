@@ -8,7 +8,7 @@ sessions can continue without losing context.
 The project is a FastAPI backend template using SQLAlchemy, Alembic,
 PostgreSQL, Redis, Docker Compose, pytest, Ruff, uv, and GitHub Actions.
 
-Current branch for active feature work: `feature/audit-log-hardening`.
+Current branch for active feature work: `chore/dependency-update-policy`.
 
 Current architecture:
 
@@ -40,6 +40,8 @@ Current documentation/rules setup:
 - Production-oriented API Dockerfile with a non-root runtime user, Python/uv
   runtime defaults, explicit build file configuration, and `.dockerignore`.
 - Python dependency management through `pyproject.toml` and `uv.lock`.
+- Documented dependency update policy with runtime and dev dependency
+  separation.
 - User registration.
 - User login with access and refresh JWTs.
 - Password hashing with bcrypt/passlib.
@@ -88,37 +90,29 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. Dependency/version management
-    - Dependency update policy is not documented.
-    - Most top-level dependency constraints are intentionally broad.
+No main production gaps are currently tracked in this file.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. Dependency/version management
-    - Goal: define dependency update policy and tighten constraints where
-      useful.
-    - Why: improves long-term maintenance.
+Reassess the backend after the dependency management work is merged and choose
+the next production-readiness improvement from the current project state.
 
 ## 5. Next Immediate Task
 
-Recommended next branch after `feature/audit-log-hardening`:
+Recommended next branch after `chore/dependency-update-policy`:
 
 ```text
-chore/dependency-update-policy
+to-be-decided
 ```
 
 Recommended scope:
 
-- Document dependency update policy.
-- Review top-level dependency constraints in `pyproject.toml`.
-- Keep `uv.lock` reproducible.
-- Update README if dependency workflow changes.
+- Re-run a production-readiness gap analysis.
+- Pick the next highest-ROI backend improvement.
 
 Expected files likely to change:
 
-- `pyproject.toml`
-- `uv.lock`
-- `README.md`
+- To be decided after the next gap analysis.
 
 Expected validation:
 
