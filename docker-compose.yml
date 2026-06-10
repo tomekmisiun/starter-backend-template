@@ -7,6 +7,9 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      RUFF_CACHE_DIR: /tmp/.ruff_cache
+      PYTEST_ADDOPTS: "-o cache_dir=/tmp/.pytest_cache"
     depends_on:
       - db
       - test_db
