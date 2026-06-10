@@ -77,6 +77,8 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_DB=0
 LOG_LEVEL=INFO
+RATE_LIMIT_DEFAULT_LIMIT=5
+RATE_LIMIT_DEFAULT_WINDOW_SECONDS=60
 ```
 
 `SECRET_KEY` is required. Known weak placeholder values such as `change-me` are
@@ -191,10 +193,13 @@ allow changing admin-managed fields such as `is_active`.
 
 `GET /health/limited` demonstrates Redis-backed IP rate limiting.
 
-Current default:
+Current defaults are environment-driven:
 
-- limit: 5 requests
-- window: 60 seconds
+- `RATE_LIMIT_DEFAULT_LIMIT=5`
+- `RATE_LIMIT_DEFAULT_WINDOW_SECONDS=60`
+
+Rate limit counters are stored in Redis by client IP and expire after the
+configured window.
 
 ## Health Checks
 
@@ -275,7 +280,6 @@ to log only to stdout/stderr and does not write log files.
 
 ## Known Production Gaps
 
-- Redis-backed rate limiting needs stronger configuration and tests.
 - Error response standardization is not implemented.
 - Docker image is development-oriented and not hardened.
 - CI does not validate migrations explicitly.
