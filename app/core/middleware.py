@@ -5,6 +5,8 @@ from uuid import uuid4
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.metrics import get_route_path, observe_request
+
 
 logger = logging.getLogger("app.requests")
 
@@ -29,6 +31,14 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         process_time = time.perf_counter() - start_time
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Process-Time"] = str(process_time)
+
+        if request.url.path != "/metrics":
+            observe_request(
+                method=request.method,
+                path=get_route_path(request.scope),
+                status_code=response.status_code,
+                duration_seconds=process_time,
+            )
 
         logger.info(
             "request_finished",

@@ -221,6 +221,10 @@ Health:
 - `GET /health/redis`
 - `GET /health/limited`
 
+Metrics:
+
+- `GET /metrics`
+
 Auth:
 
 - `POST /auth/register`
@@ -417,12 +421,30 @@ docker compose logs api
 
 Use `LOG_LEVEL` to control the logging level.
 
+The API exposes Prometheus-compatible metrics at:
+
+```text
+GET /metrics
+```
+
+Current metrics include:
+
+- `http_requests_total`
+- `http_request_duration_seconds`
+- `app_info`
+- `process_start_time_seconds`
+
+Request metric labels use HTTP method, route template, and status code. Route
+templates such as `/users/{user_id}` are used instead of raw request paths to
+avoid exposing request-specific values in metrics labels.
+
 ### Local Loki/Grafana Stack
 
 The local observability flow is:
 
 ```text
 FastAPI -> stdout/stderr -> Docker logs -> Promtail -> Loki -> Grafana
+FastAPI -> /metrics -> Prometheus -> Grafana
 ```
 
 Start the app stack and observability stack together:
@@ -437,6 +459,12 @@ Open Grafana:
 http://localhost:3000
 ```
 
+Open Prometheus:
+
+```text
+http://localhost:9090
+```
+
 Default local credentials from `.env.observability`:
 
 ```text
@@ -449,7 +477,9 @@ The observability compose file loads these values from `.env.observability`.
 They are not hardcoded in `docker-compose.observability.yml` and are not passed
 to the API container.
 
-Grafana provisions Loki automatically as the default datasource.
+Grafana provisions Loki and Prometheus automatically as datasources. A local
+`FastAPI Overview` dashboard is provisioned from
+`observability/grafana/dashboards`.
 
 Example LogQL query:
 
@@ -460,9 +490,14 @@ Example LogQL query:
 Promtail reads Docker logs from the `api` container. The application continues
 to log only to stdout/stderr and does not write log files.
 
+Example PromQL query:
+
+```text
+sum by (method, path, status_code) (rate(http_requests_total[5m]))
+```
+
 ## Known Production Gaps
 
-- Prometheus Metrics + Grafana dashboard.
 - Redis Caching for selected read endpoints.
 - File Upload with S3-compatible storage / MinIO.
 - Password reset rate limiting.
