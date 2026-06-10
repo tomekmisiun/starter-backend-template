@@ -113,6 +113,7 @@ Services:
 - `db`: main PostgreSQL database
 - `test_db`: PostgreSQL database used by tests
 - `redis`: Redis for rate limiting, token revocation, and background jobs
+- `minio`: local S3-compatible object storage for file uploads
 
 The API image is built from `Dockerfile`, runs as a non-root `app` user, and
 uses `.dockerignore` to keep local secrets, VCS metadata, virtual environments,
@@ -149,6 +150,13 @@ WORKER_POLL_TIMEOUT_SECONDS=5
 WORKER_MAX_RETRIES=3
 USERS_CACHE_ENABLED=true
 USERS_CACHE_TTL_SECONDS=60
+S3_ENDPOINT_URL=http://minio:9000
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_BUCKET_NAME=uploads
+S3_REGION_NAME=us-east-1
+UPLOAD_MAX_SIZE_BYTES=5242880
+UPLOAD_ALLOWED_CONTENT_TYPES=image/png,image/jpeg,application/pdf
 ```
 
 `SECRET_KEY` is required. Known weak placeholder values such as `change-me` are
@@ -250,6 +258,10 @@ Admin:
 
 - `GET /admin`
 - `GET /admin/audit-logs`
+
+Files:
+
+- `POST /files/upload`
 
 Audit log listing supports pagination and filters:
 
@@ -374,6 +386,36 @@ Current cache configuration:
 The user list cache is invalidated when users are created, updated, activated,
 deactivated, or deleted. Cached values expire automatically after the configured
 TTL.
+
+## File Uploads
+
+Authenticated users can upload files with:
+
+```text
+POST /files/upload
+```
+
+Uploads are stored through an S3-compatible storage service abstraction. The
+local Docker stack uses MinIO and stores file metadata in PostgreSQL.
+
+Upload configuration:
+
+- `S3_ENDPOINT_URL`
+- `S3_ACCESS_KEY_ID`
+- `S3_SECRET_ACCESS_KEY`
+- `S3_BUCKET_NAME`
+- `S3_REGION_NAME`
+- `UPLOAD_MAX_SIZE_BYTES`
+- `UPLOAD_ALLOWED_CONTENT_TYPES`
+
+The upload endpoint validates file content type and size before writing object
+metadata. Allowed content types are configured as a comma-separated list.
+
+The local MinIO console is available at:
+
+```text
+http://localhost:9001
+```
 
 ## Health Checks
 
@@ -514,7 +556,6 @@ sum by (method, path, status_code) (rate(http_requests_total[5m]))
 
 ## Known Production Gaps
 
-- File Upload with S3-compatible storage / MinIO.
 - Password reset rate limiting.
 - Audit log integration for password reset events.
 - Automatic cleanup of expired password reset tokens.

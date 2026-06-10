@@ -14,6 +14,7 @@ services:
       - db
       - test_db
       - redis
+      - minio
     volumes:
       - .:/app
 
@@ -30,6 +31,7 @@ services:
     depends_on:
       - db
       - redis
+      - minio
     volumes:
       - .:/app
 
@@ -58,5 +60,18 @@ services:
     ports:
       - "6379:6379"
 
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
 volumes:
   postgres_data:
+  minio_data:
