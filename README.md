@@ -109,9 +109,10 @@ make docker-down
 Services:
 
 - `api`: FastAPI application
+- `worker`: Redis-backed background worker for async jobs
 - `db`: main PostgreSQL database
 - `test_db`: PostgreSQL database used by tests
-- `redis`: Redis for rate limiting and token revocation
+- `redis`: Redis for rate limiting, token revocation, and background jobs
 
 The API image is built from `Dockerfile`, runs as a non-root `app` user, and
 uses `.dockerignore` to keep local secrets, VCS metadata, virtual environments,
@@ -142,6 +143,10 @@ SMTP_PASSWORD=
 EMAIL_FROM=noreply@example.com
 PASSWORD_RESET_URL=http://localhost:8000/reset-password
 PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=30
+WORKER_QUEUE_NAME=app_jobs
+WORKER_FAILED_QUEUE_NAME=app_jobs_failed
+WORKER_POLL_TIMEOUT_SECONDS=5
+WORKER_MAX_RETRIES=3
 ```
 
 `SECRET_KEY` is required. Known weak placeholder values such as `change-me` are
@@ -272,10 +277,12 @@ Supported audit actions:
 Refresh token revocation is stored in Redis until the revoked token would have
 expired.
 
-Password reset tokens are generated once, delivered only through email, and
-stored in the database as HMAC-SHA256 hashes. Reset tokens are single-use and
-expire after `PASSWORD_RESET_TOKEN_EXPIRE_MINUTES`. Password reset request
-responses do not reveal whether an account exists or is active.
+Password reset requests enqueue a Redis-backed background job for email
+delivery. The worker generates the raw token, sends the email, and stores only
+an HMAC-SHA256 token hash in the database. Raw reset tokens are not stored in
+PostgreSQL or Redis. Reset tokens are single-use and expire after
+`PASSWORD_RESET_TOKEN_EXPIRE_MINUTES`. Password reset request responses do not
+reveal whether an account exists or is active.
 
 ## Email
 
@@ -292,6 +299,30 @@ The initial provider uses SMTP configuration from environment variables:
 `PASSWORD_RESET_URL` is used as the base URL for generated reset links. The raw
 reset token is appended as a `token` query parameter and is never stored in
 plaintext.
+
+## Background Jobs
+
+The `worker` service processes Redis-backed background jobs:
+
+```bash
+docker compose logs worker
+```
+
+Current worker-backed behavior:
+
+- password reset email delivery
+
+Worker configuration:
+
+- `WORKER_QUEUE_NAME`
+- `WORKER_FAILED_QUEUE_NAME`
+- `WORKER_POLL_TIMEOUT_SECONDS`
+- `WORKER_MAX_RETRIES`
+
+Failed jobs are retried up to `WORKER_MAX_RETRIES`. Jobs that still fail are
+moved to `WORKER_FAILED_QUEUE_NAME` for inspection. Password reset email jobs
+carry only the target `user_id`; the raw reset token is generated inside the
+worker and is never stored in Redis.
 
 ## Roles And Permissions
 
@@ -431,7 +462,6 @@ to log only to stdout/stderr and does not write log files.
 
 ## Known Production Gaps
 
-- Background Jobs with Redis-backed worker.
 - Prometheus Metrics + Grafana dashboard.
 - Redis Caching for selected read endpoints.
 - File Upload with S3-compatible storage / MinIO.

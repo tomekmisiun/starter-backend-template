@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.job_queue import enqueue_job
 from app.core.config import settings
 from app.core.security import (
     generate_password_reset_token,
@@ -19,6 +20,7 @@ from app.services.email_service import EmailDeliveryError, get_email_service
 
 logger = logging.getLogger("app.password_reset")
 
+SEND_PASSWORD_RESET_EMAIL_JOB = "send_password_reset_email"
 PASSWORD_RESET_RESPONSE_MESSAGE = (
     "If an account exists for this email, password reset instructions were sent."
 )
@@ -31,6 +33,33 @@ def request_password_reset(db: Session, reset_request: PasswordResetRequest) -> 
     if user is None or not user.is_active:
         logger.info("password_reset_request_ignored")
         return PASSWORD_RESET_RESPONSE_MESSAGE
+
+    job = enqueue_password_reset_email_job(user.id)
+    logger.info(
+        "password_reset_email_job_enqueued user_id=%s job_id=%s",
+        user.id,
+        job.id,
+    )
+
+    return PASSWORD_RESET_RESPONSE_MESSAGE
+
+
+def enqueue_password_reset_email_job(user_id: int):
+    return enqueue_job(
+        SEND_PASSWORD_RESET_EMAIL_JOB,
+        {"user_id": user_id},
+    )
+
+
+def create_password_reset_token_and_send_email(db: Session, user_id: int) -> None:
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if user is None or not user.is_active:
+        logger.info(
+            "password_reset_email_job_skipped reason=inactive_or_missing_user user_id=%s",
+            user_id,
+        )
+        return
 
     raw_token = generate_password_reset_token()
     token_hash = hash_password_reset_token(raw_token)
@@ -45,8 +74,7 @@ def request_password_reset(db: Session, reset_request: PasswordResetRequest) -> 
     )
 
     db.add(reset_token)
-    db.commit()
-    db.refresh(reset_token)
+    db.flush()
 
     logger.info(
         "password_reset_token_created user_id=%s token_id=%s expires_at=%s",
@@ -58,13 +86,20 @@ def request_password_reset(db: Session, reset_request: PasswordResetRequest) -> 
     try:
         get_email_service().send_password_reset_email(user.email, raw_token)
     except EmailDeliveryError:
+        db.rollback()
         logger.exception(
             "password_reset_email_delivery_failed user_id=%s token_id=%s",
             user.id,
             reset_token.id,
         )
+        raise
 
-    return PASSWORD_RESET_RESPONSE_MESSAGE
+    db.commit()
+    logger.info(
+        "password_reset_email_job_completed user_id=%s token_id=%s",
+        user.id,
+        reset_token.id,
+    )
 
 
 def confirm_password_reset(db: Session, reset_confirm: PasswordResetConfirm) -> str:
