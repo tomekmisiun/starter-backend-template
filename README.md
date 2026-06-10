@@ -135,6 +135,13 @@ REDIS_DB=0
 LOG_LEVEL=INFO
 RATE_LIMIT_DEFAULT_LIMIT=5
 RATE_LIMIT_DEFAULT_WINDOW_SECONDS=60
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USERNAME=
+SMTP_PASSWORD=
+EMAIL_FROM=noreply@example.com
+PASSWORD_RESET_URL=http://localhost:8000/reset-password
+PASSWORD_RESET_TOKEN_EXPIRE_MINUTES=30
 ```
 
 `SECRET_KEY` is required. Known weak placeholder values such as `change-me` are
@@ -216,6 +223,8 @@ Auth:
 - `GET /auth/me`
 - `POST /auth/refresh`
 - `POST /auth/logout`
+- `POST /auth/password-reset/request`
+- `POST /auth/password-reset/confirm`
 
 Users:
 
@@ -256,9 +265,33 @@ Supported audit actions:
 5. Refresh token rotation revokes the previous refresh token.
 6. Logout with `POST /auth/logout` by sending the refresh token to revoke it.
 7. Inactive users cannot log in, use access tokens, or refresh tokens.
+8. Request a password reset with `POST /auth/password-reset/request`.
+9. Confirm the reset with `POST /auth/password-reset/confirm` using the token
+   delivered by email and the new password.
 
 Refresh token revocation is stored in Redis until the revoked token would have
 expired.
+
+Password reset tokens are generated once, delivered only through email, and
+stored in the database as HMAC-SHA256 hashes. Reset tokens are single-use and
+expire after `PASSWORD_RESET_TOKEN_EXPIRE_MINUTES`. Password reset request
+responses do not reveal whether an account exists or is active.
+
+## Email
+
+Password reset email delivery is isolated behind an email service abstraction.
+The initial provider uses SMTP configuration from environment variables:
+
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
+- `EMAIL_FROM`
+- `PASSWORD_RESET_URL`
+
+`PASSWORD_RESET_URL` is used as the base URL for generated reset links. The raw
+reset token is appended as a `token` query parameter and is never stored in
+plaintext.
 
 ## Roles And Permissions
 
@@ -398,5 +431,10 @@ to log only to stdout/stderr and does not write log files.
 
 ## Known Production Gaps
 
-- CI does not validate migrations explicitly.
-- Dependencies are mostly unpinned.
+- Background Jobs with Redis-backed worker.
+- Prometheus Metrics + Grafana dashboard.
+- Redis Caching for selected read endpoints.
+- File Upload with S3-compatible storage / MinIO.
+- Password reset rate limiting.
+- Audit log integration for password reset events.
+- Automatic cleanup of expired password reset tokens.

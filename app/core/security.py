@@ -1,3 +1,6 @@
+import hmac
+import secrets
+from hashlib import sha256
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
@@ -19,6 +22,22 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def generate_password_reset_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_password_reset_token(token: str) -> str:
+    return hmac.new(
+        settings.secret_key.encode("utf-8"),
+        token.encode("utf-8"),
+        sha256,
+    ).hexdigest()
+
+
+def verify_password_reset_token(token: str, token_hash: str) -> bool:
+    return hmac.compare_digest(hash_password_reset_token(token), token_hash)
 
 
 def create_access_token(subject: str, expires_delta: timedelta | None = None) -> str:

@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     rate_limit_default_limit: int = Field(default=5, gt=0)
     rate_limit_default_window_seconds: int = Field(default=60, gt=0)
+    smtp_host: str = ""
+    smtp_port: int = Field(default=587, gt=0)
+    smtp_username: str = ""
+    smtp_password: str = ""
+    email_from: str = "noreply@example.com"
+    password_reset_url: str = "http://localhost:8000/reset-password"
+    password_reset_token_expire_minutes: int = Field(default=30, gt=0)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

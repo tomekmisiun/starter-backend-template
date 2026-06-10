@@ -6,6 +6,9 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.auth import (
     LogoutRequest,
+    MessageResponse,
+    PasswordResetConfirm,
+    PasswordResetRequest,
     RefreshTokenRequest,
     Token,
     UserCreate,
@@ -17,6 +20,10 @@ from app.services.auth_service import (
     login_user,
     logout_user,
     rotate_refresh_token,
+)
+from app.services.password_reset_service import (
+    confirm_password_reset,
+    request_password_reset,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -64,3 +71,23 @@ def refresh_token(
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(token_data: LogoutRequest):
     logout_user(token_data.refresh_token)
+
+
+@router.post("/password-reset/request", response_model=MessageResponse)
+def request_reset_password(
+    reset_request: PasswordResetRequest,
+    db: Session = Depends(get_db),
+):
+    message = request_password_reset(db, reset_request)
+
+    return MessageResponse(message=message)
+
+
+@router.post("/password-reset/confirm", response_model=MessageResponse)
+def confirm_reset_password(
+    reset_confirm: PasswordResetConfirm,
+    db: Session = Depends(get_db),
+):
+    message = confirm_password_reset(db, reset_confirm)
+
+    return MessageResponse(message=message)
