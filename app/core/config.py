@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     worker_max_retries: int = Field(default=3, ge=0)
     users_cache_enabled: bool = True
     users_cache_ttl_seconds: int = Field(default=60, gt=0)
+    s3_endpoint_url: str = "http://minio:9000"
+    s3_access_key_id: str = "minioadmin"
+    s3_secret_access_key: str = "minioadmin"
+    s3_bucket_name: str = "uploads"
+    s3_region_name: str = "us-east-1"
+    upload_max_size_bytes: int = Field(default=5_242_880, gt=0)
+    upload_allowed_content_types: str = "image/png,image/jpeg,application/pdf"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

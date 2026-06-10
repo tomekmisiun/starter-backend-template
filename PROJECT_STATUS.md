@@ -75,6 +75,9 @@ Current documentation/rules setup:
   counters.
 - Redis-backed caching for admin user listing with environment-driven TTL,
   query-parameter cache keys, and invalidation after user writes.
+- File upload endpoint, uploaded file metadata model, S3-compatible storage
+  abstraction, local MinIO service, and upload validation for size and content
+  type.
 - Centralized API error response envelope for HTTP errors, validation errors,
   auth failures, not found responses, and rate limit failures.
 - Request ID middleware that generates or preserves `X-Request-ID`, adds it to
@@ -100,28 +103,20 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. File Upload with S3-compatible storage / MinIO
-    - The project does not support file uploads, object storage configuration,
-      local MinIO development, or upload validation.
-2. Password reset hardening follow-ups
+1. Password reset hardening follow-ups
     - Password reset does not yet include dedicated reset rate limiting, audit
       log integration, or automatic cleanup of expired tokens.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. File Upload with S3-compatible storage / MinIO
-    - Goal: support validated file uploads using local MinIO and
-      S3-compatible storage configuration.
-    - Recommended scope: storage service abstraction, upload endpoint, file
-      metadata model if needed, size/type validation, MinIO service in Docker
-      Compose, safe local env examples, and tests for validation and storage
-      interactions.
-    - Files likely to change: `app/api/routes`, `app/services`, `app/schemas`,
-      `app/models`, `app/core/config.py`, `alembic/versions`,
-      `docker-compose.yml`, `.env.example`, `README.md`, `tests`,
-      `pyproject.toml`, and `uv.lock`.
-    - Validation: `docker compose config`, `docker compose build api`,
-      `docker compose run --rm api ruff check .`,
+1. Password reset hardening follow-ups
+    - Goal: harden the password reset flow beyond the baseline implementation.
+    - Recommended scope: dedicated reset rate limiting, audit log integration,
+      automatic cleanup of expired reset tokens, and security monitoring notes.
+    - Files likely to change: `app/api/dependencies`, `app/services`,
+      `app/models`, `alembic/versions`, `README.md`, `PROJECT_STATUS.md`, and
+      `tests`.
+    - Validation: `docker compose run --rm api ruff check .`,
       `docker compose run --rm api pytest -v`, and
       `docker compose run --rm api alembic upgrade head` if a migration is
       added.
@@ -133,40 +128,30 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/file-upload-minio
+feature/password-reset-hardening
 ```
 
 Recommended scope:
 
-- Add storage service abstraction.
-- Add upload endpoint with authentication.
-- Add file metadata model if needed.
-- Add size and content type validation.
-- Add MinIO service to Docker Compose for local S3-compatible storage.
-- Add safe local env examples.
-- Add tests for validation and storage interactions.
-- Update README because the feature changes Docker, env, API, and storage
-  behavior.
+- Add dedicated password reset rate limiting.
+- Add audit log integration for password reset events.
+- Add automatic cleanup for expired password reset tokens.
+- Add tests for reset rate limits, audit behavior, and cleanup behavior.
+- Update README because the feature changes auth/security behavior.
 - Update `PROJECT_STATUS.md` after the feature is completed.
 
 Expected files likely to change:
 
-- `app/api/routes`
+- `app/api/dependencies`
 - `app/services`
-- `app/schemas`
 - `app/models`
-- `app/core`
 - `alembic/versions`
-- `docker-compose.yml`
-- `.env.example`
 - `README.md`
 - `PROJECT_STATUS.md`
 - `tests`
-- `pyproject.toml` and `uv.lock` if an S3 client library is approved
 
 Expected validation:
 
-- `docker compose config`
 - `docker compose run --rm api ruff check .`
 - `docker compose run --rm api pytest -v`
 - `docker compose run --rm api alembic upgrade head` if a migration is added.
