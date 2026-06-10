@@ -76,7 +76,8 @@ Current documentation/rules setup:
 - Migration-aware pytest setup that resets the test database and applies
   Alembic migrations before running application tests.
 - Regression test confirming the test database is at the current Alembic head.
-- GitHub Actions CI for Docker build, Ruff, and pytest.
+- GitHub Actions CI for Docker build, Ruff, Redis-backed rate limit tests, and
+  the full pytest suite with PostgreSQL, test PostgreSQL, and Redis started.
 - README documentation for project setup, API, auth flow, and production gaps.
 - Config hardening for required non-placeholder `SECRET_KEY`, production secret
   length validation, allowed environment validation, and env-driven Redis
@@ -86,52 +87,48 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. CI improvements
-    - CI does not explicitly start Redis for Redis-backed behavior tests.
-
-2. Audit log hardening
+1. Audit log hardening
     - Audit actions are raw strings.
     - Audit log listing has minimal filtering.
     - Audit behavior could be made more consistent and queryable.
 
-3. Dependency/version management
+2. Dependency/version management
     - Dependency update policy is not documented.
     - Most top-level dependency constraints are intentionally broad.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. CI improvements
-    - Goal: validate Redis-backed tests explicitly in CI.
-    - Why: catches more production-relevant failures before merge.
-
-2. Audit log hardening
+1. Audit log hardening
     - Goal: add action constants/enums, filtering, and stronger audit query
       behavior.
     - Why: makes admin/audit behavior more maintainable.
 
-3. Dependency/version management
+2. Dependency/version management
     - Goal: define dependency update policy and tighten constraints where
       useful.
     - Why: improves long-term maintenance.
 
 ## 5. Next Immediate Task
 
-Recommended next branch after `feature/docker-production-hardening`:
+Recommended next branch after `feature/ci-redis-validation`:
 
 ```text
-feature/ci-redis-validation
+feature/audit-log-hardening
 ```
 
 Recommended scope:
 
-- Ensure CI starts every dependency needed by the test suite.
-- Validate Redis-backed tests explicitly in CI.
-- Keep the Docker workflow aligned with local commands.
-- Update README if CI/test workflow changes.
+- Add audit action constants or enum-like definitions.
+- Add audit log filtering where useful.
+- Keep audit writes consistent and queryable.
+- Add regression tests for audit query behavior.
 
 Expected files likely to change:
 
-- `.github/workflows/ci.yml`
+- `app/services/audit_log_service.py`
+- `app/api/routes/admin.py`
+- `app/models/audit_log.py`
+- `tests`
 - `README.md`
 
 Expected validation:

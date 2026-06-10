@@ -153,6 +153,13 @@ Run lint locally with uv:
 uv run ruff check .
 ```
 
+## CI
+
+GitHub Actions builds the Docker stack, starts PostgreSQL, the test database,
+and Redis, then runs Ruff and pytest in the API container. Redis-backed rate
+limit tests are also run explicitly before the full test suite so Redis
+integration failures are visible in CI.
+
 ## API Overview
 
 Health:
