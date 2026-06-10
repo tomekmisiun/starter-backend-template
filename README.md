@@ -16,11 +16,13 @@ pytest.
 - Password hashing with `passlib` and bcrypt
 - pytest
 - Ruff
+- uv
 - Docker Compose
 
 ## Requirements
 
 - Python 3.12
+- uv
 - Docker and Docker Compose
 - Make
 
@@ -32,10 +34,22 @@ Install dependencies:
 make install
 ```
 
+Equivalent direct command:
+
+```bash
+uv sync
+```
+
 Run locally:
 
 ```bash
 make run
+```
+
+Equivalent direct command:
+
+```bash
+uv run uvicorn app.main:app --reload
 ```
 
 The app starts on `http://localhost:8000`.
@@ -117,6 +131,12 @@ Run the test suite:
 docker compose run --rm api pytest -v
 ```
 
+Run tests locally with uv:
+
+```bash
+uv run pytest -v
+```
+
 The pytest setup resets the test database and applies Alembic migrations before
 running tests. This validates that migrations can build the schema used by the
 application tests.
@@ -125,6 +145,12 @@ Run lint:
 
 ```bash
 docker compose run --rm api ruff check .
+```
+
+Run lint locally with uv:
+
+```bash
+uv run ruff check .
 ```
 
 ## API Overview

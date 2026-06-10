@@ -1,8 +1,8 @@
 install:
-	python -m pip install -r requirements.txt
+	uv sync
 
 run:
-	python -m uvicorn app.main:app --reload
+	uv run uvicorn app.main:app --reload
 
 docker-up:
 	docker compose up --build -d

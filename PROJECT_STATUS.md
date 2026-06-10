@@ -6,7 +6,7 @@ sessions can continue without losing context.
 ## 1. Current Project Status
 
 The project is a FastAPI backend template using SQLAlchemy, Alembic,
-PostgreSQL, Redis, Docker Compose, pytest, Ruff, and GitHub Actions.
+PostgreSQL, Redis, Docker Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work: `feature/docker-production-hardening`.
 
@@ -37,8 +37,9 @@ Current documentation/rules setup:
 - PostgreSQL database setup through SQLAlchemy.
 - Alembic migration setup.
 - Docker Compose setup for API, main database, test database, and Redis.
-- Production-oriented API Dockerfile with a non-root runtime user, Python/pip
+- Production-oriented API Dockerfile with a non-root runtime user, Python/uv
   runtime defaults, explicit build file configuration, and `.dockerignore`.
+- Python dependency management through `pyproject.toml` and `uv.lock`.
 - User registration.
 - User login with access and refresh JWTs.
 - Password hashing with bcrypt/passlib.
@@ -94,8 +95,8 @@ Current documentation/rules setup:
     - Audit behavior could be made more consistent and queryable.
 
 3. Dependency/version management
-    - Most dependencies in `requirements.txt` are unpinned.
-    - Reproducibility is weaker than expected for production templates.
+    - Dependency update policy is not documented.
+    - Most top-level dependency constraints are intentionally broad.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
@@ -109,8 +110,9 @@ Current documentation/rules setup:
     - Why: makes admin/audit behavior more maintainable.
 
 3. Dependency/version management
-    - Goal: pin or constrain dependencies and define an update process.
-    - Why: improves reproducibility.
+    - Goal: define dependency update policy and tighten constraints where
+      useful.
+    - Why: improves long-term maintenance.
 
 ## 5. Next Immediate Task
 
