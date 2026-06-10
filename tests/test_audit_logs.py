@@ -1,7 +1,7 @@
 import pytest
 from uuid import uuid4
 
-from app.models.audit_log import AuditLog
+from app.models.audit_log import AuditAction, AuditLog
 from app.models.user import User
 
 
@@ -82,7 +82,7 @@ def test_admin_update_user_creates_audit_log(
     audit_log = get_latest_audit_log(db)
 
     assert audit_log.admin_id == admin_user["id"]
-    assert audit_log.action == "user.updated"
+    assert audit_log.action == AuditAction.USER_UPDATED
     assert audit_log.target_user_id == regular_user["id"]
 
 
@@ -115,7 +115,7 @@ def test_admin_deactivate_user_creates_audit_log(
     audit_log = get_latest_audit_log(db)
 
     assert audit_log.admin_id == admin_user["id"]
-    assert audit_log.action == "user.deactivated"
+    assert audit_log.action == AuditAction.USER_DEACTIVATED
     assert audit_log.target_user_id == regular_user["id"]
 
 
@@ -140,7 +140,7 @@ def test_admin_activate_user_creates_audit_log(
     audit_log = get_latest_audit_log(db)
 
     assert audit_log.admin_id == admin_user["id"]
-    assert audit_log.action == "user.activated"
+    assert audit_log.action == AuditAction.USER_ACTIVATED
     assert audit_log.target_user_id == regular_user["id"]
 
 
@@ -165,7 +165,7 @@ def test_admin_delete_user_creates_audit_log(
     audit_log = get_latest_audit_log(db)
 
     assert audit_log.admin_id == admin_user["id"]
-    assert audit_log.action == "user.deleted"
+    assert audit_log.action == AuditAction.USER_DELETED
     assert audit_log.target_user_id == target_user_id
 
 
@@ -201,6 +201,143 @@ def test_admin_can_list_audit_logs(db, client, admin_user, regular_user):
 
     assert len(data) >= 1
     assert data[0]["admin_id"] == admin_user["id"]
-    assert data[0]["action"] == "user.deactivated"
+    assert data[0]["action"] == AuditAction.USER_DEACTIVATED
     assert data[0]["target_user_id"] == regular_user["id"]
     assert "created_at" in data[0]
+
+
+def test_admin_can_filter_audit_logs_by_action(
+    db,
+    client,
+    admin_user,
+    regular_user,
+):
+    client.patch(
+        f"/users/{regular_user['id']}/deactivate",
+        headers=admin_user["headers"],
+    )
+    client.patch(
+        f"/users/{regular_user['id']}/activate",
+        headers=admin_user["headers"],
+    )
+
+    response = client.get(
+        f"/admin/audit-logs?action={AuditAction.USER_ACTIVATED}",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) >= 1
+    assert all(item["action"] == AuditAction.USER_ACTIVATED for item in data)
+
+
+def test_admin_can_filter_audit_logs_by_admin_id(
+    db,
+    client,
+    admin_user,
+    regular_user,
+):
+    other_admin_token, other_admin_id = create_user_and_login(
+        db,
+        client,
+        f"audit-other-admin-{uuid4().hex}@example.com",
+    )
+    make_admin(db, other_admin_id)
+
+    client.patch(
+        f"/users/{regular_user['id']}/deactivate",
+        headers=admin_user["headers"],
+    )
+    client.patch(
+        f"/users/{regular_user['id']}/activate",
+        headers=auth_headers(other_admin_token),
+    )
+
+    response = client.get(
+        f"/admin/audit-logs?admin_id={other_admin_id}",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) >= 1
+    assert all(item["admin_id"] == other_admin_id for item in data)
+
+
+def test_admin_can_filter_audit_logs_by_target_user_id(
+    db,
+    client,
+    admin_user,
+    regular_user,
+):
+    _, other_target_user_id = create_user_and_login(
+        db,
+        client,
+        f"audit-other-target-{uuid4().hex}@example.com",
+    )
+
+    client.patch(
+        f"/users/{regular_user['id']}/deactivate",
+        headers=admin_user["headers"],
+    )
+    client.patch(
+        f"/users/{other_target_user_id}/deactivate",
+        headers=admin_user["headers"],
+    )
+
+    response = client.get(
+        f"/admin/audit-logs?target_user_id={other_target_user_id}",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) >= 1
+    assert all(item["target_user_id"] == other_target_user_id for item in data)
+
+
+def test_invalid_audit_log_action_filter_returns_422(client, admin_user):
+    response = client.get(
+        "/admin/audit-logs?action=invalid.action",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
+
+
+def test_audit_logs_are_ordered_newest_first(
+    db,
+    client,
+    admin_user,
+    regular_user,
+):
+    client.patch(
+        f"/users/{regular_user['id']}/deactivate",
+        headers=admin_user["headers"],
+    )
+    client.patch(
+        f"/users/{regular_user['id']}/activate",
+        headers=admin_user["headers"],
+    )
+
+    response = client.get(
+        f"/admin/audit-logs?target_user_id={regular_user['id']}",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) >= 2
+    assert data[0]["id"] > data[1]["id"]
+    assert data[0]["action"] == AuditAction.USER_ACTIVATED
+    assert data[1]["action"] == AuditAction.USER_DEACTIVATED

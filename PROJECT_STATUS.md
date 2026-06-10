@@ -8,7 +8,7 @@ sessions can continue without losing context.
 The project is a FastAPI backend template using SQLAlchemy, Alembic,
 PostgreSQL, Redis, Docker Compose, pytest, Ruff, uv, and GitHub Actions.
 
-Current branch for active feature work: `feature/docker-production-hardening`.
+Current branch for active feature work: `feature/audit-log-hardening`.
 
 Current architecture:
 
@@ -56,8 +56,9 @@ Current documentation/rules setup:
 - Separate self-update and admin-update behavior for admin-managed fields.
 - Admin user read/update/delete.
 - Admin activate/deactivate user endpoints.
-- Audit log model, migration, service, admin listing endpoint, and audit writes
-  for admin user update/deactivate/activate/delete actions.
+- Audit log model, migrations, service, admin listing endpoint, action
+  constants, filtering, query indexes, and audit writes for admin user
+  update/deactivate/activate/delete actions.
 - Basic app health check.
 - Dedicated liveness endpoint.
 - Readiness endpoint that checks database and Redis dependencies.
@@ -87,48 +88,36 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. Audit log hardening
-    - Audit actions are raw strings.
-    - Audit log listing has minimal filtering.
-    - Audit behavior could be made more consistent and queryable.
-
-2. Dependency/version management
+1. Dependency/version management
     - Dependency update policy is not documented.
     - Most top-level dependency constraints are intentionally broad.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. Audit log hardening
-    - Goal: add action constants/enums, filtering, and stronger audit query
-      behavior.
-    - Why: makes admin/audit behavior more maintainable.
-
-2. Dependency/version management
+1. Dependency/version management
     - Goal: define dependency update policy and tighten constraints where
       useful.
     - Why: improves long-term maintenance.
 
 ## 5. Next Immediate Task
 
-Recommended next branch after `feature/ci-redis-validation`:
+Recommended next branch after `feature/audit-log-hardening`:
 
 ```text
-feature/audit-log-hardening
+chore/dependency-update-policy
 ```
 
 Recommended scope:
 
-- Add audit action constants or enum-like definitions.
-- Add audit log filtering where useful.
-- Keep audit writes consistent and queryable.
-- Add regression tests for audit query behavior.
+- Document dependency update policy.
+- Review top-level dependency constraints in `pyproject.toml`.
+- Keep `uv.lock` reproducible.
+- Update README if dependency workflow changes.
 
 Expected files likely to change:
 
-- `app/services/audit_log_service.py`
-- `app/api/routes/admin.py`
-- `app/models/audit_log.py`
-- `tests`
+- `pyproject.toml`
+- `uv.lock`
 - `README.md`
 
 Expected validation:

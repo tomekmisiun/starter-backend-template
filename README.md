@@ -193,6 +193,21 @@ Admin:
 - `GET /admin`
 - `GET /admin/audit-logs`
 
+Audit log listing supports pagination and filters:
+
+- `page`
+- `size`
+- `action`
+- `admin_id`
+- `target_user_id`
+
+Supported audit actions:
+
+- `user.updated`
+- `user.deactivated`
+- `user.activated`
+- `user.deleted`
+
 ## Auth Flow
 
 1. Register with `POST /auth/register`.
@@ -346,5 +361,4 @@ to log only to stdout/stderr and does not write log files.
 ## Known Production Gaps
 
 - CI does not validate migrations explicitly.
-- Audit log filtering/action constants can be improved.
 - Dependencies are mostly unpinned.

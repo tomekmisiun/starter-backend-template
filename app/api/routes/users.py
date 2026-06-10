@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies.auth import get_current_user, require_role
 from app.db.session import get_db
+from app.models.audit_log import AuditAction
 from app.models.user import User
 from app.schemas.user import UserAdminUpdate, UserRead, UserSelfUpdate
 from app.services.audit_log_service import create_audit_log
@@ -119,7 +120,7 @@ def patch_user(
         create_audit_log(
             db=db,
             admin_id=current_user.id,
-            action="user.updated",
+            action=AuditAction.USER_UPDATED,
             target_user_id=user_id,
         )
 
@@ -143,7 +144,7 @@ def deactivate_user_endpoint(
     create_audit_log(
         db=db,
         admin_id=current_user.id,
-        action="user.deactivated",
+        action=AuditAction.USER_DEACTIVATED,
         target_user_id=user_id,
     )
 
@@ -167,7 +168,7 @@ def activate_user_endpoint(
     create_audit_log(
         db=db,
         admin_id=current_user.id,
-        action="user.activated",
+        action=AuditAction.USER_ACTIVATED,
         target_user_id=user_id,
     )
 
@@ -192,6 +193,6 @@ def remove_user(
     create_audit_log(
         db=db,
         admin_id=current_user.id,
-        action="user.deleted",
+        action=AuditAction.USER_DELETED,
         target_user_id=user_id,
     )

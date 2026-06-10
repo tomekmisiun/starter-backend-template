@@ -1,14 +1,23 @@
+from enum import StrEnum
+
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.sql import func
 
 from app.db.base import Base
 
 
+class AuditAction(StrEnum):
+    USER_UPDATED = "user.updated"
+    USER_DEACTIVATED = "user.deactivated"
+    USER_ACTIVATED = "user.activated"
+    USER_DELETED = "user.deleted"
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    admin_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    action = Column(String, nullable=False)
-    target_user_id = Column(Integer, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    admin_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    action = Column(String, nullable=False, index=True)
+    target_user_id = Column(Integer, nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
