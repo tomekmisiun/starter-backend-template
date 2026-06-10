@@ -1,7 +1,15 @@
+import hashlib
+import json
+
 from sqlalchemy.orm import Session
 
+from app.core.cache import delete_cache_pattern, get_json_cache, set_json_cache
+from app.core.config import settings
 from app.models.user import User
-from app.schemas.user import UserAdminUpdate, UserSelfUpdate
+from app.schemas.user import UserAdminUpdate, UserRead, UserSelfUpdate
+
+
+USERS_LIST_CACHE_PREFIX = "users:list:v1"
 
 
 def get_users(
@@ -14,6 +22,22 @@ def get_users(
     is_active: bool | None = None,
     search=None,
 ):
+    cache_key = build_users_list_cache_key(
+        skip=skip,
+        limit=limit,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        role=role,
+        is_active=is_active,
+        search=search,
+    )
+
+    if settings.users_cache_enabled:
+        cached_users = get_json_cache(cache_key)
+
+        if cached_users is not None:
+            return cached_users
+
     allowed_sort_fields = {
         "id": User.id,
         "email": User.email,
@@ -41,13 +65,55 @@ def get_users(
     if search is not None:
         query = query.filter(User.email.ilike(f"%{search}%"))
 
-    return (
+    users = (
         query
         .order_by(sort_column)
         .offset(skip)
         .limit(limit)
         .all()
     )
+
+    if settings.users_cache_enabled:
+        set_json_cache(
+            cache_key,
+            [
+                UserRead.model_validate(user).model_dump(mode="json")
+                for user in users
+            ],
+            ttl_seconds=settings.users_cache_ttl_seconds,
+        )
+
+    return users
+
+
+def build_users_list_cache_key(
+    *,
+    skip: int,
+    limit: int,
+    sort_by: str,
+    sort_order: str,
+    role: str | None,
+    is_active: bool | None,
+    search: str | None,
+) -> str:
+    cache_params = {
+        "skip": skip,
+        "limit": limit,
+        "sort_by": sort_by,
+        "sort_order": sort_order,
+        "role": role,
+        "is_active": is_active,
+        "search": search,
+    }
+    cache_hash = hashlib.sha256(
+        json.dumps(cache_params, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+
+    return f"{USERS_LIST_CACHE_PREFIX}:{cache_hash}"
+
+
+def invalidate_users_list_cache() -> None:
+    delete_cache_pattern(f"{USERS_LIST_CACHE_PREFIX}:*")
 
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
@@ -66,6 +132,7 @@ def update_user(
 
     db.commit()
     db.refresh(user)
+    invalidate_users_list_cache()
 
     return user
 
@@ -73,6 +140,7 @@ def update_user(
 def delete_user(db: Session, user: User) -> None:
     db.delete(user)
     db.commit()
+    invalidate_users_list_cache()
 
 
 def deactivate_user(db: Session, user_id: int) -> User | None:
@@ -84,6 +152,7 @@ def deactivate_user(db: Session, user_id: int) -> User | None:
     user.is_active = False
     db.commit()
     db.refresh(user)
+    invalidate_users_list_cache()
 
     return user
 
@@ -97,5 +166,6 @@ def activate_user(db: Session, user_id: int) -> User | None:
     user.is_active = True
     db.commit()
     db.refresh(user)
+    invalidate_users_list_cache()
 
     return user

@@ -73,6 +73,8 @@ Current documentation/rules setup:
 - Redis-backed example rate-limited endpoint with environment-driven defaults
   and regression coverage for limit enforcement, Redis TTLs, and per-IP
   counters.
+- Redis-backed caching for admin user listing with environment-driven TTL,
+  query-parameter cache keys, and invalidation after user writes.
 - Centralized API error response envelope for HTTP errors, validation errors,
   auth failures, not found responses, and rate limit failures.
 - Request ID middleware that generates or preserves `X-Request-ID`, adds it to
@@ -98,30 +100,16 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. Redis Caching for selected read endpoints
-    - Redis exists, but read endpoint caching is not implemented for selected
-      low-risk queries.
-2. File Upload with S3-compatible storage / MinIO
+1. File Upload with S3-compatible storage / MinIO
     - The project does not support file uploads, object storage configuration,
       local MinIO development, or upload validation.
-3. Password reset hardening follow-ups
+2. Password reset hardening follow-ups
     - Password reset does not yet include dedicated reset rate limiting, audit
       log integration, or automatic cleanup of expired tokens.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. Redis Caching for selected read endpoints
-    - Goal: add explicit, testable caching for selected safe read paths.
-    - Recommended scope: pick low-risk read endpoints, define cache keys and
-      TTLs, add invalidation on writes, keep behavior opt-in and
-      environment-driven, and add regression tests for hits, misses, expiry,
-      and invalidation.
-    - Files likely to change: `app/api/dependencies`, `app/services`,
-      `app/core/redis.py`, `app/core/config.py`, `tests`, `.env.example`,
-      `README.md`, and `PROJECT_STATUS.md`.
-    - Validation: `docker compose run --rm api ruff check .` and
-      `docker compose run --rm api pytest -v`.
-2. File Upload with S3-compatible storage / MinIO
+1. File Upload with S3-compatible storage / MinIO
     - Goal: support validated file uploads using local MinIO and
       S3-compatible storage configuration.
     - Recommended scope: storage service abstraction, upload endpoint, file
@@ -145,32 +133,43 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/redis-read-caching
+feature/file-upload-minio
 ```
 
 Recommended scope:
 
-- Add explicit Redis-backed caching for selected safe read endpoints.
-- Define cache keys, TTLs, and invalidation behavior.
-- Keep caching opt-in and environment-driven.
-- Add regression tests for hits, misses, expiry, and invalidation.
-- Update README because the feature changes Redis-backed API behavior.
+- Add storage service abstraction.
+- Add upload endpoint with authentication.
+- Add file metadata model if needed.
+- Add size and content type validation.
+- Add MinIO service to Docker Compose for local S3-compatible storage.
+- Add safe local env examples.
+- Add tests for validation and storage interactions.
+- Update README because the feature changes Docker, env, API, and storage
+  behavior.
 - Update `PROJECT_STATUS.md` after the feature is completed.
 
 Expected files likely to change:
 
-- `app/api/dependencies`
+- `app/api/routes`
 - `app/services`
+- `app/schemas`
+- `app/models`
 - `app/core`
+- `alembic/versions`
+- `docker-compose.yml`
 - `.env.example`
 - `README.md`
 - `PROJECT_STATUS.md`
 - `tests`
+- `pyproject.toml` and `uv.lock` if an S3 client library is approved
 
 Expected validation:
 
+- `docker compose config`
 - `docker compose run --rm api ruff check .`
 - `docker compose run --rm api pytest -v`
+- `docker compose run --rm api alembic upgrade head` if a migration is added.
 
 ## 6. Rules For Updating This File
 

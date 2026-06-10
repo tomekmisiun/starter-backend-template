@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     worker_failed_queue_name: str = "app_jobs_failed"
     worker_poll_timeout_seconds: int = Field(default=5, gt=0)
     worker_max_retries: int = Field(default=3, ge=0)
+    users_cache_enabled: bool = True
+    users_cache_ttl_seconds: int = Field(default=60, gt=0)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

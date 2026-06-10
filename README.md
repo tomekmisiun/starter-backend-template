@@ -147,6 +147,8 @@ WORKER_QUEUE_NAME=app_jobs
 WORKER_FAILED_QUEUE_NAME=app_jobs_failed
 WORKER_POLL_TIMEOUT_SECONDS=5
 WORKER_MAX_RETRIES=3
+USERS_CACHE_ENABLED=true
+USERS_CACHE_TTL_SECONDS=60
 ```
 
 `SECRET_KEY` is required. Known weak placeholder values such as `change-me` are
@@ -359,6 +361,20 @@ Current defaults are environment-driven:
 Rate limit counters are stored in Redis by client IP and expire after the
 configured window.
 
+## Redis Caching
+
+Admin user listing supports explicit Redis-backed caching. Cache keys include
+the list query parameters, pagination, sorting, filters, and search value.
+
+Current cache configuration:
+
+- `USERS_CACHE_ENABLED=true`
+- `USERS_CACHE_TTL_SECONDS=60`
+
+The user list cache is invalidated when users are created, updated, activated,
+deactivated, or deleted. Cached values expire automatically after the configured
+TTL.
+
 ## Health Checks
 
 Health endpoints are separated by deployment purpose:
@@ -498,7 +514,6 @@ sum by (method, path, status_code) (rate(http_requests_total[5m]))
 
 ## Known Production Gaps
 
-- Redis Caching for selected read endpoints.
 - File Upload with S3-compatible storage / MinIO.
 - Password reset rate limiting.
 - Audit log integration for password reset events.

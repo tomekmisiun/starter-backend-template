@@ -1,6 +1,8 @@
 import pytest
+from time import sleep
 from uuid import uuid4
 
+from app.core.cache import delete_cache_pattern, get_json_cache, set_json_cache
 from app.models.user import User
 
 
@@ -437,6 +439,85 @@ def test_admin_can_search_users_by_email(db, client, admin_user):
 
     assert len(data) == 1
     assert data[0]["email"] == "tomek@example.com"
+
+
+def test_admin_list_users_uses_cached_result_for_same_query(
+    db,
+    client,
+    admin_user,
+):
+    email_prefix = f"cache-hit-{uuid4().hex}"
+    original_email = f"{email_prefix}@example.com"
+    updated_email = f"{email_prefix}-updated@example.com"
+
+    create_user_and_login(db, client, original_email)
+
+    first_response = client.get(
+        f"/users/?search={email_prefix}&page=1&size=100",
+        headers=admin_user["headers"],
+    )
+    user = db.query(User).filter(User.email == original_email).one()
+    user.email = updated_email
+    db.commit()
+    second_response = client.get(
+        f"/users/?search={email_prefix}&page=1&size=100",
+        headers=admin_user["headers"],
+    )
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.json() == second_response.json()
+    assert first_response.json()[0]["email"] == original_email
+
+
+def test_admin_list_users_cache_is_invalidated_after_user_update(
+    db,
+    client,
+    admin_user,
+):
+    email_prefix = f"cache-invalidate-{uuid4().hex}"
+    original_email = f"{email_prefix}@example.com"
+    updated_email = f"{email_prefix}-updated@example.com"
+
+    _, user_id = create_user_and_login(db, client, original_email)
+
+    first_response = client.get(
+        f"/users/?search={email_prefix}&page=1&size=100",
+        headers=admin_user["headers"],
+    )
+    update_response = client.patch(
+        f"/users/{user_id}",
+        json={"email": updated_email},
+        headers=admin_user["headers"],
+    )
+    old_search_response = client.get(
+        f"/users/?search={original_email}&page=1&size=100",
+        headers=admin_user["headers"],
+    )
+    new_search_response = client.get(
+        f"/users/?search={updated_email}&page=1&size=100",
+        headers=admin_user["headers"],
+    )
+
+    assert first_response.status_code == 200
+    assert update_response.status_code == 200
+    assert old_search_response.status_code == 200
+    assert new_search_response.status_code == 200
+    assert old_search_response.json() == []
+    assert new_search_response.json()[0]["email"] == updated_email
+
+
+def test_json_cache_expires_values():
+    cache_key = f"test-cache-expiry:{uuid4().hex}"
+
+    set_json_cache(cache_key, {"cached": True}, ttl_seconds=1)
+
+    assert get_json_cache(cache_key) == {"cached": True}
+
+    sleep(1.1)
+
+    assert get_json_cache(cache_key) is None
+    delete_cache_pattern(cache_key)
 
 
 def test_admin_can_deactivate_user(
