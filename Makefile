@@ -20,6 +20,9 @@ docker-down:
 test:
 	docker compose exec api pytest -v
 
+test-coverage:
+	docker compose run --rm api pytest --cov=app --cov-report=term-missing -v
+
 lint:
 	docker compose exec api ruff check .
 

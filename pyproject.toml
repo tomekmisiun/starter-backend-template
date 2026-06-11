@@ -23,10 +23,23 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=9.0,<9.1",
+    "pytest-cov>=6.0,<7",
     "httpx>=0.28,<0.29",
     "ruff>=0.15,<0.16",
     "pre-commit>=4.6,<4.7",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
 
 [tool.uv]
 package = false

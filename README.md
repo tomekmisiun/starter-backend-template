@@ -290,10 +290,27 @@ uv run ruff check .
 
 ## CI
 
-GitHub Actions builds the Docker stack, starts PostgreSQL, the test database,
-and Redis, then runs Ruff and pytest in the API container. Redis-backed rate
-limit tests are also run explicitly before the full test suite so Redis
-integration failures are visible in CI.
+GitHub Actions workflows:
+
+- `ci.yml` — pre-commit, Docker-based pytest with coverage artifact upload,
+  Docker image build, and Trivy vulnerability scanning.
+- `dependency-review.yml` — pull request dependency vulnerability review.
+- `release.yml` — publishes tagged API images to GHCR on `v*` tags.
+- `deploy.yml` — manual deployment placeholder for staging/production promotion.
+
+The CI pipeline builds the Docker stack, starts PostgreSQL, the test database,
+Redis, and MinIO, then runs pytest in the API container. Redis-backed rate limit
+tests are also run explicitly before the full test suite so Redis integration
+failures are visible in CI.
+
+Local coverage run:
+
+```bash
+make test-coverage
+```
+
+Release images are published to `ghcr.io/<owner>/<repository>/api:<version>`.
+Replace the deploy workflow placeholder with your hosting provider steps.
 
 ## API Overview
 
