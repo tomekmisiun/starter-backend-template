@@ -132,6 +132,9 @@ Production-readiness summary:
 - CI/CD quality improvements with pre-commit enforcement, pytest coverage
   artifacts, Trivy image scanning, dependency review workflow, GHCR release
   image publishing, and a manual deployment placeholder workflow.
+- Operations and scale regression coverage for migration downgrade/upgrade
+  rehearsal, logical backup/restore rehearsal, worker failed-job CLI replay,
+  Redis outage behavior, cache-miss consistency, and OpenAPI contract checks.
 - Local observability stack with Promtail, Loki, and Grafana for Docker log
   collection and inspection.
 - Prometheus-compatible `/metrics` endpoint, request metrics collection,
@@ -171,12 +174,11 @@ Production-readiness summary:
 
 ## 3. Main Production Gaps
 
-1. P1 - Test coverage gaps remain around operations and scale.
-    - Regression coverage is broad for current API behavior.
-    - Missing coverage includes backup/restore rehearsal, deployment/migration
-      failure scenarios, worker failure replay, object storage edge cases,
-      OpenAPI contract checks, load/performance tests, and cache stampede or
-      Redis outage behavior.
+1. P2 - Load/performance testing baseline is not implemented.
+    - Pytest regression coverage is broad for current API and operations
+      behavior.
+    - Missing coverage includes lightweight load/performance scenarios and
+      documented throughput/latency baselines.
 
 2. P2 - Dependency/version management is documented but not automated.
     - uv is configured and dependency policy is documented.
@@ -272,20 +274,18 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/test-coverage-ops-scale
+feature/dependency-automation
 ```
 
 Recommended scope:
 
-- Add missing operations/scale regression coverage for backup/restore rehearsal,
-  migration failure scenarios, worker replay, Redis outage behavior, and OpenAPI
-  contract checks.
+- Add Dependabot or Renovate configuration for Python and GitHub Actions
+  dependencies, plus documented update/review cadence.
 - Update `PROJECT_STATUS.md` after the task is completed.
 
 Expected files likely to change:
 
-- `tests`
-- `Makefile`
+- `.github/dependabot.yml` or `renovate.json`
 - `README.md`
 - `PROJECT_STATUS.md`
 
