@@ -21,12 +21,21 @@ def readiness_response(health: ReadinessHealth):
     )
 
 
-@router.get("", response_model=HealthStatus)
+@router.get(
+    "",
+    response_model=HealthStatus,
+    summary="Basic health check",
+    description="Backward-compatible process health endpoint.",
+)
 def health_check():
     return HealthStatus(status="ok")
 
 
-@router.get("/live", response_model=HealthStatus)
+@router.get(
+    "/live",
+    response_model=HealthStatus,
+    summary="Liveness probe",
+)
 def liveness_check():
     return HealthStatus(status="ok")
 
@@ -35,6 +44,8 @@ def liveness_check():
     "/ready",
     response_model=ReadinessHealth,
     response_model_exclude_none=True,
+    summary="Readiness probe",
+    description="Checks database and Redis dependencies required to serve traffic.",
 )
 def readiness_check(db: Session = Depends(get_db)):
     return readiness_response(get_readiness(db))
@@ -44,6 +55,7 @@ def readiness_check(db: Session = Depends(get_db)):
     "/db",
     response_model=ReadinessHealth,
     response_model_exclude_none=True,
+    summary="Database health check",
 )
 def db_health_check(db: Session = Depends(get_db)):
     database_check = check_database(db)
@@ -59,6 +71,7 @@ def db_health_check(db: Session = Depends(get_db)):
     "/redis",
     response_model=ReadinessHealth,
     response_model_exclude_none=True,
+    summary="Redis health check",
 )
 def redis_health():
     redis_check = check_redis()
@@ -70,6 +83,11 @@ def redis_health():
     )
 
 
-@router.get("/limited", dependencies=[Depends(rate_limit())])
+@router.get(
+    "/limited",
+    dependencies=[Depends(rate_limit())],
+    summary="Rate-limited example endpoint",
+    description="Demonstrates Redis-backed IP rate limiting for template projects.",
+)
 def limited_endpoint():
     return {"message": "ok"}

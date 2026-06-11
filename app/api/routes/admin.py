@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.dependencies.auth import require_role
+from app.api.openapi import ADMIN_ERROR_RESPONSES
 from app.db.session import get_db
 from app.models.audit_log import AuditAction
 from app.models.user import User
@@ -11,7 +12,11 @@ from app.services.audit_log_service import get_audit_logs
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-@router.get("")
+@router.get(
+    "",
+    summary="Admin panel welcome payload",
+    responses=ADMIN_ERROR_RESPONSES,
+)
 def admin_panel(
     current_user: User = Depends(require_role("admin")),
 ):
@@ -21,7 +26,13 @@ def admin_panel(
     }
 
 
-@router.get("/audit-logs", response_model=list[AuditLogRead])
+@router.get(
+    "/audit-logs",
+    response_model=list[AuditLogRead],
+    summary="List audit logs",
+    description="Admin-only paginated audit log listing with action and actor filters.",
+    responses=ADMIN_ERROR_RESPONSES,
+)
 def list_audit_logs(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
