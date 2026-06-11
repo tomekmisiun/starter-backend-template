@@ -193,6 +193,7 @@ management expectations:
 ```text
 docs/production-deployment.md
 docs/secret-management.md
+docs/database-backup-restore.md
 ```
 
 ## Migrations
@@ -207,6 +208,29 @@ Create a migration after a schema change:
 
 ```bash
 docker compose run --rm api alembic revision --autogenerate -m "describe change"
+```
+
+## Database Backup And Restore
+
+Create a local PostgreSQL backup:
+
+```bash
+make db-backup
+```
+
+Verify that the backup can be restored into a temporary database:
+
+```bash
+make db-restore-check
+```
+
+The default dump path is `backups/app_db.dump`. Database dumps are ignored by
+git and must not be committed.
+
+Production backup and restore expectations are documented in:
+
+```text
+docs/database-backup-restore.md
 ```
 
 ## Tests
@@ -612,7 +636,6 @@ The production guide covers:
 
 - Production migration and rollback strategy needs deeper implementation
   support beyond the current deployment guide.
-- Database backup/restore verification is not automated.
 - Alerting, error tracking, and tracing are not implemented.
 - Schedule automation for expired password reset token cleanup is not
   implemented.
