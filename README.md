@@ -151,6 +151,8 @@ WORKER_QUEUE_NAME=app_jobs
 WORKER_FAILED_QUEUE_NAME=app_jobs_failed
 WORKER_POLL_TIMEOUT_SECONDS=5
 WORKER_MAX_RETRIES=3
+WORKER_MAINTENANCE_ENABLED=true
+WORKER_MAINTENANCE_INTERVAL_SECONDS=3600
 USERS_CACHE_ENABLED=true
 USERS_CACHE_TTL_SECONDS=60
 S3_ENDPOINT_URL=http://minio:9000
@@ -414,6 +416,7 @@ docker compose logs worker
 Current worker-backed behavior:
 
 - password reset email delivery
+- scheduled expired password reset token cleanup
 
 Worker configuration:
 
@@ -421,11 +424,29 @@ Worker configuration:
 - `WORKER_FAILED_QUEUE_NAME`
 - `WORKER_POLL_TIMEOUT_SECONDS`
 - `WORKER_MAX_RETRIES`
+- `WORKER_MAINTENANCE_ENABLED`
+- `WORKER_MAINTENANCE_INTERVAL_SECONDS`
 
 Failed jobs are retried up to `WORKER_MAX_RETRIES`. Jobs that still fail are
 moved to `WORKER_FAILED_QUEUE_NAME` for inspection. Password reset email jobs
 carry only the target `user_id`; the raw reset token is generated inside the
 worker and is never stored in Redis.
+
+The worker runs scheduled maintenance when `WORKER_MAINTENANCE_ENABLED=true`.
+Current scheduled maintenance removes expired password reset tokens every
+`WORKER_MAINTENANCE_INTERVAL_SECONDS`.
+
+Inspect failed jobs:
+
+```bash
+docker compose run --rm worker python -m app.worker_failed_jobs list
+```
+
+Requeue failed jobs:
+
+```bash
+docker compose run --rm worker python -m app.worker_failed_jobs requeue
+```
 
 ## Roles And Permissions
 
@@ -694,5 +715,5 @@ The production guide covers:
 
 ## Known Production Gaps
 
-- Schedule automation for expired password reset token cleanup is not
-  implemented.
+- API versioning and OpenAPI documentation still need production-template
+  polish.

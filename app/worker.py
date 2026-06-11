@@ -1,4 +1,5 @@
 import logging
+import time
 
 from app.core.config import settings
 from app.core.job_queue import (
@@ -11,11 +12,13 @@ from app.core.logging import configure_logging
 from app.db.session import SessionLocal
 from app.services.password_reset_service import (
     SEND_PASSWORD_RESET_EMAIL_JOB,
+    cleanup_expired_password_reset_tokens,
     create_password_reset_token_and_send_email,
 )
 
 
 logger = logging.getLogger("app.worker")
+last_maintenance_run_at: float | None = None
 
 
 def handle_job(job: Job) -> None:
@@ -72,11 +75,43 @@ def process_next_job() -> bool:
     return True
 
 
+def run_scheduled_maintenance(now: float | None = None) -> bool:
+    global last_maintenance_run_at
+
+    if not settings.worker_maintenance_enabled:
+        return False
+
+    current_time = now if now is not None else time.monotonic()
+
+    if (
+        last_maintenance_run_at is not None
+        and current_time - last_maintenance_run_at
+        < settings.worker_maintenance_interval_seconds
+    ):
+        return False
+
+    last_maintenance_run_at = current_time
+    db = SessionLocal()
+
+    try:
+        deleted_count = cleanup_expired_password_reset_tokens(db)
+    finally:
+        db.close()
+
+    logger.info(
+        "worker_maintenance_completed expired_password_reset_tokens_deleted=%s",
+        deleted_count,
+    )
+
+    return True
+
+
 def run_worker() -> None:
     configure_logging()
     logger.info("worker_started queue=%s", settings.worker_queue_name)
 
     while True:
+        run_scheduled_maintenance()
         process_next_job()
 
 

@@ -156,3 +156,24 @@ def test_settings_rejects_invalid_sentry_traces_sample_rate():
             secret_key="development-secret",
             sentry_traces_sample_rate=1.1,
         )
+
+
+def test_settings_accepts_worker_maintenance_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        worker_maintenance_enabled=False,
+        worker_maintenance_interval_seconds=120,
+    )
+
+    assert settings.worker_maintenance_enabled is False
+    assert settings.worker_maintenance_interval_seconds == 120
+
+
+def test_settings_rejects_invalid_worker_maintenance_interval():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            secret_key="development-secret",
+            worker_maintenance_interval_seconds=0,
+        )

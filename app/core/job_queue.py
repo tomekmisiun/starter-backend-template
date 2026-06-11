@@ -95,3 +95,36 @@ def move_job_to_failed_queue(
     failed_queue_name: str = settings.worker_failed_queue_name,
 ) -> None:
     redis.lpush(failed_queue_name, job.to_json())
+
+
+def list_failed_jobs(
+    *,
+    redis: Redis = redis_client,
+    failed_queue_name: str = settings.worker_failed_queue_name,
+    limit: int = 20,
+) -> list[Job]:
+    raw_jobs = redis.lrange(failed_queue_name, 0, limit - 1)
+
+    return [Job.from_json(raw_job) for raw_job in raw_jobs]
+
+
+def requeue_failed_jobs(
+    *,
+    redis: Redis = redis_client,
+    queue_name: str = settings.worker_queue_name,
+    failed_queue_name: str = settings.worker_failed_queue_name,
+    limit: int | None = None,
+) -> int:
+    requeued_count = 0
+
+    while limit is None or requeued_count < limit:
+        raw_job = redis.rpop(failed_queue_name)
+
+        if raw_job is None:
+            break
+
+        job = Job.from_json(raw_job)
+        redis.lpush(queue_name, job.to_json())
+        requeued_count += 1
+
+    return requeued_count

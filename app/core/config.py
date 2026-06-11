@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     worker_failed_queue_name: str = "app_jobs_failed"
     worker_poll_timeout_seconds: int = Field(default=5, gt=0)
     worker_max_retries: int = Field(default=3, ge=0)
+    worker_maintenance_enabled: bool = True
+    worker_maintenance_interval_seconds: int = Field(default=3600, gt=0)
     users_cache_enabled: bool = True
     users_cache_ttl_seconds: int = Field(default=60, gt=0)
     s3_endpoint_url: str = "http://minio:9000"
