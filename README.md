@@ -180,6 +180,14 @@ make validate
 
 Common local issues are documented in `docs/troubleshooting.md`.
 
+Run a lightweight local load baseline:
+
+```bash
+make load-smoke
+```
+
+See `perf/README.md` for result format and tuning options.
+
 ## Environment Variables
 
 See `.env.example` for application variables and

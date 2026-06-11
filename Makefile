@@ -65,3 +65,13 @@ validate:
 	docker compose run --rm api pytest -v
 
 bootstrap: docker-up migration-upgrade seed smoke
+
+LOAD_REQUESTS ?= 50
+LOAD_CONCURRENCY ?= 5
+LOAD_API_BASE_URL ?= http://api:8000
+
+load-smoke:
+	docker compose run --rm api python perf/load_baseline.py \
+		--base-url $(LOAD_API_BASE_URL) \
+		--requests $(LOAD_REQUESTS) \
+		--concurrency $(LOAD_CONCURRENCY)

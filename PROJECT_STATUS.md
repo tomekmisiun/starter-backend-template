@@ -139,6 +139,8 @@ Production-readiness summary:
   pull requests with documented review cadence in `README.md`.
 - Local developer experience improvements with development-only seed data,
   `make bootstrap`, `make smoke`, `make validate`, and troubleshooting docs.
+- Lightweight load/performance baseline with `perf/load_baseline.py`,
+  `make load-smoke`, and documented JSON result format.
 - Local observability stack with Promtail, Loki, and Grafana for Docker log
   collection and inspection.
 - Prometheus-compatible `/metrics` endpoint, request metrics collection,
@@ -178,11 +180,9 @@ Production-readiness summary:
 
 ## 3. Main Production Gaps
 
-1. P2 - Load/performance testing baseline is not implemented.
-    - Pytest regression coverage is broad for current API and operations
-      behavior.
-    - Missing coverage includes lightweight load/performance scenarios and
-      documented throughput/latency baselines.
+No open template gaps are tracked here right now. Future projects should still
+verify hosting, secret management, backup targets, runtime choice, and
+observability stack preferences before production rollout.
 
 Items requiring verification before being treated as implemented:
 
@@ -267,27 +267,19 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/load-performance-baseline
+feature/<next-project-specific-task>
 ```
 
 Recommended scope:
 
-- Add a lightweight load/performance smoke scenario, local run instructions,
-  and a documented baseline result format.
-- Update `PROJECT_STATUS.md` after the task is completed.
-
-Expected files likely to change:
-
-- `perf/` or `scripts/`
-- `Makefile`
-- `README.md`
-- `PROJECT_STATUS.md`
+- Start from a project-specific requirement rather than another template-wide
+  production gap. Update `PROJECT_STATUS.md` when new roadmap items emerge.
 
 Expected validation:
 
-- `docker compose run --rm api ruff check .`
-- `docker compose run --rm api pytest -v`
-- `git diff --check`
+- `make validate`
+- `make smoke` when API behavior changes
+- `make load-smoke` when performance-sensitive paths change
 
 ## 6. Rules For Updating This File
 
