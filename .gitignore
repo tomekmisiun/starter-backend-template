@@ -25,6 +25,9 @@ coverage/
 *.log
 logs/
 tmp/
+backups/
+*.dump
+*.sql.gz
 
 .vscode/
 .idea/
