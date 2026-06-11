@@ -4,16 +4,26 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-ALLOWED_ENVIRONMENTS = {"development", "test", "production"}
+ALLOWED_ENVIRONMENTS = {"development", "test", "staging", "production"}
 WEAK_SECRET_KEYS = {"change-me", "changeme", "secret", "test", "password"}
+LOCAL_DATABASE_URL = "postgresql://app_user:app_password@db:5432/app_db"
+LOCAL_PASSWORD_RESET_URLS = {
+    "http://localhost:8000/reset-password",
+    "http://127.0.0.1:8000/reset-password",
+}
+LOCAL_S3_ENDPOINT_URLS = {
+    "http://minio:9000",
+    "http://localhost:9000",
+    "http://127.0.0.1:9000",
+}
+LOCAL_S3_CREDENTIALS = {"minioadmin"}
+PLACEHOLDER_EMAILS = {"noreply@example.com"}
 
 
 class Settings(BaseSettings):
     app_name: str = "Starter Backend Template"
     environment: str = "development"
-    database_url: str = Field(
-        default="postgresql://app_user:app_password@db:5432/app_db"
-    )
+    database_url: str = Field(default=LOCAL_DATABASE_URL)
     secret_key: str = Field(min_length=1)
     algorithm: str = "HS256"
     redis_host: str = "redis"
@@ -63,16 +73,68 @@ class Settings(BaseSettings):
         return normalized_environment
 
     @model_validator(mode="after")
-    def validate_secret_key(self) -> "Settings":
+    def validate_production_settings(self) -> "Settings":
         secret_key = self.secret_key.strip()
 
         if secret_key.lower() in WEAK_SECRET_KEYS:
             raise ValueError("secret_key must not use a known weak placeholder")
 
-        if self.environment == "production" and len(secret_key) < 32:
-            raise ValueError(
-                "secret_key must be at least 32 characters in production"
+        if self.environment != "production":
+            return self
+
+        production_errors = []
+
+        if len(secret_key) < 32:
+            production_errors.append(
+                "secret_key must be at least 32 characters in production",
             )
+
+        if self.database_url == LOCAL_DATABASE_URL:
+            production_errors.append(
+                "database_url must not use the local Docker default in production",
+            )
+
+        if self.smtp_host.strip() == "":
+            production_errors.append("smtp_host is required in production")
+
+        if self.smtp_username.strip() == "":
+            production_errors.append("smtp_username is required in production")
+
+        if self.smtp_password.strip() == "":
+            production_errors.append("smtp_password is required in production")
+
+        if self.email_from.lower() in PLACEHOLDER_EMAILS:
+            production_errors.append(
+                "email_from must not use the example placeholder in production",
+            )
+
+        if self.password_reset_url in LOCAL_PASSWORD_RESET_URLS:
+            production_errors.append(
+                "password_reset_url must not use a localhost URL in production",
+            )
+
+        if self.s3_endpoint_url in LOCAL_S3_ENDPOINT_URLS:
+            production_errors.append(
+                "s3_endpoint_url must not use a local MinIO URL in production",
+            )
+
+        if self.s3_access_key_id in LOCAL_S3_CREDENTIALS:
+            production_errors.append(
+                "s3_access_key_id must not use the local MinIO default in production",
+            )
+
+        if self.s3_secret_access_key in LOCAL_S3_CREDENTIALS:
+            production_errors.append(
+                "s3_secret_access_key must not use the local MinIO default in production",
+            )
+
+        if self.s3_bucket_name == "uploads":
+            production_errors.append(
+                "s3_bucket_name must not use the local default in production",
+            )
+
+        if production_errors:
+            raise ValueError("; ".join(production_errors))
 
         return self
 

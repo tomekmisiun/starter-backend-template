@@ -122,20 +122,15 @@ Production-readiness summary:
 - Config hardening for required non-placeholder `SECRET_KEY`, production secret
   length validation, allowed environment validation, and env-driven Redis
   settings.
+- Environment/config hardening with explicit `staging` support and
+  production-only validation that rejects local/default values for database,
+  SMTP, password reset URL, and S3 storage settings.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
 ## 3. Main Production Gaps
 
-1. P0 - Staging/production environment split is minimal.
-    - `ENVIRONMENT` supports `development`, `test`, and `production`, but the
-      application does not yet provide explicit staging behavior, stricter
-      production-only validation for all deployment-critical settings, or
-      environment-specific config examples beyond local `.env.example`.
-    - The production deployment guide documents expectations, but enforcement
-      and concrete config examples are still missing.
-
-2. P0 - Secret management is not production-complete.
+1. P0 - Secret management is not production-complete.
     - Secrets are environment-driven and `SECRET_KEY` validation exists, but
       there is no documented external secret manager strategy, rotation
       process, emergency secret replacement process, or deployment secret
@@ -143,14 +138,14 @@ Production-readiness summary:
     - The production deployment guide documents baseline expectations, but the
       repository still needs a deeper secret inventory and rotation runbook.
 
-3. P0 - Database backup/restore strategy is not verified.
+2. P0 - Database backup/restore strategy is not verified.
     - PostgreSQL is configured and migrations are tested, but there is no
       automated backup command, restore rehearsal workflow, disaster recovery
       objective, or restore validation test.
     - The production deployment guide documents expectations, but verification
       is not implemented.
 
-4. P0 - Migration strategy during deployment needs deeper implementation
+3. P0 - Migration strategy during deployment needs deeper implementation
    support.
     - Alembic is implemented and tests apply migrations, but production rollout
       support is still missing for explicit deploy commands, zero-downtime
@@ -159,85 +154,85 @@ Production-readiness summary:
     - The production deployment guide documents baseline rules, but does not
       yet add automation or reusable project files.
 
-5. P0 - Rollback strategy needs deeper implementation support.
+4. P0 - Rollback strategy needs deeper implementation support.
     - The production deployment guide documents a baseline rollback flow, but
       the repository still lacks release artifact conventions, image promotion
       automation, feature-flag guidance, and tested rollback drills.
 
-6. P0 - Alerting and production incident visibility are missing.
+5. P0 - Alerting and production incident visibility are missing.
     - The project has local logs, Loki, Prometheus metrics, and a Grafana
       dashboard, but no alert rules, Alertmanager configuration, paging policy,
       uptime checks, or documented operational thresholds.
 
-7. P0 - Error tracking and distributed tracing are not implemented.
+6. P0 - Error tracking and distributed tracing are not implemented.
     - There is no Sentry, OpenTelemetry, trace propagation, span collection, or
       exception monitoring integration.
 
-8. P0 - Worker reliability and scheduled maintenance are incomplete.
+7. P0 - Worker reliability and scheduled maintenance are incomplete.
     - The Redis-backed worker has retries and a failed job queue, and expired
       password reset token cleanup exists as a command.
     - Missing pieces include scheduled execution, failed-job inspection/replay
       workflow, job idempotency guarantees, worker readiness guidance, and
       operational runbooks.
 
-9. P1 - Logging is production-useful but not fully structured.
+8. P1 - Logging is production-useful but not fully structured.
     - Request logs include request context fields and go to stdout/stderr.
     - Logs are not emitted as JSON, worker logs do not yet share a complete
       request/job correlation model, and sensitive-field redaction policy needs
       verification.
 
-10. P1 - API versioning is not implemented.
+9. P1 - API versioning is not implemented.
     - Routes are mounted directly at paths such as `/auth` and `/users`; there
       is no `/api/v1` namespace or versioning policy for future breaking
       changes.
 
-11. P1 - OpenAPI documentation quality needs improvement.
+10. P1 - OpenAPI documentation quality needs improvement.
     - FastAPI generates OpenAPI automatically, but endpoint summaries,
       descriptions, examples, error envelope documentation, auth docs, and
       tag-level structure are not yet production-template quality.
 
-12. P1 - RBAC and permissions are basic.
+11. P1 - RBAC and permissions are basic.
     - The template supports `admin` and `user`, but not a reusable permission
       model, scopes, policies, role hierarchy, or resource-level authorization
       patterns.
 
-13. P1 - Multi-tenancy readiness is not implemented.
+12. P1 - Multi-tenancy readiness is not implemented.
     - There is no tenant model, tenant-aware auth, tenant-scoped queries,
       tenant-aware audit logs, tenant-safe cache keys, or tenant isolation
       strategy.
 
-14. P1 - Idempotency and webhook security foundation are missing.
+13. P1 - Idempotency and webhook security foundation are missing.
     - The template does not yet provide idempotency keys, webhook signature
       verification, replay protection, event persistence, or generic webhook
       testing helpers.
 
-15. P1 - File upload/storage safety is partial.
+14. P1 - File upload/storage safety is partial.
     - Upload validation, metadata storage, S3-compatible abstraction, and local
       MinIO exist.
     - Missing pieces include presigned download/upload flows, private object
       access policy, object lifecycle rules, malware scanning, content sniffing,
       bucket bootstrap verification, and storage cleanup strategy.
 
-16. P1 - CI/CD quality is incomplete for a reusable production template.
+15. P1 - CI/CD quality is incomplete for a reusable production template.
     - CI runs Docker build, Ruff, Redis-backed tests, and pytest with database
       services.
     - Missing pieces include deployment pipeline, release artifacts, image
       tagging, vulnerability scanning, dependency review, coverage reporting,
       and optional pre-commit enforcement in CI.
 
-17. P1 - Test coverage gaps remain around operations and scale.
+16. P1 - Test coverage gaps remain around operations and scale.
     - Regression coverage is broad for current API behavior.
     - Missing coverage includes backup/restore rehearsal, deployment/migration
       failure scenarios, worker failure replay, object storage edge cases,
       OpenAPI contract checks, load/performance tests, and cache stampede or
       Redis outage behavior.
 
-18. P2 - Dependency/version management is documented but not automated.
+17. P2 - Dependency/version management is documented but not automated.
     - uv is configured and dependency policy is documented.
     - Automated dependency updates, vulnerability alerts, and dependency update
       cadence still require implementation or repository hosting setup.
 
-19. P2 - Local developer experience can be improved further.
+18. P2 - Local developer experience can be improved further.
     - Makefile, Docker Compose, uv, README, and tests are in place.
     - Potential improvements include seed data, smoke-test commands, one-command
       full validation, local production-mode checks, generated API client
@@ -255,16 +250,15 @@ Items requiring verification before being treated as implemented:
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. P0 - Staging/production environment and config hardening
-    - Goal: make environment-specific runtime configuration explicit and safer
-      before a real deployment.
-    - Recommended scope: staging value support if needed, stricter
-      production-mode validation for deployment-critical settings, safe
-      environment examples, README updates, and tests for config validation.
-    - Files likely to change: `app/core/config.py`, `.env.example`,
-      `README.md`, `PROJECT_STATUS.md`, and `tests/test_config.py`.
-    - Validation: `docker compose run --rm api ruff check .` and
-      `docker compose run --rm api pytest -v tests/test_config.py`.
+1. P0 - Secret management runbook and rotation checklist
+    - Goal: make secret ownership, storage, rotation, and emergency replacement
+      explicit for projects built from this template.
+    - Recommended scope: provider-neutral secret inventory, rotation procedure,
+      emergency replacement checklist, production/staging separation notes,
+      README link, and project status update.
+    - Files likely to change: `README.md`, `PROJECT_STATUS.md`, and possibly
+      new docs under `docs/`.
+    - Validation: `git diff --check` and documentation diff review.
 
 2. P0 - Production migration and rollback strategy implementation support
     - Goal: make schema changes safe for real deployments.
@@ -392,32 +386,30 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/environment-config-hardening
+docs/secret-management-runbook
 ```
 
 Recommended scope:
 
-- Add explicit staging environment support if it fits the current config model.
-- Add stricter production-mode validation for deployment-critical settings
-  beyond `SECRET_KEY`.
-- Keep all sensitive values environment-driven and out of git.
-- Update safe env examples and README documentation.
-- Add focused config regression tests.
+- Document the provider-neutral secret inventory for this template.
+- Define staging/production secret separation expectations.
+- Define normal rotation and emergency replacement procedures.
+- Call out `SECRET_KEY` rotation impact on active JWT/session flows.
+- Keep real secret values out of git and examples.
+- Link the runbook from README.
 - Update `PROJECT_STATUS.md` after the task is completed.
 
 Expected files likely to change:
 
-- `app/core/config.py`
-- `.env.example`
 - `README.md`
 - `PROJECT_STATUS.md`
-- `tests/test_config.py`
+- Possibly new docs under `docs/`
 
 Expected validation:
 
-- `docker compose run --rm api ruff check .`
-- `docker compose run --rm api pytest -v tests/test_config.py`
-- `docker compose run --rm api pytest -v`
+- `git diff --check`
+- No pytest run required for docs-only changes unless commands or workflow
+  files change
 
 ## 6. Rules For Updating This File
 

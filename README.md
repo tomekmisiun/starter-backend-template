@@ -131,6 +131,7 @@ DATABASE_URL=postgresql://app_user:app_password@db:5432/app_db
 TEST_DATABASE_URL=postgresql://app_user:app_password@test_db:5432/app_test_db
 SECRET_KEY=replace-with-a-strong-random-secret-key
 ENVIRONMENT=development
+# Supported values: development, test, staging, production
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_DB=0
@@ -169,7 +170,29 @@ Supported `ENVIRONMENT` values:
 
 - `development`
 - `test`
+- `staging`
 - `production`
+
+When `ENVIRONMENT=production`, the application rejects local/default
+deployment-critical placeholders. Production must provide non-local values for:
+
+- `DATABASE_URL`
+- `SMTP_HOST`
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
+- `EMAIL_FROM`
+- `PASSWORD_RESET_URL`
+- `S3_ENDPOINT_URL`
+- `S3_ACCESS_KEY_ID`
+- `S3_SECRET_ACCESS_KEY`
+- `S3_BUCKET_NAME`
+
+Use the production deployment guide for environment separation and secret
+management expectations:
+
+```text
+docs/production-deployment.md
+```
 
 ## Migrations
 
