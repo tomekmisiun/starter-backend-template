@@ -124,3 +124,35 @@ def test_settings_rejects_non_positive_rate_limit_config():
             secret_key="development-secret",
             rate_limit_default_window_seconds=0,
         )
+
+
+def test_settings_accepts_sentry_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        sentry_dsn="https://public@example.ingest.sentry.io/1",
+        sentry_traces_sample_rate=0.5,
+        sentry_send_default_pii=True,
+        sentry_release="template@1.2.3",
+    )
+
+    assert settings.sentry_dsn == "https://public@example.ingest.sentry.io/1"
+    assert settings.sentry_traces_sample_rate == 0.5
+    assert settings.sentry_send_default_pii is True
+    assert settings.sentry_release == "template@1.2.3"
+
+
+def test_settings_rejects_invalid_sentry_traces_sample_rate():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            secret_key="development-secret",
+            sentry_traces_sample_rate=-0.1,
+        )
+
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            secret_key="development-secret",
+            sentry_traces_sample_rate=1.1,
+        )

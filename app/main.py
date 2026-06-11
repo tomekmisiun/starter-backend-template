@@ -6,6 +6,7 @@ from app.core.exception_handlers import (
     http_exception_handler,
     validation_exception_handler,
 )
+from app.core.error_tracking import initialize_error_tracking
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.api.routes.admin import router as admin_router
@@ -17,6 +18,7 @@ from app.core.config import settings
 from app.api.routes import users
 
 configure_logging()
+initialize_error_tracking()
 
 app = FastAPI(title=settings.app_name)
 

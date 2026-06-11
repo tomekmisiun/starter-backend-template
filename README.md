@@ -160,6 +160,10 @@ S3_BUCKET_NAME=uploads
 S3_REGION_NAME=us-east-1
 UPLOAD_MAX_SIZE_BYTES=5242880
 UPLOAD_ALLOWED_CONTENT_TYPES=image/png,image/jpeg,application/pdf
+SENTRY_DSN=
+SENTRY_TRACES_SAMPLE_RATE=0.0
+SENTRY_SEND_DEFAULT_PII=false
+SENTRY_RELEASE=
 ```
 
 `SECRET_KEY` is required. Known weak placeholder values such as `change-me` are
@@ -577,6 +581,21 @@ Request metric labels use HTTP method, route template, and status code. Route
 templates such as `/users/{user_id}` are used instead of raw request paths to
 avoid exposing request-specific values in metrics labels.
 
+### Sentry Error Tracking
+
+Sentry SDK is installed and initialized only when `SENTRY_DSN` is configured.
+Without a DSN, error tracking remains disabled and no external events are sent.
+
+Sentry configuration:
+
+- `SENTRY_DSN`: Sentry project DSN. Empty disables Sentry.
+- `SENTRY_TRACES_SAMPLE_RATE`: tracing sample rate from `0.0` to `1.0`.
+- `SENTRY_SEND_DEFAULT_PII`: whether Sentry may include default PII.
+- `SENTRY_RELEASE`: optional release identifier such as a git SHA or version.
+
+The app uses the configured `ENVIRONMENT` as the Sentry environment and adds
+`X-Request-ID` as a Sentry tag for request correlation.
+
 ### Local Loki/Grafana Stack
 
 The local observability flow is:
@@ -675,6 +694,5 @@ The production guide covers:
 
 ## Known Production Gaps
 
-- Error tracking and tracing are not implemented.
 - Schedule automation for expired password reset token cleanup is not
   implemented.
