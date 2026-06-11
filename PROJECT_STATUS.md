@@ -109,6 +109,8 @@ Production-readiness summary:
 - Prometheus-compatible `/metrics` endpoint, request metrics collection,
   Prometheus service in the local observability stack, Grafana Prometheus
   datasource provisioning, and a local FastAPI overview dashboard.
+- Local Alertmanager service, Prometheus alert routing, and baseline FastAPI
+  alert rules for target availability, 5xx error rate, and p95 latency.
 - Pytest test suite for auth, users, admin, audit logs, and basic health.
 - Migration-aware pytest setup that resets the test database and applies
   Alembic migrations before running application tests.
@@ -138,80 +140,75 @@ Production-readiness summary:
 
 ## 3. Main Production Gaps
 
-1. P0 - Alerting and production incident visibility are missing.
-    - The project has local logs, Loki, Prometheus metrics, and a Grafana
-      dashboard, but no alert rules, Alertmanager configuration, paging policy,
-      uptime checks, or documented operational thresholds.
-
-2. P0 - Error tracking and distributed tracing are not implemented.
+1. P0 - Error tracking and distributed tracing are not implemented.
     - There is no Sentry, OpenTelemetry, trace propagation, span collection, or
       exception monitoring integration.
 
-3. P0 - Worker reliability and scheduled maintenance are incomplete.
+2. P0 - Worker reliability and scheduled maintenance are incomplete.
     - The Redis-backed worker has retries and a failed job queue, and expired
       password reset token cleanup exists as a command.
     - Missing pieces include scheduled execution, failed-job inspection/replay
       workflow, job idempotency guarantees, worker readiness guidance, and
       operational runbooks.
 
-4. P1 - Logging is production-useful but not fully structured.
+3. P1 - Logging is production-useful but not fully structured.
     - Request logs include request context fields and go to stdout/stderr.
     - Logs are not emitted as JSON, worker logs do not yet share a complete
       request/job correlation model, and sensitive-field redaction policy needs
       verification.
 
-5. P1 - API versioning is not implemented.
+4. P1 - API versioning is not implemented.
     - Routes are mounted directly at paths such as `/auth` and `/users`; there
       is no `/api/v1` namespace or versioning policy for future breaking
       changes.
 
-6. P1 - OpenAPI documentation quality needs improvement.
+5. P1 - OpenAPI documentation quality needs improvement.
     - FastAPI generates OpenAPI automatically, but endpoint summaries,
       descriptions, examples, error envelope documentation, auth docs, and
       tag-level structure are not yet production-template quality.
 
-7. P1 - RBAC and permissions are basic.
+6. P1 - RBAC and permissions are basic.
     - The template supports `admin` and `user`, but not a reusable permission
       model, scopes, policies, role hierarchy, or resource-level authorization
       patterns.
 
-8. P1 - Multi-tenancy readiness is not implemented.
+7. P1 - Multi-tenancy readiness is not implemented.
     - There is no tenant model, tenant-aware auth, tenant-scoped queries,
       tenant-aware audit logs, tenant-safe cache keys, or tenant isolation
       strategy.
 
-9. P1 - Idempotency and webhook security foundation are missing.
+8. P1 - Idempotency and webhook security foundation are missing.
     - The template does not yet provide idempotency keys, webhook signature
       verification, replay protection, event persistence, or generic webhook
       testing helpers.
 
-10. P1 - File upload/storage safety is partial.
+9. P1 - File upload/storage safety is partial.
     - Upload validation, metadata storage, S3-compatible abstraction, and local
       MinIO exist.
     - Missing pieces include presigned download/upload flows, private object
       access policy, object lifecycle rules, malware scanning, content sniffing,
       bucket bootstrap verification, and storage cleanup strategy.
 
-11. P1 - CI/CD quality is incomplete for a reusable production template.
+10. P1 - CI/CD quality is incomplete for a reusable production template.
     - CI runs Docker build, Ruff, Redis-backed tests, and pytest with database
       services.
     - Missing pieces include deployment pipeline, release artifacts, image
       tagging, vulnerability scanning, dependency review, coverage reporting,
       and optional pre-commit enforcement in CI.
 
-12. P1 - Test coverage gaps remain around operations and scale.
+11. P1 - Test coverage gaps remain around operations and scale.
     - Regression coverage is broad for current API behavior.
     - Missing coverage includes backup/restore rehearsal, deployment/migration
       failure scenarios, worker failure replay, object storage edge cases,
       OpenAPI contract checks, load/performance tests, and cache stampede or
       Redis outage behavior.
 
-13. P2 - Dependency/version management is documented but not automated.
+12. P2 - Dependency/version management is documented but not automated.
     - uv is configured and dependency policy is documented.
     - Automated dependency updates, vulnerability alerts, and dependency update
       cadence still require implementation or repository hosting setup.
 
-14. P2 - Local developer experience can be improved further.
+13. P2 - Local developer experience can be improved further.
     - Makefile, Docker Compose, uv, README, and tests are in place.
     - Potential improvements include seed data, smoke-test commands, one-command
       full validation, local production-mode checks, generated API client
@@ -229,17 +226,7 @@ Items requiring verification before being treated as implemented:
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. P0 - Alerting and incident visibility
-    - Goal: turn local metrics/logs into actionable operational signals.
-    - Recommended scope: Prometheus alert rules, Grafana/Alertmanager guidance,
-      service-level indicators, dashboard refinements, and incident runbook.
-    - Files likely to change: `observability/`, `docker-compose.observability.yml`,
-      `README.md`, `PROJECT_STATUS.md`, and tests only if config validation is
-      added.
-    - Validation: `docker compose -f docker-compose.yml -f docker-compose.observability.yml config`
-      and local observability startup.
-
-2. P0 - Error tracking and tracing foundation
+1. P0 - Error tracking and tracing foundation
     - Goal: add production-grade exception visibility and request tracing.
     - Recommended scope: choose Sentry/OpenTelemetry approach, env-driven
       configuration, request ID/trace correlation, safe PII handling, tests,
@@ -251,7 +238,7 @@ Items requiring verification before being treated as implemented:
       `docker compose run --rm api pytest -v`, and no real external events in
       tests.
 
-3. P0 - Scheduled maintenance and worker operations
+2. P0 - Scheduled maintenance and worker operations
     - Goal: make recurring maintenance tasks and failed jobs operationally
       reliable.
     - Recommended scope: scheduled expired-token cleanup, scheduler config,
@@ -264,7 +251,7 @@ Items requiring verification before being treated as implemented:
       `docker compose run --rm api ruff check .`, and
       `docker compose run --rm api pytest -v`.
 
-4. P1 - API versioning and OpenAPI polish
+3. P1 - API versioning and OpenAPI polish
     - Goal: make the public API contract safer to evolve across projects.
     - Recommended scope: `/api/v1` routing strategy, compatibility policy,
       OpenAPI summaries/descriptions/examples, documented error envelope, and
@@ -274,7 +261,7 @@ Items requiring verification before being treated as implemented:
     - Validation: `docker compose run --rm api ruff check .`,
       `docker compose run --rm api pytest -v`, and manual OpenAPI review.
 
-5. P1 - Permission model foundation
+4. P1 - Permission model foundation
     - Goal: evolve from two roles to reusable authorization patterns for SaaS
       projects.
     - Recommended scope: permission constants/policies, dependency helpers,
@@ -286,7 +273,7 @@ Items requiring verification before being treated as implemented:
       `docker compose run --rm api ruff check .`, and
       `docker compose run --rm api pytest -v`.
 
-6. P1 - Idempotency and webhook security foundation
+5. P1 - Idempotency and webhook security foundation
     - Goal: provide reusable primitives for payment providers, integrations,
       and async external events without tying the template to one provider.
     - Recommended scope: idempotency-key persistence, webhook signature helper,
@@ -298,7 +285,7 @@ Items requiring verification before being treated as implemented:
       `docker compose run --rm api ruff check .`, and
       `docker compose run --rm api pytest -v`.
 
-7. P1 - File storage hardening
+6. P1 - File storage hardening
     - Goal: make uploads safer for real customer data.
     - Recommended scope: private object access, presigned URL strategy, content
       sniffing, malware scanning integration point, lifecycle/cleanup notes,
@@ -309,7 +296,7 @@ Items requiring verification before being treated as implemented:
     - Validation: `docker compose run --rm api ruff check .`,
       `docker compose run --rm api pytest -v`, and MinIO local smoke test.
 
-8. P1 - CI/CD and security scanning
+7. P1 - CI/CD and security scanning
     - Goal: make the template safer to maintain and release.
     - Recommended scope: Docker image scan, dependency vulnerability scan,
       coverage reporting, optional pre-commit check in CI, release image tags,
@@ -318,7 +305,7 @@ Items requiring verification before being treated as implemented:
       `README.md`, `PROJECT_STATUS.md`, and possibly dependency config files.
     - Validation: GitHub Actions workflow run and local `docker compose build`.
 
-9. P2 - Load/performance testing baseline
+8. P2 - Load/performance testing baseline
     - Goal: give future projects a reusable way to measure request latency,
       throughput, Redis behavior, and database pressure.
     - Recommended scope: lightweight load-test tool choice, baseline scenarios,
@@ -335,28 +322,33 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/observability-alerting
+feature/error-tracking-tracing
 ```
 
 Recommended scope:
 
-- Add local Prometheus alert rules for core API health and latency/error rate
-  signals.
-- Add Alertmanager or documented alert routing for the local observability
-  stack.
-- Document recommended production alert thresholds and incident checks.
+- Add provider-neutral error tracking/tracing foundation.
+- Choose and document Sentry/OpenTelemetry approach before adding external
+  dependencies.
+- Keep configuration environment-driven and disabled by default for tests.
+- Correlate errors/traces with request IDs where possible.
 - Update `PROJECT_STATUS.md` after the task is completed.
 
 Expected files likely to change:
 
-- `observability/`
-- `docker-compose.observability.yml`
+- `pyproject.toml`
+- `uv.lock`
+- `.env.example`
+- `app/core`
+- `app/main.py`
 - `README.md`
 - `PROJECT_STATUS.md`
+- `tests`
 
 Expected validation:
 
-- `docker compose -f docker-compose.yml -f docker-compose.observability.yml config`
+- `docker compose run --rm api ruff check .`
+- `docker compose run --rm api pytest -v`
 - `git diff --check`
 
 ## 6. Rules For Updating This File

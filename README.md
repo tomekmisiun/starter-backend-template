@@ -584,6 +584,7 @@ The local observability flow is:
 ```text
 FastAPI -> stdout/stderr -> Docker logs -> Promtail -> Loki -> Grafana
 FastAPI -> /metrics -> Prometheus -> Grafana
+Prometheus -> Alertmanager
 ```
 
 Start the app stack and observability stack together:
@@ -604,6 +605,12 @@ Open Prometheus:
 http://localhost:9090
 ```
 
+Open Alertmanager:
+
+```text
+http://localhost:9093
+```
+
 Default local credentials from `.env.observability`:
 
 ```text
@@ -619,6 +626,21 @@ to the API container.
 Grafana provisions Loki and Prometheus automatically as datasources. A local
 `FastAPI Overview` dashboard is provisioned from
 `observability/grafana/dashboards`.
+
+Prometheus loads local alert rules from `observability/prometheus/rules` and
+sends alerts to Alertmanager. The local Alertmanager receiver is intentionally
+provider-neutral and does not send external notifications.
+
+Current local alert rules:
+
+- `FastAPITargetDown`: Prometheus cannot scrape the FastAPI metrics endpoint.
+- `FastAPIHighErrorRate`: more than 5 percent of requests return 5xx responses
+  over 5 minutes.
+- `FastAPIHighLatencyP95`: p95 request latency is above 1 second for 5 minutes.
+
+Production projects should replace the local receiver with the deployment
+team's notification target, such as PagerDuty, Opsgenie, Slack, email, or a
+cloud-native alerting integration.
 
 Example LogQL query:
 
@@ -653,6 +675,6 @@ The production guide covers:
 
 ## Known Production Gaps
 
-- Alerting, error tracking, and tracing are not implemented.
+- Error tracking and tracing are not implemented.
 - Schedule automation for expired password reset token cleanup is not
   implemented.
