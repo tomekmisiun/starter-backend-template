@@ -26,6 +26,15 @@ lint:
 lint-fix:
 	docker compose exec api ruff check . --fix
 
+migration-current:
+	docker compose run --rm api alembic current
+
+migration-heads:
+	docker compose run --rm api alembic heads
+
+migration-upgrade:
+	docker compose run --rm api alembic upgrade head
+
 db-backup:
 	mkdir -p $(BACKUP_DIR)
 	docker compose exec -T $(DB_SERVICE) pg_dump -U $(DB_USER) -d $(DB_NAME) -Fc > $(BACKUP_FILE)

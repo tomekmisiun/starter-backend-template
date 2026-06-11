@@ -194,6 +194,7 @@ management expectations:
 docs/production-deployment.md
 docs/secret-management.md
 docs/database-backup-restore.md
+docs/migration-rollback.md
 ```
 
 ## Migrations
@@ -201,13 +202,31 @@ docs/database-backup-restore.md
 Run migrations:
 
 ```bash
-docker compose run --rm api alembic upgrade head
+make migration-upgrade
 ```
 
 Create a migration after a schema change:
 
 ```bash
 docker compose run --rm api alembic revision --autogenerate -m "describe change"
+```
+
+Show current migration state:
+
+```bash
+make migration-current
+```
+
+Show migration heads:
+
+```bash
+make migration-heads
+```
+
+Production migration and rollback expectations are documented in:
+
+```text
+docs/migration-rollback.md
 ```
 
 ## Database Backup And Restore
@@ -634,8 +653,6 @@ The production guide covers:
 
 ## Known Production Gaps
 
-- Production migration and rollback strategy needs deeper implementation
-  support beyond the current deployment guide.
 - Alerting, error tracking, and tracing are not implemented.
 - Schedule automation for expired password reset token cleanup is not
   implemented.
