@@ -5,8 +5,13 @@ sessions can continue without losing context.
 
 ## 1. Current Project Status
 
-The project is a FastAPI backend template using SQLAlchemy, Alembic,
-PostgreSQL, Redis, Docker Compose, pytest, Ruff, uv, and GitHub Actions.
+The project is a universal, reusable FastAPI backend template for future
+SaaS/API/backend projects. It is intended to be a production-ready foundation,
+not a template for one specific business domain.
+
+The current implementation is a strong local-development and testable backend
+foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
+Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work: `main`.
 
@@ -28,8 +33,21 @@ Current documentation/rules setup:
 - `.ai-rules` is the source of truth for AI/project rules.
 - `.cursor/rules/*.mdc` files are thin wrappers pointing to `.ai-rules`.
 - `README.md` documents project purpose, stack, setup, Docker, env variables,
-  migrations, tests, API overview, auth flow, roles, rate limiting, and known
-  production gaps.
+  migrations, tests, API overview, auth flow, roles, rate limiting, file
+  uploads, observability, and known production gaps.
+
+Production-readiness summary:
+
+- The template has a broad backend feature baseline: auth/session hardening,
+  users/admin flows, audit logs, rate limiting, caching, worker jobs, password
+  reset, file uploads, health checks, metrics, logs, CI, and migration-aware
+  tests.
+- The remaining highest-value work is operational production readiness:
+  deployment flow, staging/production split, secrets, backup/restore, migration
+  rollout, rollback, alerting, tracing/error tracking, worker operations, and
+  runbooks.
+- Anything marked as a production gap below is not implemented yet unless
+  explicitly listed in "Completed Features".
 
 ## 2. Completed Features
 
@@ -106,22 +124,261 @@ Current documentation/rules setup:
 
 ## 3. Main Production Gaps
 
-1. Scheduled maintenance jobs
-    - Expired password reset token cleanup exists as a command, but is not yet
-      scheduled automatically.
+1. P0 - Production deployment flow is not defined.
+    - There is no documented staging/production deployment blueprint, release
+      checklist, deployment target, infrastructure layout, or production
+      runtime contract.
+    - The Docker setup is useful locally, but production deployment behavior is
+      not yet specified.
+
+2. P0 - Staging/production environment split is minimal.
+    - `ENVIRONMENT` supports `development`, `test`, and `production`, but the
+      repository does not yet define separate staging/production configuration
+      expectations, environment validation, release promotion rules, or
+      deployment-specific settings.
+
+3. P0 - Secret management is not production-complete.
+    - Secrets are environment-driven and `SECRET_KEY` validation exists, but
+      there is no documented external secret manager strategy, rotation
+      process, emergency secret replacement process, or deployment secret
+      checklist.
+
+4. P0 - Database backup/restore strategy is missing.
+    - PostgreSQL is configured and migrations are tested, but there is no
+      backup schedule, restore runbook, disaster recovery objective, restore
+      validation test, or local restore rehearsal workflow.
+
+5. P0 - Migration strategy during deployment is not defined.
+    - Alembic is implemented and tests apply migrations, but production rollout
+      rules are missing for migration ordering, zero-downtime expectations,
+      expand/contract migrations, data backfills, and failed migration
+      recovery.
+
+6. P0 - Rollback strategy is missing.
+    - There is no documented application rollback flow, database rollback
+      policy, feature-flag strategy, image promotion strategy, or incident
+      checklist.
+
+7. P0 - Alerting and production incident visibility are missing.
+    - The project has local logs, Loki, Prometheus metrics, and a Grafana
+      dashboard, but no alert rules, Alertmanager configuration, paging policy,
+      uptime checks, or documented operational thresholds.
+
+8. P0 - Error tracking and distributed tracing are not implemented.
+    - There is no Sentry, OpenTelemetry, trace propagation, span collection, or
+      exception monitoring integration.
+
+9. P0 - Worker reliability and scheduled maintenance are incomplete.
+    - The Redis-backed worker has retries and a failed job queue, and expired
+      password reset token cleanup exists as a command.
+    - Missing pieces include scheduled execution, failed-job inspection/replay
+      workflow, job idempotency guarantees, worker readiness guidance, and
+      operational runbooks.
+
+10. P1 - Logging is production-useful but not fully structured.
+    - Request logs include request context fields and go to stdout/stderr.
+    - Logs are not emitted as JSON, worker logs do not yet share a complete
+      request/job correlation model, and sensitive-field redaction policy needs
+      verification.
+
+11. P1 - API versioning is not implemented.
+    - Routes are mounted directly at paths such as `/auth` and `/users`; there
+      is no `/api/v1` namespace or versioning policy for future breaking
+      changes.
+
+12. P1 - OpenAPI documentation quality needs improvement.
+    - FastAPI generates OpenAPI automatically, but endpoint summaries,
+      descriptions, examples, error envelope documentation, auth docs, and
+      tag-level structure are not yet production-template quality.
+
+13. P1 - RBAC and permissions are basic.
+    - The template supports `admin` and `user`, but not a reusable permission
+      model, scopes, policies, role hierarchy, or resource-level authorization
+      patterns.
+
+14. P1 - Multi-tenancy readiness is not implemented.
+    - There is no tenant model, tenant-aware auth, tenant-scoped queries,
+      tenant-aware audit logs, tenant-safe cache keys, or tenant isolation
+      strategy.
+
+15. P1 - Idempotency and webhook security foundation are missing.
+    - The template does not yet provide idempotency keys, webhook signature
+      verification, replay protection, event persistence, or generic webhook
+      testing helpers.
+
+16. P1 - File upload/storage safety is partial.
+    - Upload validation, metadata storage, S3-compatible abstraction, and local
+      MinIO exist.
+    - Missing pieces include presigned download/upload flows, private object
+      access policy, object lifecycle rules, malware scanning, content sniffing,
+      bucket bootstrap verification, and storage cleanup strategy.
+
+17. P1 - CI/CD quality is incomplete for a reusable production template.
+    - CI runs Docker build, Ruff, Redis-backed tests, and pytest with database
+      services.
+    - Missing pieces include deployment pipeline, release artifacts, image
+      tagging, vulnerability scanning, dependency review, coverage reporting,
+      and optional pre-commit enforcement in CI.
+
+18. P1 - Test coverage gaps remain around operations and scale.
+    - Regression coverage is broad for current API behavior.
+    - Missing coverage includes backup/restore rehearsal, deployment/migration
+      failure scenarios, worker failure replay, object storage edge cases,
+      OpenAPI contract checks, load/performance tests, and cache stampede or
+      Redis outage behavior.
+
+19. P2 - Dependency/version management is documented but not automated.
+    - uv is configured and dependency policy is documented.
+    - Automated dependency updates, vulnerability alerts, and dependency update
+      cadence still require implementation or repository hosting setup.
+
+20. P2 - Local developer experience can be improved further.
+    - Makefile, Docker Compose, uv, README, and tests are in place.
+    - Potential improvements include seed data, smoke-test commands, one-command
+      full validation, local production-mode checks, generated API client
+      examples, and clearer troubleshooting docs.
+
+Items requiring verification before being treated as implemented:
+
+- Production hosting target and deployment platform.
+- Real production secret manager choice.
+- Real backup provider and restore target.
+- Whether deployment should use Kubernetes, a PaaS, Docker Compose on a VM, or
+  another runtime.
+- Whether the preferred error tracking/tracing stack should be Sentry,
+  OpenTelemetry, or both.
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-1. Scheduled maintenance jobs
-    - Goal: automate recurring maintenance work such as expired password reset
-      token cleanup.
-    - Recommended scope: scheduled worker command or lightweight scheduler,
-      Docker wiring, logging, tests, and README documentation.
+1. P0 - Production deployment flow and runbooks
+    - Goal: define how this template is safely promoted from local development
+      to staging and production.
+    - Recommended scope: deployment assumptions, staging/production split,
+      release checklist, migration ordering, rollback policy, secret checklist,
+      backup/restore runbook, and README/project status updates.
+    - Files likely to change: `README.md`, `PROJECT_STATUS.md`, and possibly
+      new docs under `docs/`.
+    - Validation: `git diff -- README.md PROJECT_STATUS.md docs`, plus any
+      docs linting if added.
+
+2. P0 - Production migration and rollback strategy
+    - Goal: make schema changes safe for real deployments.
+    - Recommended scope: expand/contract migration policy, pre-deploy migration
+      command, rollback rules, failed migration handling, data backfill
+      guidance, and migration checklist.
+    - Files likely to change: `README.md`, `PROJECT_STATUS.md`, possibly
+      `docs/`, and optionally CI workflow files if migration checks are added.
+    - Validation: `docker compose run --rm api alembic upgrade head`,
+      `docker compose run --rm api pytest -v`, and documentation diff review.
+
+3. P0 - Database backup/restore runbook and verification
+    - Goal: make PostgreSQL recovery an explicit part of the template.
+    - Recommended scope: backup schedule expectations, restore procedure,
+      restore rehearsal command, local backup/restore smoke test, disaster
+      recovery notes, and README updates.
+    - Files likely to change: `README.md`, `PROJECT_STATUS.md`, possibly
+      `docs/`, `Makefile`, and scripts if a local rehearsal command is added.
+    - Validation: local backup/restore rehearsal if implemented,
+      `docker compose config`, and docs diff review.
+
+4. P0 - Alerting and incident visibility
+    - Goal: turn local metrics/logs into actionable operational signals.
+    - Recommended scope: Prometheus alert rules, Grafana/Alertmanager guidance,
+      service-level indicators, dashboard refinements, and incident runbook.
+    - Files likely to change: `observability/`, `docker-compose.observability.yml`,
+      `README.md`, `PROJECT_STATUS.md`, and tests only if config validation is
+      added.
+    - Validation: `docker compose -f docker-compose.yml -f docker-compose.observability.yml config`
+      and local observability startup.
+
+5. P0 - Error tracking and tracing foundation
+    - Goal: add production-grade exception visibility and request tracing.
+    - Recommended scope: choose Sentry/OpenTelemetry approach, env-driven
+      configuration, request ID/trace correlation, safe PII handling, tests,
+      and README updates.
+    - Files likely to change: `pyproject.toml`, `uv.lock`, `app/core`,
+      `app/main.py`, `.env.example`, `README.md`, `PROJECT_STATUS.md`, and
+      `tests`.
+    - Validation: `docker compose run --rm api ruff check .`,
+      `docker compose run --rm api pytest -v`, and no real external events in
+      tests.
+
+6. P0 - Scheduled maintenance and worker operations
+    - Goal: make recurring maintenance tasks and failed jobs operationally
+      reliable.
+    - Recommended scope: scheduled expired-token cleanup, scheduler config,
+      failed-job inspection/replay guidance, idempotency notes, worker health
+      guidance, tests, and README updates.
     - Files likely to change: `app/worker.py`, `app/services`,
-      `docker-compose.yml`, `README.md`, `PROJECT_STATUS.md`, and `tests`.
+      `docker-compose.yml`, `.env.example`, `README.md`,
+      `PROJECT_STATUS.md`, and `tests`.
     - Validation: `docker compose config`,
       `docker compose run --rm api ruff check .`, and
       `docker compose run --rm api pytest -v`.
+
+7. P1 - API versioning and OpenAPI polish
+    - Goal: make the public API contract safer to evolve across projects.
+    - Recommended scope: `/api/v1` routing strategy, compatibility policy,
+      OpenAPI summaries/descriptions/examples, documented error envelope, and
+      regression tests for route availability.
+    - Files likely to change: `app/main.py`, `app/api/routes`, `app/schemas`,
+      `README.md`, `PROJECT_STATUS.md`, and `tests`.
+    - Validation: `docker compose run --rm api ruff check .`,
+      `docker compose run --rm api pytest -v`, and manual OpenAPI review.
+
+8. P1 - Permission model foundation
+    - Goal: evolve from two roles to reusable authorization patterns for SaaS
+      projects.
+    - Recommended scope: permission constants/policies, dependency helpers,
+      admin/user compatibility, tests, and docs.
+    - Files likely to change: `app/api/dependencies/auth.py`, `app/models`,
+      `app/schemas`, `app/services`, `alembic/versions`, `README.md`,
+      `PROJECT_STATUS.md`, and `tests`.
+    - Validation: `docker compose run --rm api alembic upgrade head`,
+      `docker compose run --rm api ruff check .`, and
+      `docker compose run --rm api pytest -v`.
+
+9. P1 - Idempotency and webhook security foundation
+    - Goal: provide reusable primitives for payment providers, integrations,
+      and async external events without tying the template to one provider.
+    - Recommended scope: idempotency-key persistence, webhook signature helper,
+      replay protection, tests, and provider-neutral documentation.
+    - Files likely to change: `app/api/dependencies`, `app/models`,
+      `app/services`, `app/schemas`, `alembic/versions`, `README.md`,
+      `PROJECT_STATUS.md`, and `tests`.
+    - Validation: `docker compose run --rm api alembic upgrade head`,
+      `docker compose run --rm api ruff check .`, and
+      `docker compose run --rm api pytest -v`.
+
+10. P1 - File storage hardening
+    - Goal: make uploads safer for real customer data.
+    - Recommended scope: private object access, presigned URL strategy, content
+      sniffing, malware scanning integration point, lifecycle/cleanup notes,
+      and storage failure tests.
+    - Files likely to change: `app/services/storage_service.py`,
+      `app/api/routes/files.py`, `app/schemas/file.py`, `.env.example`,
+      `README.md`, `PROJECT_STATUS.md`, and `tests`.
+    - Validation: `docker compose run --rm api ruff check .`,
+      `docker compose run --rm api pytest -v`, and MinIO local smoke test.
+
+11. P1 - CI/CD and security scanning
+    - Goal: make the template safer to maintain and release.
+    - Recommended scope: Docker image scan, dependency vulnerability scan,
+      coverage reporting, optional pre-commit check in CI, release image tags,
+      and deployment workflow placeholder.
+    - Files likely to change: `.github/workflows`, `.pre-commit-config.yaml`,
+      `README.md`, `PROJECT_STATUS.md`, and possibly dependency config files.
+    - Validation: GitHub Actions workflow run and local `docker compose build`.
+
+12. P2 - Load/performance testing baseline
+    - Goal: give future projects a reusable way to measure request latency,
+      throughput, Redis behavior, and database pressure.
+    - Recommended scope: lightweight load-test tool choice, baseline scenarios,
+      local run instructions, and performance result documentation format.
+    - Files likely to change: `tests` or `perf/`, `README.md`,
+      `PROJECT_STATUS.md`, and optionally Docker/Makefile helpers.
+    - Validation: local load-test smoke run and normal pytest/Ruff validation
+      if code is added.
 
 ## 5. Next Immediate Task
 
@@ -130,31 +387,34 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/scheduled-maintenance-jobs
+docs/production-deployment-flow
 ```
 
 Recommended scope:
 
-- Add scheduled execution for expired password reset token cleanup.
-- Keep scheduling environment-driven.
-- Add tests for scheduler/command behavior.
-- Update README because the feature changes runtime operations.
-- Update `PROJECT_STATUS.md` after the feature is completed.
+- Document the template as a universal production-ready backend foundation, not
+  a domain-specific application.
+- Define staging and production environment expectations.
+- Define production deployment flow and release checklist.
+- Define secret management expectations without committing real secrets.
+- Define migration rollout strategy, including ordering and failed migration
+  handling.
+- Define rollback strategy for application and database changes.
+- Define PostgreSQL backup/restore expectations and restore rehearsal process.
+- Update `PROJECT_STATUS.md` after the task is completed.
 
 Expected files likely to change:
 
-- `app/worker.py`
-- `app/services`
-- `docker-compose.yml`
 - `README.md`
 - `PROJECT_STATUS.md`
-- `tests`
+- Possibly new docs under `docs/`
 
 Expected validation:
 
-- `docker compose config`
-- `docker compose run --rm api ruff check .`
-- `docker compose run --rm api pytest -v`
+- `git diff -- README.md PROJECT_STATUS.md docs`
+- `docker compose config` if Docker/deployment examples change
+- No pytest run required for docs-only changes unless commands or workflow
+  files change
 
 ## 6. Rules For Updating This File
 
