@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies.auth import get_current_user, require_role
+from app.api.openapi import ADMIN_ERROR_RESPONSES, PROTECTED_ERROR_RESPONSES
 from app.db.session import get_db
 from app.models.audit_log import AuditAction
 from app.models.user import User
@@ -39,7 +40,13 @@ class UserRole(str, Enum):
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("/", response_model=list[UserRead])
+@router.get(
+    "/",
+    response_model=list[UserRead],
+    summary="List users",
+    description="Admin-only paginated user listing with sorting, filters, and search.",
+    responses=ADMIN_ERROR_RESPONSES,
+)
 def list_users(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
@@ -65,7 +72,13 @@ def list_users(
     )
 
 
-@router.get("/{user_id}", response_model=UserRead)
+@router.get(
+    "/{user_id}",
+    response_model=UserRead,
+    summary="Get a user by ID",
+    description="Admins can read any user. Regular users can only read themselves.",
+    responses=PROTECTED_ERROR_RESPONSES,
+)
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
@@ -88,7 +101,16 @@ def get_user(
     return user
 
 
-@router.patch("/{user_id}", response_model=UserRead)
+@router.patch(
+    "/{user_id}",
+    response_model=UserRead,
+    summary="Update a user",
+    description=(
+        "Admins can update managed fields and activation state. Regular users "
+        "can update only their own safe profile fields."
+    ),
+    responses=PROTECTED_ERROR_RESPONSES,
+)
 def patch_user(
     user_id: int,
     user_update: UserAdminUpdate,
@@ -127,7 +149,12 @@ def patch_user(
     return updated_user
 
 
-@router.patch("/{user_id}/deactivate", response_model=UserRead)
+@router.patch(
+    "/{user_id}/deactivate",
+    response_model=UserRead,
+    summary="Deactivate a user",
+    responses=ADMIN_ERROR_RESPONSES,
+)
 def deactivate_user_endpoint(
     user_id: int,
     db: Session = Depends(get_db),
@@ -151,7 +178,12 @@ def deactivate_user_endpoint(
     return user
 
 
-@router.patch("/{user_id}/activate", response_model=UserRead)
+@router.patch(
+    "/{user_id}/activate",
+    response_model=UserRead,
+    summary="Activate a user",
+    responses=ADMIN_ERROR_RESPONSES,
+)
 def activate_user_endpoint(
     user_id: int,
     db: Session = Depends(get_db),
@@ -175,7 +207,12 @@ def activate_user_endpoint(
     return user
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a user",
+    responses=ADMIN_ERROR_RESPONSES,
+)
 def remove_user(
     user_id: int,
     db: Session = Depends(get_db),

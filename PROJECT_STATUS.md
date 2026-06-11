@@ -114,6 +114,9 @@ Production-readiness summary:
 - API versioning with `/api/v1` route namespace, deprecated legacy route
   compatibility for existing unversioned paths, and route availability
   regression tests.
+- OpenAPI documentation polish with tag descriptions, endpoint summaries,
+  documented error envelope schema, bearer auth scheme, request examples, and
+  contract regression tests.
 - Local observability stack with Promtail, Loki, and Grafana for Docker log
   collection and inspection.
 - Prometheus-compatible `/metrics` endpoint, request metrics collection,
@@ -153,53 +156,48 @@ Production-readiness summary:
 
 ## 3. Main Production Gaps
 
-1. P1 - OpenAPI documentation quality needs improvement.
-    - FastAPI generates OpenAPI automatically, but endpoint summaries,
-      descriptions, examples, error envelope documentation, auth docs, and
-      tag-level structure are not yet production-template quality.
-
-2. P1 - RBAC and permissions are basic.
+1. P1 - RBAC and permissions are basic.
     - The template supports `admin` and `user`, but not a reusable permission
       model, scopes, policies, role hierarchy, or resource-level authorization
       patterns.
 
-3. P1 - Multi-tenancy readiness is not implemented.
+2. P1 - Multi-tenancy readiness is not implemented.
     - There is no tenant model, tenant-aware auth, tenant-scoped queries,
       tenant-aware audit logs, tenant-safe cache keys, or tenant isolation
       strategy.
 
-4. P1 - Idempotency and webhook security foundation are missing.
+3. P1 - Idempotency and webhook security foundation are missing.
     - The template does not yet provide idempotency keys, webhook signature
       verification, replay protection, event persistence, or generic webhook
       testing helpers.
 
-5. P1 - File upload/storage safety is partial.
+4. P1 - File upload/storage safety is partial.
     - Upload validation, metadata storage, S3-compatible abstraction, and local
       MinIO exist.
     - Missing pieces include presigned download/upload flows, private object
       access policy, object lifecycle rules, malware scanning, content sniffing,
       bucket bootstrap verification, and storage cleanup strategy.
 
-6. P1 - CI/CD quality is incomplete for a reusable production template.
+5. P1 - CI/CD quality is incomplete for a reusable production template.
     - CI runs Docker build, Ruff, Redis-backed tests, and pytest with database
       services.
     - Missing pieces include deployment pipeline, release artifacts, image
       tagging, vulnerability scanning, dependency review, coverage reporting,
       and optional pre-commit enforcement in CI.
 
-7. P1 - Test coverage gaps remain around operations and scale.
+6. P1 - Test coverage gaps remain around operations and scale.
     - Regression coverage is broad for current API behavior.
     - Missing coverage includes backup/restore rehearsal, deployment/migration
       failure scenarios, worker failure replay, object storage edge cases,
       OpenAPI contract checks, load/performance tests, and cache stampede or
       Redis outage behavior.
 
-8. P2 - Dependency/version management is documented but not automated.
+7. P2 - Dependency/version management is documented but not automated.
     - uv is configured and dependency policy is documented.
     - Automated dependency updates, vulnerability alerts, and dependency update
       cadence still require implementation or repository hosting setup.
 
-9. P2 - Local developer experience can be improved further.
+8. P2 - Local developer experience can be improved further.
     - Makefile, Docker Compose, uv, README, and tests are in place.
     - Potential improvements include seed data, smoke-test commands, one-command
       full validation, local production-mode checks, generated API client
@@ -288,20 +286,23 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/openapi-documentation
+feature/permission-model-foundation
 ```
 
 Recommended scope:
 
-- Improve OpenAPI metadata, tags, summaries, and error response documentation.
-- Add examples and auth documentation for versioned routes.
+- Add reusable permission constants/policies and dependency helpers.
+- Preserve existing `admin`/`user` compatibility.
+- Add tests and documentation.
 - Update `PROJECT_STATUS.md` after the task is completed.
 
 Expected files likely to change:
 
-- `app/api/routes`
+- `app/api/dependencies/auth.py`
+- `app/models`
 - `app/schemas`
-- `app/main.py`
+- `app/services`
+- `alembic/versions`
 - `README.md`
 - `PROJECT_STATUS.md`
 - `tests`
