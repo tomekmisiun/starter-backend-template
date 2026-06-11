@@ -471,7 +471,8 @@ Examples:
 - `users.list`, `users.read`, `users.update`, `users.delete`
 - `users.read.self`, `users.update.self`
 - `users.activate`, `users.deactivate`
-- `admin.access`, `audit_logs.list`, `files.upload`
+- `admin.access`, `audit_logs.list`, `files.upload`, `files.download.self`,
+  `files.delete.self`
 
 `admin` inherits the `user` role hierarchy and receives the full permission
 set. Regular users can read and update only their own profile through self
@@ -528,14 +529,17 @@ TTL.
 
 ## File Uploads
 
-Authenticated users can upload files with:
+Authenticated users can upload and access private files through:
 
-```text
-POST /api/v1/files/upload
-```
+- `POST /api/v1/files/upload` — multipart upload with content sniffing
+- `POST /api/v1/files/presigned-upload` — short-lived PUT URL for direct uploads
+- `POST /api/v1/files/presigned-upload/complete` — register a presigned upload
+- `GET /api/v1/files/{file_id}/download-url` — short-lived private download URL
+- `DELETE /api/v1/files/{file_id}` — delete object metadata and storage object
 
 Uploads are stored through an S3-compatible storage service abstraction. The
-local Docker stack uses MinIO and stores file metadata in PostgreSQL.
+local Docker stack uses MinIO and stores file metadata in PostgreSQL. Objects
+are private; clients use presigned URLs for download access.
 
 Upload configuration:
 
@@ -546,9 +550,12 @@ Upload configuration:
 - `S3_REGION_NAME`
 - `UPLOAD_MAX_SIZE_BYTES`
 - `UPLOAD_ALLOWED_CONTENT_TYPES`
+- `UPLOAD_PRESIGNED_URL_EXPIRE_SECONDS`
+- `UPLOAD_MALWARE_SCAN_ENABLED`
 
-The upload endpoint validates file content type and size before writing object
-metadata. Allowed content types are configured as a comma-separated list.
+The upload flow validates declared content type, file size, and magic-byte
+content sniffing before writing metadata. `scan_uploaded_file()` is the malware
+scanner integration point for downstream projects.
 
 The local MinIO console is available at:
 

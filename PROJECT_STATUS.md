@@ -126,6 +126,9 @@ Production-readiness summary:
 - Idempotency and webhook security foundation with persisted idempotency keys,
   signed inbound webhook endpoint, replay-protected webhook event storage, and
   regression tests.
+- File storage hardening with private object uploads, presigned download/upload
+  flows, content sniffing, malware-scan integration point, bucket access
+  verification, delete cleanup, and storage failure regression tests.
 - Local observability stack with Promtail, Loki, and Grafana for Docker log
   collection and inspection.
 - Prometheus-compatible `/metrics` endpoint, request metrics collection,
@@ -165,33 +168,26 @@ Production-readiness summary:
 
 ## 3. Main Production Gaps
 
-1. P1 - File upload/storage safety is partial.
-    - Upload validation, metadata storage, S3-compatible abstraction, and local
-      MinIO exist.
-    - Missing pieces include presigned download/upload flows, private object
-      access policy, object lifecycle rules, malware scanning, content sniffing,
-      bucket bootstrap verification, and storage cleanup strategy.
-
-2. P1 - CI/CD quality is incomplete for a reusable production template.
+1. P1 - CI/CD quality is incomplete for a reusable production template.
     - CI runs Docker build, Ruff, Redis-backed tests, and pytest with database
       services.
     - Missing pieces include deployment pipeline, release artifacts, image
       tagging, vulnerability scanning, dependency review, coverage reporting,
       and optional pre-commit enforcement in CI.
 
-3. P1 - Test coverage gaps remain around operations and scale.
+2. P1 - Test coverage gaps remain around operations and scale.
     - Regression coverage is broad for current API behavior.
     - Missing coverage includes backup/restore rehearsal, deployment/migration
       failure scenarios, worker failure replay, object storage edge cases,
       OpenAPI contract checks, load/performance tests, and cache stampede or
       Redis outage behavior.
 
-4. P2 - Dependency/version management is documented but not automated.
+3. P2 - Dependency/version management is documented but not automated.
     - uv is configured and dependency policy is documented.
     - Automated dependency updates, vulnerability alerts, and dependency update
       cadence still require implementation or repository hosting setup.
 
-5. P2 - Local developer experience can be improved further.
+4. P2 - Local developer experience can be improved further.
     - Makefile, Docker Compose, uv, README, and tests are in place.
     - Potential improvements include seed data, smoke-test commands, one-command
       full validation, local production-mode checks, generated API client
@@ -280,24 +276,21 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/file-storage-hardening
+feature/ci-cd-quality
 ```
 
 Recommended scope:
 
-- Add private object access, presigned URL strategy, and content sniffing hooks.
-- Add storage failure tests and documentation.
+- Add vulnerability scanning, coverage reporting, and deployment workflow placeholder.
+- Add optional pre-commit enforcement in CI.
 - Update `PROJECT_STATUS.md` after the task is completed.
 
 Expected files likely to change:
 
-- `app/services/storage_service.py`
-- `app/api/routes/files.py`
-- `app/schemas/file.py`
-- `.env.example`
+- `.github/workflows`
+- `.pre-commit-config.yaml`
 - `README.md`
 - `PROJECT_STATUS.md`
-- `tests`
 
 Expected validation:
 

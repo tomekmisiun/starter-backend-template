@@ -13,6 +13,10 @@ class Permission(StrEnum):
     ADMIN_ACCESS = "admin.access"
     AUDIT_LOGS_LIST = "audit_logs.list"
     FILES_UPLOAD = "files.upload"
+    FILES_DOWNLOAD = "files.download"
+    FILES_DOWNLOAD_SELF = "files.download.self"
+    FILES_DELETE = "files.delete"
+    FILES_DELETE_SELF = "files.delete.self"
 
 
 USER_PERMISSIONS = frozenset(
@@ -20,6 +24,8 @@ USER_PERMISSIONS = frozenset(
         Permission.USERS_READ_SELF,
         Permission.USERS_UPDATE_SELF,
         Permission.FILES_UPLOAD,
+        Permission.FILES_DOWNLOAD_SELF,
+        Permission.FILES_DELETE_SELF,
     }
 )
 

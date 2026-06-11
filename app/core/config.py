@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     s3_region_name: str = "us-east-1"
     upload_max_size_bytes: int = Field(default=5_242_880, gt=0)
     upload_allowed_content_types: str = "image/png,image/jpeg,application/pdf"
+    upload_presigned_url_expire_seconds: int = Field(default=300, gt=0)
+    upload_malware_scan_enabled: bool = False
     sentry_dsn: str = ""
     sentry_traces_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
     sentry_send_default_pii: bool = False
