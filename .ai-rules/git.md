@@ -36,6 +36,17 @@ Examples:
 Keep commit messages short and focused.
 One commit should represent one logical change.
 
+Do not add commit trailers or footers that attribute authorship to AI tools.
+Forbidden examples:
+
+- `Co-authored-by: Cursor <...>`
+- `Co-authored-by: Codex <...>`
+- `Co-authored-by: Claude <...>`
+- `Authored-by: Cursor`, `Authored-by: Codex`, or `Authored-by: Claude`
+
+Commit messages must contain only the Conventional Commit subject and optional
+body written for humans reviewing the repository history.
+
 ## Commits
 
 - Run relevant tests before commit.
@@ -44,8 +55,9 @@ One commit should represent one logical change.
 - Do not commit secrets, `.env`, caches, virtual environments, local database
   files, or generated junk.
 - Do not commit automatically unless explicitly requested.
-- Use clear commit messages. Conventional Commit style is preferred when the
-  user has not specified another format.
+- Use clear commit messages in Conventional Commit format.
+- Never append AI authorship trailers (`Co-authored-by`, `Authored-by`, or
+  similar) for Cursor, Codex, Claude, or other agents.
 
 ## Push And Merge
 
