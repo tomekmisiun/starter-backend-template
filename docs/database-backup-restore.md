@@ -12,6 +12,10 @@ Create a local custom-format PostgreSQL dump from the Docker Compose database:
 make db-backup
 ```
 
+The Makefile delegates to `scripts/db_backup.sh`. See
+`docs/backup-restore-automation.md` for direct-connection and provider-hook
+modes.
+
 Default output:
 
 ```text
@@ -34,6 +38,9 @@ Verify that a dump can be restored into a temporary database:
 ```bash
 make db-restore-check
 ```
+
+The restore rehearsal script verifies core tables such as `tenants`, `users`,
+and `alembic_version` before dropping the temporary database.
 
 The restore check:
 
@@ -112,7 +119,11 @@ Prefer provider-supported point-in-time recovery when available.
 
 ## Current Template Limits
 
-This repository provides local backup and restore rehearsal commands. It does
-not include provider-specific production backup automation, cross-region
-replication, point-in-time recovery setup, or automated production restore
-validation.
+This repository provides local backup and restore rehearsal commands plus
+provider-neutral automation scripts and a manual GitHub Actions workflow. It
+does not include provider-specific snapshot scheduling, cross-region replication,
+point-in-time recovery setup, or automated production restore into live
+environments.
+
+See `docs/backup-restore-automation.md` for provider examples and automation
+patterns.

@@ -47,16 +47,16 @@ migration-upgrade:
 	docker compose run --rm api alembic upgrade head
 
 db-backup:
-	mkdir -p $(BACKUP_DIR)
-	docker compose exec -T $(DB_SERVICE) pg_dump -U $(DB_USER) -d $(DB_NAME) -Fc > $(BACKUP_FILE)
+	bash scripts/db_backup.sh
 
 db-restore-check:
-	test -f $(BACKUP_FILE)
-	docker compose exec -T $(DB_SERVICE) dropdb -U $(DB_USER) --if-exists $(RESTORE_CHECK_DB)
-	docker compose exec -T $(DB_SERVICE) createdb -U $(DB_USER) $(RESTORE_CHECK_DB)
-	docker compose exec -T $(DB_SERVICE) pg_restore -U $(DB_USER) -d $(RESTORE_CHECK_DB) < $(BACKUP_FILE)
-	docker compose exec -T $(DB_SERVICE) psql -U $(DB_USER) -d $(RESTORE_CHECK_DB) -c "SELECT 1;"
-	docker compose exec -T $(DB_SERVICE) dropdb -U $(DB_USER) --if-exists $(RESTORE_CHECK_DB)
+	bash scripts/db_restore_rehearsal.sh
+
+db-backup-dry-run:
+	DRY_RUN=true bash scripts/db_backup.sh
+
+db-restore-check-dry-run:
+	DRY_RUN=true bash scripts/db_restore_rehearsal.sh
 
 seed:
 	docker compose run --rm api python -m app.seed_dev_data

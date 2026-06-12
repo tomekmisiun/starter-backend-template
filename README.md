@@ -362,8 +362,22 @@ Verify that the backup can be restored into a temporary database:
 make db-restore-check
 ```
 
+Dry-run the automation plan without touching data:
+
+```bash
+make db-backup-dry-run
+make db-restore-check-dry-run
+```
+
 The default dump path is `backups/app_db.dump`. Database dumps are ignored by
 git and must not be committed.
+
+Automation scripts, provider examples, and the manual backup rehearsal workflow
+are documented in:
+
+```text
+docs/backup-restore-automation.md
+```
 
 Production backup and restore expectations are documented in:
 
