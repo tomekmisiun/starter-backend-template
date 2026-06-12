@@ -24,7 +24,7 @@ def main() -> None:
 
     if args.command == "list":
         jobs = list_failed_jobs(limit=args.limit)
-        print(json.dumps([job.__dict__ for job in jobs], indent=2))
+        print(json.dumps([job.to_dict() for job in jobs], indent=2))
         return
 
     if args.command == "requeue":

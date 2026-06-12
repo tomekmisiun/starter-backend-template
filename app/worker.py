@@ -1,12 +1,15 @@
 import logging
-import time
 
 from app.core.config import settings
 from app.core.job_queue import (
     Job,
+    ack_job,
+    calculate_retry_delay_seconds,
     dequeue_job,
     move_job_to_failed_queue,
-    requeue_job,
+    promote_delayed_jobs,
+    schedule_retry,
+    try_acquire_maintenance_lock,
 )
 from app.core.log_helpers import job_log_extra
 from app.core.logging import configure_logging
@@ -19,7 +22,6 @@ from app.services.password_reset_service import (
 
 
 logger = logging.getLogger("app.worker")
-last_maintenance_run_at: float | None = None
 
 
 def handle_job(job: Job) -> None:
@@ -38,6 +40,7 @@ def handle_job(job: Job) -> None:
 
 
 def process_next_job() -> bool:
+    promote_delayed_jobs()
     job = dequeue_job()
 
     if job is None:
@@ -50,42 +53,44 @@ def process_next_job() -> bool:
 
     try:
         handle_job(job)
-    except Exception:
+    except Exception as exc:
         if job.attempts < settings.worker_max_retries:
-            retried_job = requeue_job(job)
+            retried_job = schedule_retry(job, exc)
             logger.exception(
-                "worker_job_requeued",
-                extra={**job_log_extra(retried_job), "attempts": retried_job.attempts},
+                "worker_job_scheduled_for_retry",
+                extra={
+                    **job_log_extra(retried_job),
+                    "attempts": retried_job.attempts,
+                    "retry_delay_seconds": calculate_retry_delay_seconds(
+                        retried_job.attempts
+                    ),
+                },
             )
             return True
 
-        move_job_to_failed_queue(job)
+        failed_job = move_job_to_failed_queue(job, exc)
         logger.exception(
             "worker_job_failed",
-            extra={**job_log_extra(job), "attempts": job.attempts},
+            extra={**job_log_extra(failed_job), "attempts": failed_job.attempts},
         )
         return True
 
+    ack_job(job)
     logger.info("worker_job_completed", extra=job_log_extra(job))
     return True
 
 
 def run_scheduled_maintenance(now: float | None = None) -> bool:
-    global last_maintenance_run_at
+    del now
 
     if not settings.worker_maintenance_enabled:
         return False
 
-    current_time = now if now is not None else time.monotonic()
-
-    if (
-        last_maintenance_run_at is not None
-        and current_time - last_maintenance_run_at
-        < settings.worker_maintenance_interval_seconds
+    if not try_acquire_maintenance_lock(
+        ttl_seconds=settings.worker_maintenance_interval_seconds,
     ):
         return False
 
-    last_maintenance_run_at = current_time
     db = SessionLocal()
 
     try:

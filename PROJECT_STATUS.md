@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/production-deployment-automation`.
+`feature/worker-reliability`.
 
 Current architecture:
 
@@ -76,8 +76,9 @@ Production-readiness summary:
   audit log entries for reset request/confirm events, and cleanup command for
   expired reset tokens.
 - Redis-backed background worker, Docker Compose worker service, job retry
-  handling, failed job queue, and password reset email delivery through worker
-  jobs.
+  handling with exponential backoff, processing and delayed queues, failed job
+  dead-letter metadata, Redis-backed maintenance locking, failed job queue, and
+  password reset email delivery through worker jobs.
 - Environment-driven worker scheduled maintenance for expired password reset
   token cleanup.
 - Worker failed-job inspection and requeue command for Redis-backed failed
@@ -195,6 +196,9 @@ Production-readiness summary:
   provider-neutral promotion scripts for deploy hooks and SSH compose rollout,
   optional runner-side Alembic migrations, post-deploy smoke checks, and
   `docker-compose.prod.yml` for VM-style deployments.
+- Worker reliability improvements with processing acknowledgement, delayed retry
+  backoff, dead-letter metadata, Redis-backed maintenance locking, failed-job
+  CLI metadata output, and `docs/worker-reliability.md`.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
@@ -203,10 +207,6 @@ Production-readiness summary:
 The project should still be treated as a production-ready template foundation,
 not a finished production platform. The following gaps are template-wide enough
 to track before calling the repository complete for high-scale reuse.
-
-- P1: Worker reliability.
-  Background jobs need stronger retry backoff, dead-letter metadata, visibility
-  or acknowledgement semantics, scheduler locking, and job idempotency guidance.
 
 - P1: Production observability.
   Metrics are a local foundation and need production-safe multi-process or
@@ -255,7 +255,6 @@ mark them as completed until the implementation and regression coverage are on
 
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
-| P1 | Worker reliability | Improve retries, backoff, failed-job metadata, scheduler coordination, and job idempotency patterns. | `feature/worker-reliability` |
 | P1 | Production observability hardening | Make metrics/tracing useful across multi-worker and multi-instance production deployments. | `feature/observability-production-hardening` |
 | P1 | Webhook and idempotency hardening | Improve replay protection, concurrent duplicate handling, timestamp validation, and secret enforcement. | `feature/webhook-idempotency-hardening` |
 | P1 | File upload production hardening | Add streaming-safe upload behavior, actual object verification, and concrete scanner integration boundaries. | `feature/file-upload-production-hardening` |
@@ -270,19 +269,19 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/worker-reliability
+feature/observability-production-hardening
 ```
 
 Recommended scope:
 
-- Add stronger retry backoff and dead-letter metadata for background jobs.
-- Improve scheduler coordination and document job idempotency patterns.
-- Add regression coverage for worker failure and replay behavior.
+- Make metrics safe for multi-process and multi-instance production deployments.
+- Add dependency and worker metrics where useful.
+- Document external alert routing and trace correlation expectations.
 
 Expected validation:
 
 - `make validate`
-- Worker-focused tests and any Redis integration coverage touched by the change
+- Metrics and observability regression coverage for changed paths
 
 ## 6. Rules For Updating This File
 
