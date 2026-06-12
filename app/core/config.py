@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ALLOWED_ENVIRONMENTS = {"development", "test", "staging", "production"}
 ALLOWED_LOG_FORMATS = {"text", "json"}
+ALLOWED_REGISTRATION_POLICIES = {"public", "disabled"}
 WEAK_SECRET_KEYS = {"change-me", "changeme", "secret", "test", "password"}
 LOCAL_DATABASE_URL = "postgresql://app_user:app_password@db:5432/app_db"
 LOCAL_PASSWORD_RESET_URLS = {
@@ -69,6 +70,7 @@ class Settings(BaseSettings):
     auth_login_rate_limit_window_seconds: int = Field(default=60, gt=0)
     auth_register_rate_limit_limit: int = Field(default=5, gt=0)
     auth_register_rate_limit_window_seconds: int = Field(default=300, gt=0)
+    registration_policy: str = "public"
     smtp_host: str = ""
     smtp_port: int = Field(default=587, gt=0)
     smtp_username: str = ""
@@ -130,6 +132,23 @@ class Settings(BaseSettings):
             raise ValueError(f"environment must be one of: {allowed_values}")
 
         return normalized_environment
+
+    @field_validator("registration_policy")
+    @classmethod
+    def validate_registration_policy(cls, value: str) -> str:
+        normalized_policy = value.lower()
+
+        if normalized_policy not in ALLOWED_REGISTRATION_POLICIES:
+            allowed_values = ", ".join(sorted(ALLOWED_REGISTRATION_POLICIES))
+            raise ValueError(
+                f"registration_policy must be one of: {allowed_values}",
+            )
+
+        return normalized_policy
+
+    @property
+    def registration_enabled(self) -> bool:
+        return self.registration_policy == "public"
 
     def _collect_remote_environment_errors(
         self,

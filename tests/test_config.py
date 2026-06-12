@@ -61,6 +61,31 @@ def test_settings_rejects_unknown_environment():
         )
 
 
+def test_settings_accepts_registration_policy_values():
+    public_settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        registration_policy="public",
+    )
+    disabled_settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        registration_policy="disabled",
+    )
+
+    assert public_settings.registration_enabled is True
+    assert disabled_settings.registration_enabled is False
+
+
+def test_settings_rejects_unknown_registration_policy():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            secret_key="development-secret",
+            registration_policy="invite_only",
+        )
+
+
 def test_settings_accepts_staging_environment():
     settings = Settings(
         _env_file=None,

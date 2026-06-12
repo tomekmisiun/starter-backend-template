@@ -262,6 +262,7 @@ AUTH_LOGIN_RATE_LIMIT_LIMIT=10
 AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS=60
 AUTH_REGISTER_RATE_LIMIT_LIMIT=5
 AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS=300
+REGISTRATION_POLICY=public
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USERNAME=
@@ -549,7 +550,7 @@ Supported audit actions:
 
 ## Auth Flow
 
-1. Register with `POST /api/v1/auth/register`.
+1. Register with `POST /api/v1/auth/register` when `REGISTRATION_POLICY=public`.
 2. Login with `POST /api/v1/auth/login`.
 3. Use the returned access token as a bearer token for protected endpoints.
 4. Use the returned refresh token with `POST /api/v1/auth/refresh` to receive a
@@ -577,6 +578,11 @@ Password reset requests have dedicated Redis-backed rate limiting:
 
 - `PASSWORD_RESET_RATE_LIMIT_LIMIT=3`
 - `PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS=300`
+
+- `AUTH_REGISTER_RATE_LIMIT_LIMIT=5`
+- `AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS=300`
+- `REGISTRATION_POLICY=public` (`public` allows self-service registration;
+  `disabled` returns `403` on `/auth/register`)
 
 Login and registration endpoints use the same Redis counter mechanism with
 separate per-IP keys:
@@ -1010,7 +1016,7 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` includes registration
-policy gates, access-token invalidation strategy, and related docs/tests.
+Template hardening work tracked in `PROJECT_STATUS.md` includes access-token
+invalidation strategy and related docs/tests.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.
