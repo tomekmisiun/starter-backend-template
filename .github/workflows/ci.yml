@@ -76,6 +76,14 @@ jobs:
       - name: Start test dependencies
         run: docker compose up -d db test_db redis minio
 
+      - name: Prepare app database for backup rehearsal
+        run: docker compose run --rm api alembic upgrade head
+
+      - name: Rehearse database backup and restore
+        run: |
+          make db-backup
+          make db-restore-check
+
       - name: Show dependency containers
         run: docker compose ps
 

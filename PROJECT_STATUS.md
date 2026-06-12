@@ -178,8 +178,10 @@ Production-readiness summary:
   staging/production separation, planned rotation, emergency rotation, and
   `SECRET_KEY` rotation impact.
 - Local PostgreSQL backup and restore rehearsal workflow with Makefile targets,
-  ignored dump files, and provider-neutral backup/restore runbook. Production
-  backup automation, PITR, and provider-specific restore drills remain
+  ignored dump files, and provider-neutral backup/restore runbook.
+- Backup and restore automation scripts, core-table verification, CI rehearsal,
+  and provider-hook examples documented in `docs/backup-restore-automation.md`.
+  Provider-specific PITR policies and live-environment restore targets remain
   downstream responsibilities.
 - Migration and rollback support with Makefile Alembic helper targets and a
   provider-neutral migration/rollback runbook covering expand/contract,
@@ -215,6 +217,10 @@ Production-readiness summary:
 - File upload production hardening with streaming-safe multipart reads, stored
   object verification after presigned uploads, metadata validation, HTTP
   malware scanner integration boundaries, and `docs/file-upload-production.md`.
+- Backup and restore automation with provider-neutral backup/restore scripts,
+  core-table restore verification, Makefile dry-run targets, CI backup
+  rehearsal, manual GitHub Actions workflow, and
+  `docs/backup-restore-automation.md`.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
@@ -223,11 +229,6 @@ Production-readiness summary:
 The project should still be treated as a production-ready template foundation,
 not a finished production platform. The following gaps are template-wide enough
 to track before calling the repository complete for high-scale reuse.
-
-- P2: Disaster recovery automation.
-  Backup/restore docs and local rehearsal exist, but production provider
-  automation, PITR strategy, and automated restore rehearsal remain
-  project-specific gaps.
 
 - P2: Load, performance, and concurrency testing.
   The repository has a lightweight baseline, but needs repeatable thresholds and
@@ -252,7 +253,6 @@ mark them as completed until the implementation and regression coverage are on
 
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
-| P2 | Backup/restore automation | Add provider-ready backup automation examples and stronger restore rehearsal workflows. | `feature/backup-restore-automation` |
 | P2 | Load and concurrency testing | Add repeatable performance thresholds and concurrency tests for critical infrastructure paths. | `feature/load-concurrency-testing` |
 
 ## 5. Next Immediate Task
@@ -262,18 +262,19 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/backup-restore-automation
+feature/load-concurrency-testing
 ```
 
 Recommended scope:
 
-- Add provider-ready backup automation examples.
-- Strengthen restore rehearsal workflows and operational guidance.
+- Add repeatable performance thresholds for critical infrastructure paths.
+- Add concurrency and race-condition coverage for idempotency, workers, auth,
+  Redis, storage, and high-latency dependencies.
 
 Expected validation:
 
 - `make validate`
-- Backup/restore rehearsal tests for changed paths
+- Load and concurrency tests for changed paths
 
 ## 6. Rules For Updating This File
 
