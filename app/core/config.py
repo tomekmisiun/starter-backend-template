@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     rate_limit_default_window_seconds: int = Field(default=60, gt=0)
     password_reset_rate_limit_limit: int = Field(default=3, gt=0)
     password_reset_rate_limit_window_seconds: int = Field(default=300, gt=0)
+    auth_login_rate_limit_limit: int = Field(default=10, gt=0)
+    auth_login_rate_limit_window_seconds: int = Field(default=60, gt=0)
+    auth_register_rate_limit_limit: int = Field(default=5, gt=0)
+    auth_register_rate_limit_window_seconds: int = Field(default=300, gt=0)
     smtp_host: str = ""
     smtp_port: int = Field(default=587, gt=0)
     smtp_username: str = ""

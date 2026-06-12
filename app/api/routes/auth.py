@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies.rate_limit import password_reset_rate_limit
+from app.api.dependencies.rate_limit import (
+    auth_login_rate_limit,
+    auth_register_rate_limit,
+    password_reset_rate_limit,
+)
 from app.api.dependencies.auth import get_current_user
 from app.api.dependencies.tenant import get_request_tenant
 from app.api.openapi import AUTH_ERROR_RESPONSES, RATE_LIMITED_ERROR_RESPONSES
@@ -38,7 +42,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     response_model=UserRead,
     summary="Register a new user",
     description="Create an active user account with the default `user` role.",
-    responses=AUTH_ERROR_RESPONSES,
+    responses={**AUTH_ERROR_RESPONSES, **RATE_LIMITED_ERROR_RESPONSES},
+    dependencies=[Depends(auth_register_rate_limit())],
 )
 def register(
     user_data: UserCreate,
@@ -56,7 +61,8 @@ def register(
         "Authenticate with email and password. Returns a short-lived access "
         "token and a refresh token used for rotation."
     ),
-    responses=AUTH_ERROR_RESPONSES,
+    responses={**AUTH_ERROR_RESPONSES, **RATE_LIMITED_ERROR_RESPONSES},
+    dependencies=[Depends(auth_login_rate_limit())],
 )
 def login(
     login_data: UserLogin,

@@ -102,6 +102,8 @@ Production-readiness summary:
 - Redis-backed example rate-limited endpoint with environment-driven defaults
   and regression coverage for limit enforcement, Redis TTLs, and per-IP
   counters.
+- Redis-backed rate limiting on `/auth/login` and `/auth/register` with separate
+  per-IP keys, configurable limits/windows, and regression tests.
 - Redis-backed caching for admin user listing with environment-driven TTL,
   query-parameter cache keys, and invalidation after user writes.
 - File upload endpoint, uploaded file metadata model, S3-compatible storage
@@ -244,7 +246,6 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- Auth endpoint rate limiting on login/register (password reset only today).
 - Worker job idempotency for password-reset email side effects on retry.
 - Staging environment validation parity with production (no localhost defaults).
 - Platform admin vs tenant admin boundary for tenant lifecycle APIs.
@@ -279,10 +280,10 @@ Audit remediation order (separate PRs):
 
 ## 5. Next Immediate Task
 
-Current PR: docs/status sync and `docs/template-onboarding.md`.
+Current PR: auth login/register Redis-backed rate limits.
 
-Next branch: `feature/auth-rate-limiting` — Redis-backed rate limits on
-`/auth/login` and `/auth/register` using the existing rate-limit dependency.
+Next branch: `feature/worker-idempotency` — idempotent password-reset email
+jobs under worker retry.
 
 ## 6. Rules For Updating This File
 

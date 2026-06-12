@@ -3,7 +3,20 @@ from time import sleep
 
 from app.core.cache import delete_cache_pattern, get_json_cache, set_json_cache
 from app.core.ids import uuid7
+from app.core.security import hash_password
 from app.models.user import User
+
+
+def create_user_in_db(db, email: str, *, tenant_id: int = 1) -> User:
+    user = User(
+        email=email,
+        hashed_password=hash_password("password123"),
+        tenant_id=tenant_id,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 def create_user_and_login(db, client, email: str) -> tuple[str, int]:
@@ -228,11 +241,7 @@ def test_user_cannot_delete_other_user(db, client, regular_user):
 
 def test_admin_can_list_users_with_pagination(db, client, admin_user):
     for i in range(15):
-        create_user_and_login(
-            db,
-            client,
-            f"pagination-user-{i}@example.com",
-        )
+        create_user_in_db(db, f"pagination-user-{i}@example.com")
 
     response = client.get(
         "/users/?page=1&size=5",
@@ -245,11 +254,7 @@ def test_admin_can_list_users_with_pagination(db, client, admin_user):
 
 def test_admin_can_list_second_page(db, client, admin_user):
     for i in range(15):
-        create_user_and_login(
-            db,
-            client,
-            f"pagination-page2-user-{i}@example.com",
-        )
+        create_user_in_db(db, f"pagination-page2-user-{i}@example.com")
 
     response = client.get(
         "/users/?page=2&size=5",
