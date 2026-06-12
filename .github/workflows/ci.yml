@@ -1,8 +1,14 @@
 name: CI
 
 on:
-  push:
   pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -18,9 +24,11 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --frozen --group dev
 
       - name: Run pre-commit
         run: uv run pre-commit run --all-files
@@ -29,31 +37,51 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - pre-commit
+    env:
+      TEST_DATABASE_URL: postgresql://app_user:app_password@localhost:5433/app_test_db
+      SECRET_KEY: test-secret-key-for-ci-only
+      ENVIRONMENT: test
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      S3_ENDPOINT_URL: http://localhost:9000
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      S3_BUCKET_NAME: uploads
+      S3_REGION_NAME: us-east-1
+      COVERAGE_FILE: /tmp/.coverage
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Create env file
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Create env file for compose
         run: |
           cat > .env <<EOF
           DATABASE_URL=postgresql://app_user:app_password@db:5432/app_db
           TEST_DATABASE_URL=postgresql://app_user:app_password@test_db:5432/app_test_db
-          SECRET_KEY=test-secret-key
+          SECRET_KEY=test-secret-key-for-ci-only
+          S3_ACCESS_KEY_ID=minioadmin
+          S3_SECRET_ACCESS_KEY=minioadmin
           EOF
 
-      - name: Build containers
-        run: docker compose build
-
-      - name: Start dependencies
+      - name: Start test dependencies
         run: docker compose up -d db test_db redis minio
 
-      - name: Run Redis-backed tests
-        run: docker compose run --rm api pytest -v tests/test_rate_limit.py
+      - name: Show dependency containers
+        run: docker compose ps
 
       - name: Run tests with coverage
         run: |
-          docker compose run --rm --user root api pytest \
+          uv run pytest \
             --cov=app \
             --cov-report=term-missing \
             --cov-report=xml \
@@ -71,8 +99,6 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
-    needs:
-      - test
 
     steps:
       - name: Checkout code
