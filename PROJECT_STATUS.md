@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/access-token-revocation` (audit remediation).
+`docs/production-runtime-examples` (audit remediation).
 
 Current architecture:
 
@@ -213,6 +213,9 @@ Production-readiness summary:
   provider-neutral promotion scripts for deploy hooks and SSH compose rollout,
   optional runner-side Alembic migrations, post-deploy smoke checks, and
   `docker-compose.prod.yml` for VM-style deployments.
+- Production runtime examples in `docs/production-runtime-examples.md` covering
+  Nginx, Caddy, and Traefik reverse-proxy patterns, `docker-compose.prod.yml`
+  scope, and GitHub environment checklists for staging/production deploys.
 - Worker reliability improvements with processing acknowledgement, delayed retry
   backoff, dead-letter metadata, Redis-backed maintenance locking, failed-job
   CLI metadata output, and `docs/worker-reliability.md`.
@@ -259,7 +262,6 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- Production runtime examples (reverse proxy/TLS) and GitHub Environment checklist.
 - Scheduled backup workflow example; PITR documented as provider responsibility.
 - Load thresholds: manual workflow only; not a PR gate.
 - Malware scanning: integration point only, not a bundled scanner.
@@ -279,7 +281,7 @@ Audit remediation order (separate PRs):
 | P1 | Platform vs tenant admin model | `feature/platform-admin-model` ✅ |
 | P1 | Registration policy gate | `feature/registration-policy` ✅ |
 | P1 | Access token invalidation strategy | `feature/access-token-revocation` ✅ |
-| P2 | Production runtime docs | `docs/production-runtime-examples` |
+| P2 | Production runtime docs | `docs/production-runtime-examples` ✅ |
 | P2 | Scheduled backup + PITR checklist | `feature/scheduled-backup-docs` |
 | P2 | Load threshold CI smoke | `feature/load-threshold-ci-smoke` |
 | P2 | Malware scanning boundary docs/tests | `docs/malware-scanning` |
@@ -288,9 +290,9 @@ Audit remediation order (separate PRs):
 
 ## 5. Next Immediate Task
 
-Current PR: access token invalidation via token_version.
+Current PR: production runtime examples and GitHub environment checklist.
 
-Next branch: `docs/production-runtime-examples`.
+Next branch: `feature/scheduled-backup-docs`.
 
 ## 6. Rules For Updating This File
 

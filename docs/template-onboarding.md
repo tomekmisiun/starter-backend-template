@@ -124,8 +124,7 @@ Before accepting production traffic, decide and document:
 - Tracing: Sentry only, OpenTelemetry, or both.
 - Registration policy: public, invite-only, or disabled.
 - Platform admin vs tenant admin model (`docs/tenant-isolation.md`).
-- Reverse proxy / TLS termination (`docs/production-runtime-examples.md` when
-  present).
+- Reverse proxy / TLS termination (`docs/production-runtime-examples.md`)
 
 Track project-specific choices in your own runbook. This template documents
 patterns, not your provider accounts.
@@ -135,6 +134,7 @@ patterns, not your provider accounts.
 | Topic | Document |
 |-------|----------|
 | Production deployment | `docs/production-deployment.md` |
+| Reverse proxy / runtime examples | `docs/production-runtime-examples.md` |
 | Secrets | `docs/secret-management.md` |
 | Migrations / rollback | `docs/migration-rollback.md` |
 | Backups | `docs/backup-restore-automation.md`, `docs/database-backup-restore.md` |

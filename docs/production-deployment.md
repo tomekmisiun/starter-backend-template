@@ -301,7 +301,8 @@ Recommended promotion flow:
 
 For VM-style deployments, copy `docker-compose.prod.yml` and a production `.env`
 file to the remote host, then configure SSH deployment secrets and
-`REMOTE_APP_DIR`.
+`REMOTE_APP_DIR`. See `docs/production-runtime-examples.md` for reverse-proxy
+examples (Nginx, Caddy, Traefik) and the GitHub environment checklist.
 
 Local dry run:
 

@@ -1,3 +1,6 @@
+# Minimal production Compose manifest for promoted API and worker containers.
+# Does not include PostgreSQL, Redis, object storage, TLS, or migrations.
+# See docs/production-runtime-examples.md for reverse-proxy and hosting patterns.
 services:
   api:
     image: ${API_IMAGE:?Set API_IMAGE to the promoted container image reference}

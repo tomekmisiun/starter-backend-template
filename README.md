@@ -993,7 +993,9 @@ sum by (method, path, status_code) (rate(http_requests_total[5m]))
 
 This repository is a reusable backend template, not a provider-specific
 deployment package. The production operating model is documented in
-`docs/production-deployment.md`.
+`docs/production-deployment.md`. Reverse-proxy examples (Nginx, Caddy, Traefik),
+`docker-compose.prod.yml` scope, and the GitHub Actions environment checklist
+live in `docs/production-runtime-examples.md`.
 
 The production guide covers:
 
@@ -1019,7 +1021,7 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` includes production
-runtime docs and related docs/tests.
+Template hardening work tracked in `PROJECT_STATUS.md` includes scheduled
+backup docs and related docs/tests.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.
