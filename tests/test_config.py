@@ -187,6 +187,32 @@ def test_settings_rejects_invalid_worker_maintenance_interval():
         )
 
 
+def test_settings_accepts_worker_retry_backoff_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        worker_retry_backoff_base_seconds=10,
+        worker_retry_backoff_max_seconds=120,
+        worker_processing_queue_name="jobs_processing",
+        worker_delayed_queue_name="jobs_delayed",
+    )
+
+    assert settings.worker_retry_backoff_base_seconds == 10
+    assert settings.worker_retry_backoff_max_seconds == 120
+    assert settings.worker_processing_queue_name == "jobs_processing"
+    assert settings.worker_delayed_queue_name == "jobs_delayed"
+
+
+def test_settings_rejects_invalid_worker_retry_backoff_range():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            secret_key="development-secret",
+            worker_retry_backoff_base_seconds=60,
+            worker_retry_backoff_max_seconds=30,
+        )
+
+
 def test_settings_accepts_database_pool_config():
     settings = Settings(
         _env_file=None,
