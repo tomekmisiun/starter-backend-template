@@ -19,7 +19,7 @@ class DevUserSeed:
 
 
 DEV_USERS = (
-    DevUserSeed(email="admin@example.local", role="admin"),
+    DevUserSeed(email="admin@example.local", role="platform_admin"),
     DevUserSeed(email="user@example.local", role="user"),
 )
 

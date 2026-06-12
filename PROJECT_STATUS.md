@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/staging-config-parity` (audit remediation).
+`feature/platform-admin-model` (audit remediation).
 
 Current architecture:
 
@@ -87,7 +87,8 @@ Production-readiness summary:
 - Refresh token rotation with Redis-backed refresh token revocation.
 - Inactive users are blocked from login, access-token use, and refresh-token
   use.
-- Basic role-based access control with `admin` and `user` roles.
+- Basic role-based access control with `user`, tenant `admin`, and
+  `platform_admin` roles.
 - Admin-only `/admin` endpoint.
 - User listing with pagination, sorting, filtering, and email search.
 - User self-read and self-update.
@@ -218,6 +219,9 @@ Production-readiness summary:
   requests, inactive-tenant rejection, admin tenant lifecycle endpoints,
   tenant-management permissions, cross-tenant denial regression tests, and
   `docs/tenant-isolation.md`.
+- Platform vs tenant admin boundary with `platform_admin` role for global
+  tenant lifecycle APIs and tenant-scoped `admin` role without `tenants.*`
+  permissions.
 - Webhook and idempotency hardening with timestamped HMAC verification, replay
   windows, Redis-backed in-flight idempotency locking, concurrent duplicate
   fallback handling, production webhook secret validation, and
@@ -251,7 +255,6 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- Platform admin vs tenant admin boundary for tenant lifecycle APIs.
 - Registration policy gate (public vs disabled; email verification not built).
 - Access-token invalidation beyond short TTL + refresh revocation.
 - Production runtime examples (reverse proxy/TLS) and GitHub Environment checklist.
@@ -271,7 +274,7 @@ Audit remediation order (separate PRs):
 | P0 | Auth login/register rate limits | `feature/auth-rate-limiting` |
 | P1 | Worker password-reset idempotency | `feature/worker-idempotency` |
 | P1 | Staging config validators | `feature/staging-config-parity` ✅ |
-| P1 | Platform vs tenant admin model | `feature/platform-admin-model` |
+| P1 | Platform vs tenant admin model | `feature/platform-admin-model` ✅ |
 | P1 | Registration policy gate | `feature/registration-policy` |
 | P1 | Access token invalidation strategy | `feature/access-token-revocation` |
 | P2 | Production runtime docs | `docs/production-runtime-examples` |
@@ -283,9 +286,9 @@ Audit remediation order (separate PRs):
 
 ## 5. Next Immediate Task
 
-Current PR: staging environment config validators.
+Current PR: platform vs tenant admin role boundary.
 
-Next branch: `feature/platform-admin-model`.
+Next branch: `feature/registration-policy`.
 
 ## 6. Rules For Updating This File
 

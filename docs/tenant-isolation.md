@@ -44,15 +44,32 @@ Recommended lifecycle for new tenants:
 Provisioning and lifecycle changes are audit logged in the provisioning
 admin's tenant audit stream.
 
-## Admin Permissions
+## Platform Admin vs Tenant Admin
 
-Tenant lifecycle endpoints require admin permissions:
+The template distinguishes two admin roles:
+
+- `admin` — tenant admin. Manages users, audit logs, and files within the
+  user's own tenant only.
+- `platform_admin` — platform operator. Includes all tenant-admin permissions
+  plus global tenant lifecycle permissions (`tenants.*`).
+
+Tenant lifecycle endpoints require `platform_admin` (or any role with
+`tenants.*` permissions):
 
 - `tenants.list` for listing and reading tenants
 - `tenants.provision` for creating tenants
 - `tenants.manage` for activation/deactivation and metadata updates
 
-Regular `user` role accounts cannot access tenant lifecycle endpoints.
+Regular `user` role accounts cannot access tenant lifecycle endpoints. Tenant
+`admin` accounts in customer tenants are denied tenant lifecycle access.
+
+Provision platform operators in the seeded `default` tenant (or your chosen
+platform tenant) with role `platform_admin`.
+
+## Admin Permissions
+
+Tenant admins receive tenant-scoped permissions such as `users.*`,
+`admin.access`, and `audit_logs.list`, but not `tenants.*`.
 
 ## Regression Expectations
 

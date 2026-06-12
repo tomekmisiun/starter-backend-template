@@ -178,7 +178,7 @@ make seed
 
 The seed command runs only when `ENVIRONMENT=development` and creates:
 
-- `admin@example.local` with role `admin`
+- `admin@example.local` with role `platform_admin`
 - `user@example.local` with role `user`
 
 Both accounts use the password `devpassword123`.
@@ -673,7 +673,8 @@ docker compose run --rm worker python -m app.worker_failed_jobs requeue
 Supported roles:
 
 - `user`
-- `admin`
+- `admin` — tenant admin within the user's own tenant
+- `platform_admin` — platform operator with global tenant lifecycle access
 
 Authorization is permission-based. Roles map to permission policies in
 `app/core/permissions.py`, and routes use `require_permission(...)` or
@@ -686,11 +687,13 @@ Examples:
 - `users.activate`, `users.deactivate`
 - `admin.access`, `audit_logs.list`, `files.upload`, `files.download.self`,
   `files.delete.self`
+- `tenants.list`, `tenants.provision`, `tenants.manage` (`platform_admin` only)
 
-`admin` inherits the `user` role hierarchy and receives the full permission
-set. Regular users can read and update only their own profile through self
-permissions, but self-update does not allow changing admin-managed fields such
-as `is_active`.
+`admin` inherits the `user` role hierarchy and receives tenant-scoped admin
+permissions, but not `tenants.*`. `platform_admin` inherits the full permission
+set, including tenant lifecycle APIs under `/api/v1/admin/tenants`. Regular
+users can read and update only their own profile through self permissions, but
+self-update does not allow changing admin-managed fields such as `is_active`.
 
 ## Idempotency And Webhooks
 
@@ -1007,8 +1010,7 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` includes platform vs
-tenant admin boundaries, registration policy gates, access-token invalidation
-strategy, and related docs/tests.
+Template hardening work tracked in `PROJECT_STATUS.md` includes registration
+policy gates, access-token invalidation strategy, and related docs/tests.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.

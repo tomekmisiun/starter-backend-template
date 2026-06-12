@@ -40,6 +40,7 @@ class SortOrder(str, Enum):
 
 class UserRole(str, Enum):
     admin = "admin"
+    platform_admin = "platform_admin"
     user = "user"
 
 

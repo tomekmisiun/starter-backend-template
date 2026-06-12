@@ -32,14 +32,22 @@ USER_PERMISSIONS = frozenset(
     }
 )
 
-ADMIN_PERMISSIONS = frozenset(Permission)
+TENANT_ADMIN_PERMISSIONS = frozenset(
+    permission
+    for permission in Permission
+    if not permission.value.startswith("tenants.")
+)
+
+PLATFORM_ADMIN_PERMISSIONS = frozenset(Permission)
 
 ROLE_PERMISSIONS: dict[str, frozenset[Permission]] = {
     "user": USER_PERMISSIONS,
-    "admin": ADMIN_PERMISSIONS,
+    "admin": TENANT_ADMIN_PERMISSIONS,
+    "platform_admin": PLATFORM_ADMIN_PERMISSIONS,
 }
 
 ROLE_HIERARCHY: dict[str, frozenset[str]] = {
+    "platform_admin": frozenset({"platform_admin", "admin", "user"}),
     "admin": frozenset({"admin", "user"}),
     "user": frozenset({"user"}),
 }

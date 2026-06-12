@@ -59,6 +59,14 @@ def promote_to_admin(db, email: str) -> User:
     return user
 
 
+def promote_to_platform_admin(db, email: str) -> User:
+    user = db.query(User).filter(User.email == email).one()
+    user.role = "platform_admin"
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def test_authenticated_request_rejects_mismatched_tenant_header(db, client):
     register_user(client, "member@example.com")
     login_response = login_user(client, "member@example.com")
@@ -154,9 +162,9 @@ def test_admin_cannot_read_user_from_other_tenant(db, client):
     assert response.status_code == 404
 
 
-def test_admin_can_provision_tenant(db, client):
+def test_platform_admin_can_provision_tenant(db, client):
     register_user(client, "platform-admin@example.com")
-    promote_to_admin(db, "platform-admin@example.com")
+    promote_to_platform_admin(db, "platform-admin@example.com")
     admin_login = login_user(client, "platform-admin@example.com")
     admin_token = admin_login.json()["access_token"]
 
@@ -187,9 +195,9 @@ def test_regular_user_cannot_provision_tenant(client):
     assert response.status_code == 403
 
 
-def test_admin_can_deactivate_tenant(db, client):
+def test_platform_admin_can_deactivate_tenant(db, client):
     register_user(client, "lifecycle-admin@example.com")
-    promote_to_admin(db, "lifecycle-admin@example.com")
+    promote_to_platform_admin(db, "lifecycle-admin@example.com")
     admin_login = login_user(client, "lifecycle-admin@example.com")
     admin_token = admin_login.json()["access_token"]
 
@@ -217,3 +225,71 @@ def test_admin_can_deactivate_tenant(db, client):
         tenant_slug="sunset-isolation",
     )
     assert login_response.status_code == 404
+
+
+def test_tenant_admin_cannot_provision_tenant(db, client):
+    ensure_tenant(db, "acme", "Acme Corp")
+
+    register_user(client, "acme-admin@example.com", tenant_slug="acme")
+    promote_to_admin(db, "acme-admin@example.com")
+    admin_login = login_user(client, "acme-admin@example.com", tenant_slug="acme")
+    admin_token = admin_login.json()["access_token"]
+
+    response = client.post(
+        "/admin/tenants",
+        json={"slug": "blocked-by-tenant-admin", "name": "Blocked Tenant"},
+        headers=auth_headers(admin_token, tenant_slug="acme"),
+    )
+
+    assert response.status_code == 403
+
+
+def test_tenant_admin_cannot_list_or_manage_tenants(db, client):
+    ensure_tenant(db, "acme", "Acme Corp")
+
+    register_user(client, "acme-admin@example.com", tenant_slug="acme")
+    promote_to_admin(db, "acme-admin@example.com")
+    admin_login = login_user(client, "acme-admin@example.com", tenant_slug="acme")
+    admin_token = admin_login.json()["access_token"]
+    headers = auth_headers(admin_token, tenant_slug="acme")
+
+    list_response = client.get("/admin/tenants", headers=headers)
+    assert list_response.status_code == 403
+
+    default_tenant = db.query(Tenant).filter(Tenant.slug == "default").one()
+    read_response = client.get(
+        f"/admin/tenants/{default_tenant.id}",
+        headers=headers,
+    )
+    assert read_response.status_code == 403
+
+    patch_response = client.patch(
+        f"/admin/tenants/{default_tenant.id}",
+        json={"name": "Renamed Default"},
+        headers=headers,
+    )
+    assert patch_response.status_code == 403
+
+
+def test_tenant_admin_can_manage_users_in_own_tenant(db, client):
+    ensure_tenant(db, "acme", "Acme Corp")
+
+    register_user(client, "acme-admin@example.com", tenant_slug="acme")
+    promote_to_admin(db, "acme-admin@example.com")
+    admin_login = login_user(client, "acme-admin@example.com", tenant_slug="acme")
+    admin_token = admin_login.json()["access_token"]
+    headers = auth_headers(admin_token, tenant_slug="acme")
+
+    member_response = register_user(
+        client,
+        "acme-member@example.com",
+        tenant_slug="acme",
+    )
+    member_id = member_response.json()["id"]
+
+    list_response = client.get("/users/", headers=headers)
+    assert list_response.status_code == 200
+
+    read_response = client.get(f"/users/{member_id}", headers=headers)
+    assert read_response.status_code == 200
+    assert read_response.json()["email"] == "acme-member@example.com"
