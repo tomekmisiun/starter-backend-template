@@ -65,7 +65,8 @@ Expected JSON response:
 {"clean": true}
 ```
 
-Any non-200 response, malformed JSON, or `"clean": false` rejects the upload.
+See `docs/malware-scanning.md` for the HTTP scanner contract and production
+boundaries.
 
 ## Metadata Validation
 
