@@ -19,6 +19,7 @@ LOCAL_S3_ENDPOINT_URLS = {
 }
 LOCAL_S3_CREDENTIALS = {"minioadmin"}
 LOCAL_REDIS_HOST = "redis"
+LOCAL_REDIS_HOSTS = {LOCAL_REDIS_HOST, "localhost", "127.0.0.1"}
 ALLOWED_REDIS_SSL_CERT_REQS = {"none", "optional", "required"}
 PLACEHOLDER_EMAILS = {"noreply@example.com"}
 
@@ -173,9 +174,9 @@ class Settings(BaseSettings):
                 "s3_bucket_name must not use the local default in production",
             )
 
-        if self.redis_host == LOCAL_REDIS_HOST:
+        if self.redis_host in LOCAL_REDIS_HOSTS:
             production_errors.append(
-                "redis_host must not use the local Docker default in production",
+                "redis_host must not use a local Docker or loopback host in production",
             )
 
         if self.redis_password.strip() == "":

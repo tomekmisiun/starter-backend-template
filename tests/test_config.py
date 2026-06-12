@@ -90,7 +90,7 @@ def test_settings_rejects_local_production_placeholders():
     assert "s3_access_key_id must not use the local MinIO default" in error_message
     assert "s3_secret_access_key must not use the local MinIO default" in error_message
     assert "s3_bucket_name must not use the local default" in error_message
-    assert "redis_host must not use the local Docker default" in error_message
+    assert "redis_host must not use a local Docker or loopback host" in error_message
     assert "redis_password is required in production" in error_message
     assert "trusted_hosts_enabled must be true in production" in error_message
     assert "trusted_hosts is required in production" in error_message
