@@ -13,7 +13,7 @@ The current implementation is a strong local-development and testable backend
 foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
-Current branch: `docs/legacy-route-deprecation` (audit remediation).
+Current branch: `chore/validate-with-coverage` (audit remediation).
 
 Current architecture:
 
@@ -155,7 +155,8 @@ Production-readiness summary:
 - Dependabot automation for weekly uv, GitHub Actions, and Docker image update
   pull requests with documented review cadence in `README.md`.
 - Local developer experience improvements with development-only seed data,
-  `make bootstrap`, `make smoke`, `make validate`, and troubleshooting docs.
+  `make bootstrap`, `make smoke`, `make validate` (Ruff + pytest with 85%
+  coverage floor), and troubleshooting docs.
 - Lightweight load/performance baseline with `perf/load_baseline.py`,
   `make load-smoke`, documented JSON result format, named threshold profiles,
   `make load-validate`, concurrency regression tests, and
@@ -263,7 +264,7 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- `make validate` does not yet enforce local coverage floor like CI.
+_(Final audit verification pass pending in the next PR.)_
 
 ## 4. Recommended Roadmap Ordered By ROI
 
@@ -283,13 +284,13 @@ Audit remediation order (separate PRs):
 | P2 | Load threshold CI smoke | `feature/load-threshold-ci-smoke` ✅ |
 | P2 | Malware scanning boundary docs/tests | `docs/malware-scanning` ✅ |
 | P2 | Legacy route deprecation policy | `docs/legacy-route-deprecation` ✅ |
-| P2 | Makefile validate + coverage | `chore/validate-with-coverage` |
+| P2 | Makefile validate + coverage | `chore/validate-with-coverage` ✅ |
 
 ## 5. Next Immediate Task
 
-Current PR: legacy route deprecation policy.
+Current PR: align make validate with CI coverage floor.
 
-Next branch: `chore/validate-with-coverage`.
+Next branch: final audit verification (`PROJECT_STATUS.md` sync on `main`).
 
 ## 6. Rules For Updating This File
 

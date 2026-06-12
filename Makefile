@@ -70,9 +70,15 @@ IMAGE_TAG ?= latest
 deploy-dry-run:
 	ENVIRONMENT=$(ENVIRONMENT) IMAGE_REF=ghcr.io/example/starter-backend-template/api:$(IMAGE_TAG) DRY_RUN=true RUN_MIGRATIONS=true bash scripts/deploy_promote.sh
 
+COVERAGE_FAIL_UNDER ?= 85
+
 validate:
 	docker compose run --rm api ruff check .
-	docker compose run --rm api pytest -v
+	docker compose run --rm api pytest \
+		--cov=app \
+		--cov-report=term-missing \
+		--cov-fail-under=$(COVERAGE_FAIL_UNDER) \
+		-v
 
 bootstrap: docker-up migration-upgrade seed smoke
 

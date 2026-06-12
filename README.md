@@ -195,7 +195,8 @@ Run the standard local validation workflow:
 make validate
 ```
 
-`make validate` runs Ruff and the full pytest suite in Docker.
+`make validate` runs Ruff and the full pytest suite in Docker with the same 85%
+coverage floor enforced in CI.
 
 Common local issues are documented in `docs/troubleshooting.md`.
 
@@ -1028,7 +1029,7 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` includes Makefile
-validate coverage parity and the final audit verification pass.
+Template hardening work tracked in `PROJECT_STATUS.md` includes the final audit
+verification pass.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.
