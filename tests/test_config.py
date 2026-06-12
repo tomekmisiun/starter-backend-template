@@ -18,6 +18,10 @@ def production_settings_kwargs():
         "s3_access_key_id": "prod-access-key",
         "s3_secret_access_key": "prod-secret-key",
         "s3_bucket_name": "prod-uploads",
+        "redis_host": "redis.example.test",
+        "redis_password": "redis-production-password",
+        "trusted_hosts_enabled": True,
+        "trusted_hosts": "api.example.test",
     }
 
 
@@ -86,6 +90,10 @@ def test_settings_rejects_local_production_placeholders():
     assert "s3_access_key_id must not use the local MinIO default" in error_message
     assert "s3_secret_access_key must not use the local MinIO default" in error_message
     assert "s3_bucket_name must not use the local default" in error_message
+    assert "redis_host must not use the local Docker default" in error_message
+    assert "redis_password is required in production" in error_message
+    assert "trusted_hosts_enabled must be true in production" in error_message
+    assert "trusted_hosts is required in production" in error_message
 
 
 def test_settings_accepts_strong_production_secret_key():
@@ -176,4 +184,92 @@ def test_settings_rejects_invalid_worker_maintenance_interval():
             _env_file=None,
             secret_key="development-secret",
             worker_maintenance_interval_seconds=0,
+        )
+
+
+def test_settings_accepts_database_pool_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        db_pool_size=10,
+        db_max_overflow=20,
+        db_pool_recycle_seconds=900,
+        db_pool_pre_ping=False,
+        db_pool_timeout_seconds=15,
+        db_statement_timeout_ms=5000,
+    )
+
+    assert settings.db_pool_size == 10
+    assert settings.db_max_overflow == 20
+    assert settings.db_pool_recycle_seconds == 900
+    assert settings.db_pool_pre_ping is False
+    assert settings.db_pool_timeout_seconds == 15
+    assert settings.db_statement_timeout_ms == 5000
+
+
+def test_settings_accepts_redis_connection_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        redis_username="redis-user",
+        redis_password="redis-password",
+        redis_ssl=True,
+        redis_ssl_cert_reqs="optional",
+        redis_socket_timeout_seconds=2.5,
+        redis_socket_connect_timeout_seconds=1.5,
+    )
+
+    assert settings.redis_username == "redis-user"
+    assert settings.redis_password == "redis-password"
+    assert settings.redis_ssl is True
+    assert settings.redis_ssl_cert_reqs == "optional"
+    assert settings.redis_socket_timeout_seconds == 2.5
+    assert settings.redis_socket_connect_timeout_seconds == 1.5
+
+
+def test_settings_rejects_invalid_redis_ssl_cert_reqs():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            secret_key="development-secret",
+            redis_ssl_cert_reqs="invalid",
+        )
+
+
+def test_settings_accepts_runtime_security_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        cors_enabled=True,
+        cors_allow_origins="https://app.example.test",
+        cors_allow_credentials=True,
+        trusted_hosts_enabled=True,
+        trusted_hosts="api.example.test,localhost",
+        security_headers_enabled=True,
+        hsts_enabled=True,
+        hsts_max_age_seconds=86400,
+    )
+
+    assert settings.cors_origins_list() == ["https://app.example.test"]
+    assert settings.trusted_hosts_list() == ["api.example.test", "localhost"]
+    assert settings.cors_methods_list() == [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+    ]
+    assert settings.hsts_enabled is True
+
+
+def test_settings_rejects_production_cors_wildcard():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            **{
+                **production_settings_kwargs(),
+                "cors_enabled": True,
+                "cors_allow_origins": "*",
+            },
         )

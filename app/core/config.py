@@ -18,7 +18,13 @@ LOCAL_S3_ENDPOINT_URLS = {
     "http://127.0.0.1:9000",
 }
 LOCAL_S3_CREDENTIALS = {"minioadmin"}
+LOCAL_REDIS_HOST = "redis"
+ALLOWED_REDIS_SSL_CERT_REQS = {"none", "optional", "required"}
 PLACEHOLDER_EMAILS = {"noreply@example.com"}
+
+
+def parse_csv_setting(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 class Settings(BaseSettings):
@@ -30,6 +36,28 @@ class Settings(BaseSettings):
     redis_host: str = "redis"
     redis_port: int = 6379
     redis_db: int = 0
+    redis_username: str = ""
+    redis_password: str = ""
+    redis_ssl: bool = False
+    redis_ssl_cert_reqs: str = "required"
+    redis_socket_timeout_seconds: float = Field(default=5.0, gt=0)
+    redis_socket_connect_timeout_seconds: float = Field(default=5.0, gt=0)
+    db_pool_size: int = Field(default=5, gt=0)
+    db_max_overflow: int = Field(default=10, ge=0)
+    db_pool_recycle_seconds: int = Field(default=1800, gt=0)
+    db_pool_pre_ping: bool = True
+    db_pool_timeout_seconds: int = Field(default=30, gt=0)
+    db_statement_timeout_ms: int = Field(default=0, ge=0)
+    cors_enabled: bool = False
+    cors_allow_origins: str = ""
+    cors_allow_credentials: bool = False
+    cors_allow_methods: str = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    cors_allow_headers: str = "*"
+    trusted_hosts_enabled: bool = False
+    trusted_hosts: str = ""
+    security_headers_enabled: bool = True
+    hsts_enabled: bool = False
+    hsts_max_age_seconds: int = Field(default=31536000, gt=0)
     log_level: str = "INFO"
     log_format: str = "text"
     rate_limit_default_limit: int = Field(default=5, gt=0)
@@ -145,6 +173,32 @@ class Settings(BaseSettings):
                 "s3_bucket_name must not use the local default in production",
             )
 
+        if self.redis_host == LOCAL_REDIS_HOST:
+            production_errors.append(
+                "redis_host must not use the local Docker default in production",
+            )
+
+        if self.redis_password.strip() == "":
+            production_errors.append("redis_password is required in production")
+
+        if not self.trusted_hosts_enabled:
+            production_errors.append(
+                "trusted_hosts_enabled must be true in production",
+            )
+
+        if not parse_csv_setting(self.trusted_hosts):
+            production_errors.append("trusted_hosts is required in production")
+
+        if self.cors_enabled and not parse_csv_setting(self.cors_allow_origins):
+            production_errors.append(
+                "cors_allow_origins is required when cors_enabled is true in production",
+            )
+
+        if self.cors_enabled and "*" in parse_csv_setting(self.cors_allow_origins):
+            production_errors.append(
+                "cors_allow_origins must not include a wildcard in production",
+            )
+
         if production_errors:
             raise ValueError("; ".join(production_errors))
 
@@ -165,6 +219,31 @@ class Settings(BaseSettings):
             raise ValueError(f"log_format must be one of: {allowed_values}")
 
         return normalized_log_format
+
+    @field_validator("redis_ssl_cert_reqs")
+    @classmethod
+    def normalize_redis_ssl_cert_reqs(cls, value: str) -> str:
+        normalized_value = value.lower()
+
+        if normalized_value not in ALLOWED_REDIS_SSL_CERT_REQS:
+            allowed_values = ", ".join(sorted(ALLOWED_REDIS_SSL_CERT_REQS))
+            raise ValueError(
+                f"redis_ssl_cert_reqs must be one of: {allowed_values}",
+            )
+
+        return normalized_value
+
+    def cors_origins_list(self) -> list[str]:
+        return parse_csv_setting(self.cors_allow_origins)
+
+    def cors_methods_list(self) -> list[str]:
+        return parse_csv_setting(self.cors_allow_methods)
+
+    def cors_headers_list(self) -> list[str]:
+        return parse_csv_setting(self.cors_allow_headers)
+
+    def trusted_hosts_list(self) -> list[str]:
+        return parse_csv_setting(self.trusted_hosts)
 
 
 @lru_cache
