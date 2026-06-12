@@ -318,6 +318,10 @@ deployment-critical placeholders. Production must provide non-local values for:
 - `S3_SECRET_ACCESS_KEY`
 - `S3_BUCKET_NAME`
 
+When `ENVIRONMENT=staging`, the same remote-service placeholders are rejected
+for database, Redis, SMTP, password reset URL, and S3 settings. Staging does
+not require `TRUSTED_HOSTS` or `WEBHOOK_SIGNATURE_SECRET` (production does).
+
 Production also requires `TRUSTED_HOSTS_ENABLED=true`. If `CORS_ENABLED=true`,
 `CORS_ALLOW_ORIGINS` must list explicit origins and must not use a wildcard.
 
@@ -1003,9 +1007,8 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` includes worker
-idempotency, staging config parity, platform vs tenant admin boundaries,
-registration policy gates, access-token invalidation strategy, and related
-docs/tests.
+Template hardening work tracked in `PROJECT_STATUS.md` includes platform vs
+tenant admin boundaries, registration policy gates, access-token invalidation
+strategy, and related docs/tests.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.

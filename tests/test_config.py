@@ -26,6 +26,17 @@ def production_settings_kwargs():
     }
 
 
+def staging_settings_kwargs():
+    return {
+        **production_settings_kwargs(),
+        "environment": "staging",
+        "secret_key": "strong-staging-secret-key-value-here",
+        "trusted_hosts_enabled": False,
+        "trusted_hosts": "",
+        "webhook_signature_secret": "",
+    }
+
+
 def test_settings_requires_secret_key(monkeypatch):
     monkeypatch.delenv("SECRET_KEY", raising=False)
 
@@ -53,11 +64,44 @@ def test_settings_rejects_unknown_environment():
 def test_settings_accepts_staging_environment():
     settings = Settings(
         _env_file=None,
-        environment="staging",
-        secret_key="staging-secret",
+        **staging_settings_kwargs(),
     )
 
     assert settings.environment == "staging"
+
+
+def test_settings_rejects_local_staging_placeholders():
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(
+            _env_file=None,
+            environment="staging",
+            secret_key="strong-staging-secret-key-value-here",
+        )
+
+    error_message = str(exc_info.value)
+    assert "database_url must not use the local Docker default in staging" in error_message
+    assert "redis_host must not use a local Docker or loopback host in staging" in error_message
+
+
+def test_settings_accepts_staging_without_trusted_hosts_or_webhook_secret():
+    settings = Settings(
+        _env_file=None,
+        **staging_settings_kwargs(),
+    )
+
+    assert settings.trusted_hosts_enabled is False
+    assert settings.webhook_signature_secret == ""
+
+
+def test_settings_rejects_short_staging_secret_key():
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            **{
+                **staging_settings_kwargs(),
+                "secret_key": "short-secret",
+            },
+        )
 
 
 def test_settings_rejects_short_production_secret_key():

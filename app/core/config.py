@@ -131,6 +131,137 @@ class Settings(BaseSettings):
 
         return normalized_environment
 
+    def _collect_remote_environment_errors(
+        self,
+        *,
+        environment_name: str,
+        require_trusted_hosts: bool,
+        require_webhook_secret: bool,
+    ) -> list[str]:
+        secret_key = self.secret_key.strip()
+        errors: list[str] = []
+
+        if len(secret_key) < 32:
+            errors.append(
+                f"secret_key must be at least 32 characters in {environment_name}",
+            )
+
+        if self.database_url == LOCAL_DATABASE_URL:
+            errors.append(
+                f"database_url must not use the local Docker default in {environment_name}",
+            )
+
+        if self.smtp_host.strip() == "":
+            errors.append(f"smtp_host is required in {environment_name}")
+
+        if self.smtp_username.strip() == "":
+            errors.append(f"smtp_username is required in {environment_name}")
+
+        if self.smtp_password.strip() == "":
+            errors.append(f"smtp_password is required in {environment_name}")
+
+        if self.email_from.lower() in PLACEHOLDER_EMAILS:
+            errors.append(
+                f"email_from must not use the example placeholder in {environment_name}",
+            )
+
+        if self.password_reset_url in LOCAL_PASSWORD_RESET_URLS:
+            errors.append(
+                f"password_reset_url must not use a localhost URL in {environment_name}",
+            )
+
+        if self.s3_endpoint_url in LOCAL_S3_ENDPOINT_URLS:
+            errors.append(
+                f"s3_endpoint_url must not use a local MinIO URL in {environment_name}",
+            )
+
+        if self.s3_access_key_id in LOCAL_S3_CREDENTIALS:
+            errors.append(
+                f"s3_access_key_id must not use the local MinIO default in {environment_name}",
+            )
+
+        if self.s3_secret_access_key in LOCAL_S3_CREDENTIALS:
+            errors.append(
+                "s3_secret_access_key must not use the local MinIO default "
+                f"in {environment_name}",
+            )
+
+        if self.s3_bucket_name == "uploads":
+            errors.append(
+                f"s3_bucket_name must not use the local default in {environment_name}",
+            )
+
+        if self.redis_host in LOCAL_REDIS_HOSTS:
+            errors.append(
+                "redis_host must not use a local Docker or loopback host "
+                f"in {environment_name}",
+            )
+
+        if self.redis_password.strip() == "":
+            errors.append(f"redis_password is required in {environment_name}")
+
+        if require_trusted_hosts:
+            if not self.trusted_hosts_enabled:
+                errors.append(
+                    f"trusted_hosts_enabled must be true in {environment_name}",
+                )
+
+            if not parse_csv_setting(self.trusted_hosts):
+                errors.append(f"trusted_hosts is required in {environment_name}")
+
+        if self.cors_enabled and not parse_csv_setting(self.cors_allow_origins):
+            errors.append(
+                "cors_allow_origins is required when cors_enabled is true "
+                f"in {environment_name}",
+            )
+
+        if self.cors_enabled and "*" in parse_csv_setting(self.cors_allow_origins):
+            errors.append(
+                "cors_allow_origins must not include a wildcard "
+                f"in {environment_name}",
+            )
+
+        if require_webhook_secret:
+            webhook_secret = self.webhook_signature_secret.strip()
+
+            if webhook_secret == "":
+                errors.append(
+                    f"webhook_signature_secret is required in {environment_name}",
+                )
+            elif webhook_secret.lower() in WEAK_SECRET_KEYS:
+                errors.append(
+                    "webhook_signature_secret must not use a known weak placeholder "
+                    f"in {environment_name}",
+                )
+            elif len(webhook_secret) < 32:
+                errors.append(
+                    "webhook_signature_secret must be at least 32 characters "
+                    f"in {environment_name}",
+                )
+
+        return errors
+
+    @model_validator(mode="after")
+    def validate_staging_settings(self) -> "Settings":
+        secret_key = self.secret_key.strip()
+
+        if secret_key.lower() in WEAK_SECRET_KEYS:
+            raise ValueError("secret_key must not use a known weak placeholder")
+
+        if self.environment != "staging":
+            return self
+
+        staging_errors = self._collect_remote_environment_errors(
+            environment_name="staging",
+            require_trusted_hosts=False,
+            require_webhook_secret=False,
+        )
+
+        if staging_errors:
+            raise ValueError("; ".join(staging_errors))
+
+        return self
+
     @model_validator(mode="after")
     def validate_production_settings(self) -> "Settings":
         secret_key = self.secret_key.strip()
@@ -141,97 +272,11 @@ class Settings(BaseSettings):
         if self.environment != "production":
             return self
 
-        production_errors = []
-
-        if len(secret_key) < 32:
-            production_errors.append(
-                "secret_key must be at least 32 characters in production",
-            )
-
-        if self.database_url == LOCAL_DATABASE_URL:
-            production_errors.append(
-                "database_url must not use the local Docker default in production",
-            )
-
-        if self.smtp_host.strip() == "":
-            production_errors.append("smtp_host is required in production")
-
-        if self.smtp_username.strip() == "":
-            production_errors.append("smtp_username is required in production")
-
-        if self.smtp_password.strip() == "":
-            production_errors.append("smtp_password is required in production")
-
-        if self.email_from.lower() in PLACEHOLDER_EMAILS:
-            production_errors.append(
-                "email_from must not use the example placeholder in production",
-            )
-
-        if self.password_reset_url in LOCAL_PASSWORD_RESET_URLS:
-            production_errors.append(
-                "password_reset_url must not use a localhost URL in production",
-            )
-
-        if self.s3_endpoint_url in LOCAL_S3_ENDPOINT_URLS:
-            production_errors.append(
-                "s3_endpoint_url must not use a local MinIO URL in production",
-            )
-
-        if self.s3_access_key_id in LOCAL_S3_CREDENTIALS:
-            production_errors.append(
-                "s3_access_key_id must not use the local MinIO default in production",
-            )
-
-        if self.s3_secret_access_key in LOCAL_S3_CREDENTIALS:
-            production_errors.append(
-                "s3_secret_access_key must not use the local MinIO default in production",
-            )
-
-        if self.s3_bucket_name == "uploads":
-            production_errors.append(
-                "s3_bucket_name must not use the local default in production",
-            )
-
-        if self.redis_host in LOCAL_REDIS_HOSTS:
-            production_errors.append(
-                "redis_host must not use a local Docker or loopback host in production",
-            )
-
-        if self.redis_password.strip() == "":
-            production_errors.append("redis_password is required in production")
-
-        if not self.trusted_hosts_enabled:
-            production_errors.append(
-                "trusted_hosts_enabled must be true in production",
-            )
-
-        if not parse_csv_setting(self.trusted_hosts):
-            production_errors.append("trusted_hosts is required in production")
-
-        if self.cors_enabled and not parse_csv_setting(self.cors_allow_origins):
-            production_errors.append(
-                "cors_allow_origins is required when cors_enabled is true in production",
-            )
-
-        if self.cors_enabled and "*" in parse_csv_setting(self.cors_allow_origins):
-            production_errors.append(
-                "cors_allow_origins must not include a wildcard in production",
-            )
-
-        webhook_secret = self.webhook_signature_secret.strip()
-
-        if webhook_secret == "":
-            production_errors.append(
-                "webhook_signature_secret is required in production",
-            )
-        elif webhook_secret.lower() in WEAK_SECRET_KEYS:
-            production_errors.append(
-                "webhook_signature_secret must not use a known weak placeholder in production",
-            )
-        elif len(webhook_secret) < 32:
-            production_errors.append(
-                "webhook_signature_secret must be at least 32 characters in production",
-            )
+        production_errors = self._collect_remote_environment_errors(
+            environment_name="production",
+            require_trusted_hosts=True,
+            require_webhook_secret=True,
+        )
 
         if production_errors:
             raise ValueError("; ".join(production_errors))

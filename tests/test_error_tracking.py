@@ -1,3 +1,4 @@
+from tests.test_config import staging_settings_kwargs
 from app.core.config import Settings
 from app.core.error_tracking import initialize_error_tracking
 from app.core.request_context import request_id_var
@@ -30,8 +31,7 @@ def test_initialize_error_tracking_calls_sentry_with_config(monkeypatch):
     initialized = initialize_error_tracking(
         Settings(
             _env_file=None,
-            environment="staging",
-            secret_key="staging-secret",
+            **staging_settings_kwargs(),
             sentry_dsn="https://public@example.ingest.sentry.io/1",
             sentry_traces_sample_rate=0.25,
             sentry_send_default_pii=True,

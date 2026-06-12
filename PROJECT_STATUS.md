@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`docs/status-sync-and-onboarding` (audit remediation).
+`feature/staging-config-parity` (audit remediation).
 
 Current architecture:
 
@@ -197,6 +197,9 @@ Production-readiness summary:
 - Environment/config hardening with explicit `staging` support and
   production-only validation that rejects local/default values for database,
   SMTP, password reset URL, and S3 storage settings.
+- Staging environment validation that rejects the same local/default remote
+  service placeholders as production for database, Redis, SMTP, password reset
+  URL, and S3 settings, without requiring trusted hosts or webhook secrets.
 - Production runtime hardening with environment-driven database pool settings,
   Redis auth/TLS/timeouts, CORS and trusted host middleware, security headers,
   production validation for Redis and trusted hosts, and production server
@@ -248,7 +251,6 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- Staging environment validation parity with production (no localhost defaults).
 - Platform admin vs tenant admin boundary for tenant lifecycle APIs.
 - Registration policy gate (public vs disabled; email verification not built).
 - Access-token invalidation beyond short TTL + refresh revocation.
@@ -268,7 +270,7 @@ Audit remediation order (separate PRs):
 | P0 | Docs/status sync + onboarding | `docs/status-sync-and-onboarding` |
 | P0 | Auth login/register rate limits | `feature/auth-rate-limiting` |
 | P1 | Worker password-reset idempotency | `feature/worker-idempotency` |
-| P1 | Staging config validators | `feature/staging-config-parity` |
+| P1 | Staging config validators | `feature/staging-config-parity` ✅ |
 | P1 | Platform vs tenant admin model | `feature/platform-admin-model` |
 | P1 | Registration policy gate | `feature/registration-policy` |
 | P1 | Access token invalidation strategy | `feature/access-token-revocation` |
@@ -281,9 +283,9 @@ Audit remediation order (separate PRs):
 
 ## 5. Next Immediate Task
 
-Current PR: worker password-reset job idempotency.
+Current PR: staging environment config validators.
 
-Next branch: `feature/staging-config-parity`.
+Next branch: `feature/platform-admin-model`.
 
 ## 6. Rules For Updating This File
 
