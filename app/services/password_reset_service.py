@@ -18,6 +18,7 @@ from app.models.user import User
 from app.schemas.auth import PasswordResetConfirm, PasswordResetRequest
 from app.services.auth_service import get_user_by_email
 from app.services.audit_log_service import create_audit_log
+from app.services.user_service import increment_user_token_version
 from app.services.email_service import EmailDeliveryError, get_email_service
 
 
@@ -187,6 +188,7 @@ def confirm_password_reset(db: Session, reset_confirm: PasswordResetConfirm) -> 
         raise_invalid_reset_token()
 
     user.hashed_password = hash_password(reset_confirm.new_password)
+    increment_user_token_version(db, user)
     (
         db.query(PasswordResetToken)
         .filter(

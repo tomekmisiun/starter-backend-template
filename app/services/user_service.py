@@ -122,6 +122,14 @@ def invalidate_users_list_cache(tenant_id: int) -> None:
     )
 
 
+def increment_user_token_version(db: Session, user: User) -> User:
+    user.token_version += 1
+    db.commit()
+    db.refresh(user)
+    invalidate_users_list_cache(user.tenant_id)
+    return user
+
+
 def get_user_by_id(db: Session, user_id: int, tenant_id: int) -> User | None:
     return (
         db.query(User)
@@ -136,9 +144,15 @@ def update_user(
     user_update: UserAdminUpdate | UserSelfUpdate,
 ) -> User:
     update_data = user_update.model_dump(exclude_unset=True)
+    should_invalidate_tokens = (
+        "role" in update_data and update_data["role"] != user.role
+    )
 
     for field, value in update_data.items():
         setattr(user, field, value)
+
+    if should_invalidate_tokens:
+        user.token_version += 1
 
     db.commit()
     db.refresh(user)
@@ -161,6 +175,7 @@ def deactivate_user(db: Session, user_id: int, tenant_id: int) -> User | None:
         return None
 
     user.is_active = False
+    user.token_version += 1
     db.commit()
     db.refresh(user)
     invalidate_users_list_cache(tenant_id)

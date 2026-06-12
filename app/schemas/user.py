@@ -18,3 +18,4 @@ class UserSelfUpdate(BaseModel):
 class UserAdminUpdate(BaseModel):
     email: EmailStr | None = None
     is_active: bool | None = None
+    role: str | None = None
