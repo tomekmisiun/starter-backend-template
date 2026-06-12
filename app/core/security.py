@@ -46,7 +46,9 @@ def create_access_token(
     expires_delta: timedelta | None = None,
 ) -> str:
     expire = datetime.now(timezone.utc) + (
-        expires_delta if expires_delta else timedelta(minutes=30)
+        expires_delta
+        if expires_delta is not None
+        else timedelta(minutes=settings.access_token_expire_minutes)
     )
 
     payload: dict[str, Any] = {
@@ -64,15 +66,19 @@ def create_access_token(
 def create_refresh_token(
     subject: str,
     tenant_id: int,
+    token_version: int,
     expires_delta: timedelta | None = None,
 ) -> str:
     expire = datetime.now(timezone.utc) + (
-        expires_delta if expires_delta else timedelta(days=7)
+        expires_delta
+        if expires_delta is not None
+        else timedelta(days=settings.refresh_token_expire_days)
     )
 
     payload: dict[str, Any] = {
         "sub": subject,
         "tenant_id": tenant_id,
+        "token_version": token_version,
         "exp": expire,
         "type": "refresh",
         "jti": str(uuid7()),

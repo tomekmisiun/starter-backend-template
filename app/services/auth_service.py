@@ -84,6 +84,7 @@ def login_user(db: Session, login_data: UserLogin, tenant_id: int) -> tuple[str,
     refresh_token = create_refresh_token(
         subject=str(user.id),
         tenant_id=user.tenant_id,
+        token_version=user.token_version,
     )
 
     return access_token, refresh_token
@@ -107,6 +108,7 @@ def rotate_refresh_token(db: Session, refresh_token: str) -> tuple[str, str]:
     new_refresh_token = create_refresh_token(
         subject=str(user.id),
         tenant_id=user.tenant_id,
+        token_version=user.token_version,
     )
 
     return access_token, new_refresh_token
@@ -135,8 +137,9 @@ def _decode_refresh_token(refresh_token: str) -> dict:
     jti = payload.get("jti")
     expires_at = payload.get("exp")
     tenant_id = payload.get("tenant_id")
+    token_version = payload.get("token_version")
 
-    if not jti or not expires_at or tenant_id is None:
+    if not jti or not expires_at or tenant_id is None or token_version is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
@@ -183,5 +186,12 @@ def _get_active_user_from_refresh_payload(db: Session, payload: dict) -> User:
         )
 
     assert_active_tenant_membership(user)
+
+    refresh_token_version = payload.get("token_version")
+    if refresh_token_version != user.token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has been revoked",
+        )
 
     return user

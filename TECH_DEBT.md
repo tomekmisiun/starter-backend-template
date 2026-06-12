@@ -34,8 +34,8 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-011 | Unknown worker job types log a warning then are acknowledged (`app/worker.py`). | Schema drift or typos silently drop jobs. | Route unknown types to DLQ instead of ack. | S | Done |
 | TD-012 | Nearly all routes are sync `def` with sync SQLAlchemy sessions. | Thread pool exhaustion under concurrent DB-bound load before DB maxes out. | Async SQLAlchemy + async routes, or explicit multi-worker sync sizing. | XL | Open |
 | TD-013 | Default DB pool (`pool_size=5`, `max_overflow=10`) with no startup visibility. | Naive horizontal scaling exhausts Postgres `max_connections`. | Log effective pool; document `(workers × replicas × pool)` formula. | S | Done |
-| TD-014 | Refresh tokens omit `token_version` (`app/core/security.py`). | Compromised refresh remains valid until rotation after role change/password reset. | Embed and validate `token_version` on refresh. | M | Open |
-| TD-015 | `/auth/refresh` and `/auth/logout` have no rate limits (`app/api/routes/auth.py`). | Refresh grinding amplifies Redis and DB load. | Add per-IP and per-token-hash limits. | S | Open |
+| TD-014 | Refresh tokens omit `token_version` (`app/core/security.py`). | Compromised refresh remains valid until rotation after role change/password reset. | Embed and validate `token_version` on refresh. | M | Done |
+| TD-015 | `/auth/refresh` and `/auth/logout` have no rate limits (`app/api/routes/auth.py`). | Refresh grinding amplifies Redis and DB load. | Add per-IP and per-token-hash limits. | S | Done |
 
 ---
 
@@ -73,7 +73,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-043 | Possible double migration on deploy (SSH script + runner `deploy_migrate.sh`). | Redundant Alembic runs confuse runbooks. | Deduplicate migration step in deploy workflow. | S | Open |
 | TD-044 | `release.yml` publishes `latest` tag while production deploy discourages it. | Easy misuse of mutable tag in production. | Document tension or stop tagging `latest`. | S | Open |
 | TD-045 | `BaseHTTPMiddleware` used for request logging (`app/core/middleware.py`). | Extra latency under high load (known Starlette overhead). | Pure ASGI middleware. | M | Open |
-| TD-046 | JWT access/refresh TTLs hardcoded (30 min / 7 days). | Product policy changes require code edits across forks. | Env-driven TTL settings. | S | Open |
+| TD-046 | JWT access/refresh TTLs hardcoded (30 min / 7 days). | Product policy changes require code edits across forks. | Env-driven TTL settings. | S | Done |
 | TD-047 | Duplicate `UserRead` schema in `app/schemas/auth.py` and `app/schemas/user.py`. | API contract drift risk. | Consolidate to single schema module. | S | Open |
 | TD-048 | Alertmanager receiver is empty stub (`observability/alertmanager/alertmanager.yml`). | Local alerts go nowhere; forks assume routing works. | Document as stub; provide example receiver config. | S | Open |
 
@@ -99,10 +99,10 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | Severity | Open | Done |
 |----------|------|------|
 | Critical | 1 | 3 |
-| High | 4 | 7 |
-| Medium | 33 | 0 |
+| High | 2 | 9 |
+| Medium | 32 | 1 |
 | Low | 8 | 0 |
-| **Total** | **46** | **10** |
+| **Total** | **43** | **13** |
 
 Open counts reflect post-P0 state (322 tests, June 2026). **TD-004** remains
 **Open** — production contract documented in `docs/redis-production-contract.md`;

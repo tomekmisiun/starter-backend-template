@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies.rate_limit import (
     auth_login_rate_limit,
+    auth_logout_rate_limit,
+    auth_refresh_rate_limit,
     auth_register_rate_limit,
     password_reset_rate_limit,
 )
@@ -99,7 +101,8 @@ def me(current_user: User = Depends(get_current_user)):
     response_model=Token,
     summary="Rotate access and refresh tokens",
     description="Exchange a valid refresh token for a new access/refresh pair.",
-    responses=AUTH_ERROR_RESPONSES,
+    responses={**AUTH_ERROR_RESPONSES, **RATE_LIMITED_ERROR_RESPONSES},
+    dependencies=[Depends(auth_refresh_rate_limit())],
 )
 def refresh_token(
     token_data: RefreshTokenRequest,
@@ -118,7 +121,8 @@ def refresh_token(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Logout and revoke refresh token",
     description="Revokes the submitted refresh token in Redis.",
-    responses=AUTH_ERROR_RESPONSES,
+    responses={**AUTH_ERROR_RESPONSES, **RATE_LIMITED_ERROR_RESPONSES},
+    dependencies=[Depends(auth_logout_rate_limit())],
 )
 def logout(token_data: LogoutRequest):
     logout_user(token_data.refresh_token)

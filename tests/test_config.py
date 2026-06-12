@@ -259,6 +259,34 @@ def test_settings_accepts_rate_limit_config():
     assert settings.rate_limit_default_window_seconds == 30
 
 
+def test_settings_accepts_jwt_ttl_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        access_token_expire_minutes=15,
+        refresh_token_expire_days=14,
+    )
+
+    assert settings.access_token_expire_minutes == 15
+    assert settings.refresh_token_expire_days == 14
+
+
+def test_settings_accepts_auth_refresh_and_logout_rate_limit_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        auth_refresh_rate_limit_limit=20,
+        auth_refresh_rate_limit_window_seconds=120,
+        auth_logout_rate_limit_limit=10,
+        auth_logout_rate_limit_window_seconds=90,
+    )
+
+    assert settings.auth_refresh_rate_limit_limit == 20
+    assert settings.auth_refresh_rate_limit_window_seconds == 120
+    assert settings.auth_logout_rate_limit_limit == 10
+    assert settings.auth_logout_rate_limit_window_seconds == 90
+
+
 def test_settings_rejects_non_positive_rate_limit_config():
     with pytest.raises(ValidationError):
         Settings(

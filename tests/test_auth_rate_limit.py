@@ -71,3 +71,44 @@ def test_register_returns_429_after_configured_limit(client):
         json={"email": "register-limit-blocked@example.com", "password": "password123"},
     )
     assert response.status_code == 429
+
+
+def test_refresh_returns_429_after_configured_limit(client):
+    client.post(
+        "/auth/register",
+        json={"email": "refresh-limit@example.com", "password": "password123"},
+    )
+    login_response = client.post(
+        "/auth/login",
+        json={"email": "refresh-limit@example.com", "password": "password123"},
+    )
+    refresh_token = login_response.json()["refresh_token"]
+
+    for _ in range(settings.auth_refresh_rate_limit_limit):
+        response = client.post(
+            "/auth/refresh",
+            json={"refresh_token": refresh_token},
+        )
+        assert response.status_code == 200
+        refresh_token = response.json()["refresh_token"]
+
+    response = client.post(
+        "/auth/refresh",
+        json={"refresh_token": refresh_token},
+    )
+    assert response.status_code == 429
+
+
+def test_logout_returns_429_after_configured_limit(client):
+    for _ in range(settings.auth_logout_rate_limit_limit):
+        response = client.post(
+            "/auth/logout",
+            json={"refresh_token": "invalid-token"},
+        )
+        assert response.status_code == 401
+
+    response = client.post(
+        "/auth/logout",
+        json={"refresh_token": "invalid-token"},
+    )
+    assert response.status_code == 429
