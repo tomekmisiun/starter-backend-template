@@ -74,10 +74,16 @@ class Settings(BaseSettings):
     password_reset_token_expire_minutes: int = Field(default=30, gt=0)
     worker_queue_name: str = "app_jobs"
     worker_failed_queue_name: str = "app_jobs_failed"
+    worker_processing_queue_name: str = "app_jobs_processing"
+    worker_delayed_queue_name: str = "app_jobs_delayed"
     worker_poll_timeout_seconds: int = Field(default=5, gt=0)
     worker_max_retries: int = Field(default=3, ge=0)
+    worker_retry_backoff_base_seconds: int = Field(default=5, gt=0)
+    worker_retry_backoff_max_seconds: int = Field(default=300, gt=0)
     worker_maintenance_enabled: bool = True
     worker_maintenance_interval_seconds: int = Field(default=3600, gt=0)
+    worker_maintenance_lock_key: str = "app_jobs_maintenance_lock"
+    worker_maintenance_lock_ttl_seconds: int = Field(default=300, gt=0)
     users_cache_enabled: bool = True
     users_cache_ttl_seconds: int = Field(default=60, gt=0)
     s3_endpoint_url: str = "http://minio:9000"
@@ -202,6 +208,18 @@ class Settings(BaseSettings):
 
         if production_errors:
             raise ValueError("; ".join(production_errors))
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_worker_backoff(self) -> "Settings":
+        if (
+            self.worker_retry_backoff_max_seconds
+            < self.worker_retry_backoff_base_seconds
+        ):
+            raise ValueError(
+                "worker_retry_backoff_max_seconds must be greater than or equal to worker_retry_backoff_base_seconds",
+            )
 
         return self
 
