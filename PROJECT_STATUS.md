@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/ci-security-enforcement`.
+`feature/production-deployment-automation`.
 
 Current architecture:
 
@@ -139,8 +139,8 @@ Production-readiness summary:
 - CI/CD quality foundation with pre-commit enforcement, pytest coverage
   artifacts, enforced coverage floor, blocking Trivy image policy checks,
   advisory SARIF upload, blocking runtime dependency review on pull requests,
-  GHCR release image publishing, and a manual deployment placeholder workflow.
-  Deployment automation still needs production hardening.
+  GHCR release image publishing, and a manual GitHub Actions deploy workflow
+  with hook/SSH promotion, optional migrations, and smoke checks.
 - Operations and scale regression coverage for migration downgrade/upgrade
   rehearsal, logical backup/restore rehearsal, worker failed-job CLI replay,
   Redis outage behavior, cache-miss consistency, and OpenAPI contract checks.
@@ -191,6 +191,10 @@ Production-readiness summary:
   Redis auth/TLS/timeouts, CORS and trusted host middleware, security headers,
   production validation for Redis and trusted hosts, and production server
   guidance in `docs/production-deployment.md`.
+- Production deployment automation with a manual GitHub Actions workflow,
+  provider-neutral promotion scripts for deploy hooks and SSH compose rollout,
+  optional runner-side Alembic migrations, post-deploy smoke checks, and
+  `docker-compose.prod.yml` for VM-style deployments.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
@@ -199,10 +203,6 @@ Production-readiness summary:
 The project should still be treated as a production-ready template foundation,
 not a finished production platform. The following gaps are template-wide enough
 to track before calling the repository complete for high-scale reuse.
-
-- P0: Production deployment automation.
-  The repository has provider-neutral deployment documentation and a placeholder
-  workflow, but no executable staging/production deployment path.
 
 - P1: Worker reliability.
   Background jobs need stronger retry backoff, dead-letter metadata, visibility
@@ -255,7 +255,6 @@ mark them as completed until the implementation and regression coverage are on
 
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
-| P0 | Production deployment automation | Add an executable staging/production deployment path beyond the placeholder workflow. | `feature/production-deployment-automation` |
 | P1 | Worker reliability | Improve retries, backoff, failed-job metadata, scheduler coordination, and job idempotency patterns. | `feature/worker-reliability` |
 | P1 | Production observability hardening | Make metrics/tracing useful across multi-worker and multi-instance production deployments. | `feature/observability-production-hardening` |
 | P1 | Webhook and idempotency hardening | Improve replay protection, concurrent duplicate handling, timestamp validation, and secret enforcement. | `feature/webhook-idempotency-hardening` |
@@ -271,22 +270,19 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/production-deployment-automation
+feature/worker-reliability
 ```
 
 Recommended scope:
 
-- Replace the manual deploy placeholder with an executable staging/production
-  promotion path appropriate for the chosen hosting model.
-- Wire image promotion, migration execution, and smoke checks into deployment
-  automation.
-- Keep provider-specific secrets and infrastructure outside the repository.
+- Add stronger retry backoff and dead-letter metadata for background jobs.
+- Improve scheduler coordination and document job idempotency patterns.
+- Add regression coverage for worker failure and replay behavior.
 
 Expected validation:
 
-- Deployment workflow dry run or staging rehearsal
 - `make validate`
-- Post-deploy smoke checks documented in `docs/production-deployment.md`
+- Worker-focused tests and any Redis integration coverage touched by the change
 
 ## 6. Rules For Updating This File
 

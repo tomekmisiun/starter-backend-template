@@ -64,6 +64,12 @@ seed:
 smoke:
 	API_BASE_URL=$(API_BASE_URL) DEV_ADMIN_EMAIL=$(DEV_ADMIN_EMAIL) DEV_PASSWORD=$(DEV_PASSWORD) ./scripts/smoke_test.sh
 
+ENVIRONMENT ?= staging
+IMAGE_TAG ?= latest
+
+deploy-dry-run:
+	ENVIRONMENT=$(ENVIRONMENT) IMAGE_REF=ghcr.io/example/starter-backend-template/api:$(IMAGE_TAG) DRY_RUN=true RUN_MIGRATIONS=true bash scripts/deploy_promote.sh
+
 validate:
 	docker compose run --rm api ruff check .
 	docker compose run --rm api pytest -v

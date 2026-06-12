@@ -421,7 +421,8 @@ GitHub Actions workflows:
   dependency changes with `high` or `critical` vulnerabilities.
 - `dependabot.yml` — weekly version update PRs for uv, GitHub Actions, and Docker.
 - `release.yml` — publishes tagged API images to GHCR on `v*` tags.
-- `deploy.yml` — manual deployment placeholder for staging/production promotion.
+- `deploy.yml` — manual staging/production promotion with image verification,
+  optional hook/SSH promotion, migrations, and smoke checks.
 
 The CI pipeline starts PostgreSQL, the test database, Redis, and MinIO through
 Docker Compose, then runs pytest on the GitHub runner. Coverage below 85% fails
@@ -436,8 +437,15 @@ make test-coverage
 
 This uses the same 85% coverage floor as CI.
 
+Dry-run a deployment promotion plan locally:
+
+```bash
+make deploy-dry-run ENVIRONMENT=staging IMAGE_TAG=1.2.3
+```
+
 Release images are published to `ghcr.io/<owner>/<repository>/api:<version>`.
-Replace the deploy workflow placeholder with your hosting provider steps.
+Configure GitHub environment secrets for hook or SSH promotion as documented in
+`docs/production-deployment.md`.
 
 ## API Overview
 
@@ -899,8 +907,8 @@ The production guide covers:
 
 ## Known Production Gaps
 
-- Production deployment automation still needs an executable staging/production
-  deployment path.
+- Production deployment automation still needs a project-specific deployment
+  backend configured through GitHub environment secrets.
 - Worker reliability, production observability, tenant isolation, webhook and
   idempotency hardening, file upload production safety, backup automation, and
   load/concurrency testing remain open roadmap items.
