@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from app.core.config import settings
 from app.core.job_queue import (
     Job,
@@ -7,6 +9,7 @@ from app.core.job_queue import (
     enqueue_job,
     move_job_to_failed_queue,
     promote_delayed_jobs,
+    reclaim_stale_processing_jobs,
     schedule_retry,
     try_acquire_maintenance_lock,
 )
@@ -120,14 +123,22 @@ def test_dequeue_moves_job_into_processing_queue():
         timeout_seconds=1,
     )
 
-    assert dequeued_job == enqueued_job
+    assert dequeued_job == enqueued_job.with_processing_started_at(
+        started_at=dequeued_job.processing_started_at,
+    )
+    assert dequeued_job.processing_started_at is not None
     assert redis.queues["test_jobs"] == []
-    assert redis.queues["test_processing"] == [enqueued_job.to_json()]
+    assert redis.queues["test_processing"] == [dequeued_job.to_json()]
 
 
 def test_ack_job_removes_job_from_processing_queue():
     redis = FakeRedis()
-    job = Job(id="job-id", type="demo", payload={"value": 1})
+    job = Job(
+        id="job-id",
+        type="demo",
+        payload={"value": 1},
+        processing_started_at="2026-01-01T00:00:00+00:00",
+    )
     redis.lpush("test_processing", job.to_json())
 
     ack_job(job, redis=redis, processing_queue_name="test_processing")
@@ -137,7 +148,13 @@ def test_ack_job_removes_job_from_processing_queue():
 
 def test_schedule_retry_moves_job_to_delayed_queue_with_backoff():
     redis = FakeRedis()
-    job = Job(id="job-id", type="demo", payload={"value": 1}, attempts=0)
+    job = Job(
+        id="job-id",
+        type="demo",
+        payload={"value": 1},
+        attempts=0,
+        processing_started_at="2026-01-01T00:00:00+00:00",
+    )
     redis.lpush("test_processing", job.to_json())
 
     retried_job = schedule_retry(
@@ -178,7 +195,13 @@ def test_promote_delayed_jobs_moves_due_jobs_back_to_main_queue():
 
 def test_move_job_to_failed_queue_persists_dead_letter_metadata():
     redis = FakeRedis()
-    job = Job(id="job-id", type="demo", payload={"value": 1}, attempts=3)
+    job = Job(
+        id="job-id",
+        type="demo",
+        payload={"value": 1},
+        attempts=3,
+        processing_started_at="2026-01-01T00:00:00+00:00",
+    )
     redis.lpush("test_processing", job.to_json())
 
     failed_job = move_job_to_failed_queue(
@@ -200,3 +223,66 @@ def test_try_acquire_maintenance_lock_is_exclusive():
 
     assert try_acquire_maintenance_lock(redis=redis, lock_key="maintenance") is True
     assert try_acquire_maintenance_lock(redis=redis, lock_key="maintenance") is False
+
+
+def test_reclaim_stale_processing_jobs_returns_job_to_main_queue():
+    redis = FakeRedis()
+    stale_started_at = (
+        datetime.now(timezone.utc)
+        - timedelta(seconds=settings.worker_processing_visibility_timeout_seconds + 1)
+    ).isoformat()
+    stale_job = Job(
+        id="job-id",
+        type="demo",
+        payload={"value": 1},
+        processing_started_at=stale_started_at,
+    )
+    redis.lpush("test_processing", stale_job.to_json())
+
+    reclaimed_count = reclaim_stale_processing_jobs(
+        redis=redis,
+        queue_name="test_jobs",
+        processing_queue_name="test_processing",
+        now=datetime.now(timezone.utc),
+    )
+
+    assert reclaimed_count == 1
+    assert redis.queues["test_processing"] == []
+    assert redis.queues["test_jobs"] == [stale_job.without_processing_started_at().to_json()]
+
+
+def test_reclaim_stale_processing_jobs_reclaims_jobs_without_timestamp():
+    redis = FakeRedis()
+    legacy_job = Job(id="job-id", type="demo", payload={"value": 1})
+    redis.lpush("test_processing", legacy_job.to_json())
+
+    reclaimed_count = reclaim_stale_processing_jobs(
+        redis=redis,
+        queue_name="test_jobs",
+        processing_queue_name="test_processing",
+    )
+
+    assert reclaimed_count == 1
+    assert redis.queues["test_processing"] == []
+    assert redis.queues["test_jobs"] == [legacy_job.to_json()]
+
+
+def test_reclaim_stale_processing_jobs_skips_fresh_jobs():
+    redis = FakeRedis()
+    fresh_job = Job(
+        id="job-id",
+        type="demo",
+        payload={"value": 1},
+        processing_started_at=datetime.now(timezone.utc).isoformat(),
+    )
+    redis.lpush("test_processing", fresh_job.to_json())
+
+    reclaimed_count = reclaim_stale_processing_jobs(
+        redis=redis,
+        queue_name="test_jobs",
+        processing_queue_name="test_processing",
+    )
+
+    assert reclaimed_count == 0
+    assert redis.queues["test_processing"] == [fresh_job.to_json()]
+    assert redis.queues.get("test_jobs", []) == []

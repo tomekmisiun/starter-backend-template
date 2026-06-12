@@ -22,6 +22,7 @@ class Job:
     request_id: str | None = None
     last_error: str | None = None
     failed_at: str | None = None
+    processing_started_at: str | None = None
 
     def to_json(self) -> str:
         data = {
@@ -40,6 +41,9 @@ class Job:
         if self.failed_at is not None:
             data["failed_at"] = self.failed_at
 
+        if self.processing_started_at is not None:
+            data["processing_started_at"] = self.processing_started_at
+
         return json.dumps(data)
 
     def to_dict(self) -> dict:
@@ -56,6 +60,36 @@ class Job:
             request_id=data.get("request_id"),
             last_error=data.get("last_error"),
             failed_at=data.get("failed_at"),
+            processing_started_at=data.get("processing_started_at"),
+        )
+
+    def with_processing_started_at(
+        self,
+        started_at: str | None = None,
+    ) -> "Job":
+        timestamp = started_at or datetime.now(timezone.utc).isoformat()
+
+        return Job(
+            id=self.id,
+            type=self.type,
+            payload=self.payload,
+            attempts=self.attempts,
+            request_id=self.request_id,
+            last_error=self.last_error,
+            failed_at=self.failed_at,
+            processing_started_at=timestamp,
+        )
+
+    def without_processing_started_at(self) -> "Job":
+        return Job(
+            id=self.id,
+            type=self.type,
+            payload=self.payload,
+            attempts=self.attempts,
+            request_id=self.request_id,
+            last_error=self.last_error,
+            failed_at=self.failed_at,
+            processing_started_at=None,
         )
 
     def with_next_attempt(self) -> "Job":
@@ -67,6 +101,7 @@ class Job:
             request_id=self.request_id,
             last_error=self.last_error,
             failed_at=self.failed_at,
+            processing_started_at=None,
         )
 
     def with_error(self, message: str) -> "Job":
@@ -78,6 +113,7 @@ class Job:
             request_id=self.request_id,
             last_error=message[:MAX_JOB_ERROR_LENGTH],
             failed_at=self.failed_at,
+            processing_started_at=self.processing_started_at,
         )
 
     def with_failed_at(self, failed_at: str | None = None) -> "Job":
@@ -91,6 +127,7 @@ class Job:
             request_id=self.request_id,
             last_error=self.last_error,
             failed_at=timestamp,
+            processing_started_at=self.processing_started_at,
         )
 
 
@@ -132,7 +169,14 @@ def dequeue_job(
     if raw_job is None:
         return None
 
-    return Job.from_json(raw_job)
+    job = Job.from_json(raw_job)
+    processing_job = job.with_processing_started_at()
+
+    if processing_job.to_json() != raw_job:
+        redis.lrem(processing_queue_name, 1, raw_job)
+        redis.lpush(processing_queue_name, processing_job.to_json())
+
+    return processing_job
 
 
 def ack_job(
@@ -181,6 +225,38 @@ def promote_delayed_jobs(
             promoted_count += 1
 
     return promoted_count
+
+
+def reclaim_stale_processing_jobs(
+    *,
+    redis: Redis = redis_client,
+    queue_name: str = settings.worker_queue_name,
+    processing_queue_name: str = settings.worker_processing_queue_name,
+    visibility_timeout_seconds: int = settings.worker_processing_visibility_timeout_seconds,
+    now: datetime | None = None,
+) -> int:
+    current_time = now or datetime.now(timezone.utc)
+    reclaimed_count = 0
+
+    for raw_job in redis.lrange(processing_queue_name, 0, -1):
+        job = Job.from_json(raw_job)
+        started_at = (
+            datetime.fromisoformat(job.processing_started_at)
+            if job.processing_started_at is not None
+            else None
+        )
+        is_stale = started_at is None or (
+            current_time - started_at
+        ).total_seconds() >= visibility_timeout_seconds
+
+        if not is_stale:
+            continue
+
+        if redis.lrem(processing_queue_name, 1, raw_job):
+            redis.lpush(queue_name, job.without_processing_started_at().to_json())
+            reclaimed_count += 1
+
+    return reclaimed_count
 
 
 def requeue_job(
