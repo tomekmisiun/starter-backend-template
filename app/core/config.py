@@ -275,6 +275,17 @@ class Settings(BaseSettings):
                     f"metrics_bearer_token is required in {environment_name}",
                 )
 
+        if environment_name == "production":
+            if not self.upload_malware_scan_enabled:
+                errors.append(
+                    "upload_malware_scan_enabled must be true in production",
+                )
+
+            if self.upload_malware_scanner_url.strip() == "":
+                errors.append(
+                    "upload_malware_scanner_url is required in production",
+                )
+
         return errors
 
     @model_validator(mode="after")

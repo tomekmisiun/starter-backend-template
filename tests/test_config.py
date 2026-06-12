@@ -25,6 +25,8 @@ def production_settings_kwargs():
         "rate_limit_trust_forwarded_headers": True,
         "metrics_bearer_token": "metrics-bearer-token-with-32-characters-min",
         "webhook_signature_secret": "production-webhook-secret-with-32-characters",
+        "upload_malware_scan_enabled": True,
+        "upload_malware_scanner_url": "https://scanner.example.test/scan",
     }
 
 
@@ -178,6 +180,34 @@ def test_settings_accepts_strong_production_secret_key():
     assert settings.environment == "production"
     assert settings.secret_key == "strong-production-secret-key-value"
     assert settings.legacy_routes_enabled is False
+
+
+def test_settings_rejects_production_without_malware_scanner_url():
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(
+            _env_file=None,
+            **{
+                **production_settings_kwargs(),
+                "upload_malware_scanner_url": "",
+            },
+        )
+
+    error_message = str(exc_info.value)
+    assert "upload_malware_scanner_url is required in production" in error_message
+
+
+def test_settings_rejects_production_with_malware_scan_disabled():
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(
+            _env_file=None,
+            **{
+                **production_settings_kwargs(),
+                "upload_malware_scan_enabled": False,
+            },
+        )
+
+    error_message = str(exc_info.value)
+    assert "upload_malware_scan_enabled must be true in production" in error_message
 
 
 def test_settings_default_legacy_routes_enabled_in_development():
