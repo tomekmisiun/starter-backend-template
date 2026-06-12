@@ -8,36 +8,7 @@ from app.core.job_queue import (
 )
 from app.core.request_context import request_id_var
 from app.worker import process_next_job, run_scheduled_maintenance
-
-
-class FakeRedis:
-    def __init__(self):
-        self.queues = {}
-
-    def lpush(self, queue_name: str, value: str) -> None:
-        self.queues.setdefault(queue_name, []).insert(0, value)
-
-    def brpop(self, queue_name: str, timeout: int):
-        queue = self.queues.get(queue_name, [])
-
-        if not queue:
-            return None
-
-        return queue_name, queue.pop()
-
-    def lrange(self, queue_name: str, start: int, end: int):
-        queue = self.queues.get(queue_name, [])
-        stop = end + 1 if end >= 0 else None
-
-        return queue[start:stop]
-
-    def rpop(self, queue_name: str):
-        queue = self.queues.get(queue_name, [])
-
-        if not queue:
-            return None
-
-        return queue.pop()
+from tests.test_job_queue import FakeRedis
 
 
 def test_enqueue_job_propagates_request_id_from_context():
@@ -69,6 +40,7 @@ def test_enqueue_and_dequeue_job_round_trip():
     dequeued_job = dequeue_job(
         redis=redis,
         queue_name="test_jobs",
+        processing_queue_name="test_processing",
         timeout_seconds=1,
     )
 
@@ -81,6 +53,7 @@ def test_dequeue_job_returns_none_when_queue_is_empty():
     dequeued_job = dequeue_job(
         redis=redis,
         queue_name="test_jobs",
+        processing_queue_name="test_processing",
         timeout_seconds=1,
     )
 
@@ -94,11 +67,14 @@ def test_list_failed_jobs_returns_failed_queue_items():
         type="send_password_reset_email",
         payload={"user_id": 123},
         attempts=3,
+        last_error="boom",
+        failed_at="2026-01-01T00:00:00+00:00",
     )
 
     move_job_to_failed_queue(
         job,
         redis=redis,
+        processing_queue_name="test_processing",
         failed_queue_name="test_failed_jobs",
     )
 
@@ -107,7 +83,9 @@ def test_list_failed_jobs_returns_failed_queue_items():
         failed_queue_name="test_failed_jobs",
     )
 
-    assert failed_jobs == [job]
+    assert failed_jobs[0].id == job.id
+    assert failed_jobs[0].last_error == "boom"
+    assert failed_jobs[0].failed_at is not None
 
 
 def test_requeue_failed_jobs_moves_jobs_back_to_main_queue():
@@ -122,6 +100,7 @@ def test_requeue_failed_jobs_moves_jobs_back_to_main_queue():
     move_job_to_failed_queue(
         job,
         redis=redis,
+        processing_queue_name="test_processing",
         failed_queue_name="test_failed_jobs",
     )
 
@@ -134,42 +113,52 @@ def test_requeue_failed_jobs_moves_jobs_back_to_main_queue():
     dequeued_job = dequeue_job(
         redis=redis,
         queue_name="test_jobs",
+        processing_queue_name="test_processing",
         timeout_seconds=1,
     )
 
     assert requeued_count == 1
-    assert dequeued_job == job
+    assert dequeued_job is not None
+    assert dequeued_job.id == job.id
+    assert dequeued_job.payload == job.payload
 
 
-def test_process_next_job_requeues_failed_job(monkeypatch):
+def test_process_next_job_schedules_retry_with_backoff(monkeypatch):
     job = Job(
         id="job-id",
         type="send_password_reset_email",
         payload={"user_id": 1},
         attempts=0,
     )
-    requeued_jobs = []
+    retried_jobs = []
     failed_jobs = []
 
+    monkeypatch.setattr("app.worker.promote_delayed_jobs", lambda: 0)
     monkeypatch.setattr("app.worker.dequeue_job", lambda: job)
     monkeypatch.setattr(
         "app.worker.handle_job",
         lambda queued_job: (_ for _ in ()).throw(RuntimeError("boom")),
     )
     monkeypatch.setattr(
-        "app.worker.requeue_job",
-        lambda failed_job: requeued_jobs.append(failed_job.with_next_attempt())
-        or failed_job.with_next_attempt(),
+        "app.worker.schedule_retry",
+        lambda failed_job, error: retried_jobs.append(failed_job)
+        or Job(
+            id=failed_job.id,
+            type=failed_job.type,
+            payload=failed_job.payload,
+            attempts=1,
+            last_error=str(error),
+        ),
     )
     monkeypatch.setattr(
         "app.worker.move_job_to_failed_queue",
-        lambda failed_job: failed_jobs.append(failed_job),
+        lambda failed_job, error=None: failed_jobs.append(failed_job),
     )
 
     processed = process_next_job()
 
     assert processed is True
-    assert requeued_jobs[0].attempts == 1
+    assert retried_jobs == [job]
     assert failed_jobs == []
 
 
@@ -180,31 +169,56 @@ def test_process_next_job_moves_job_to_failed_queue_after_max_retries(monkeypatc
         payload={"user_id": 1},
         attempts=3,
     )
-    requeued_jobs = []
+    retried_jobs = []
     failed_jobs = []
 
+    monkeypatch.setattr("app.worker.promote_delayed_jobs", lambda: 0)
     monkeypatch.setattr("app.worker.dequeue_job", lambda: job)
     monkeypatch.setattr(
         "app.worker.handle_job",
         lambda queued_job: (_ for _ in ()).throw(RuntimeError("boom")),
     )
     monkeypatch.setattr(
-        "app.worker.requeue_job",
-        lambda failed_job: requeued_jobs.append(failed_job.with_next_attempt()),
+        "app.worker.schedule_retry",
+        lambda failed_job, error: retried_jobs.append(failed_job),
     )
     monkeypatch.setattr(
         "app.worker.move_job_to_failed_queue",
-        lambda failed_job: failed_jobs.append(failed_job),
+        lambda failed_job, error=None: failed_jobs.append(failed_job) or failed_job,
     )
 
     processed = process_next_job()
 
     assert processed is True
-    assert requeued_jobs == []
+    assert retried_jobs == []
     assert failed_jobs == [job]
 
 
+def test_process_next_job_acknowledges_successful_jobs(monkeypatch):
+    job = Job(
+        id="job-id",
+        type="send_password_reset_email",
+        payload={"user_id": 1},
+        attempts=0,
+    )
+    acked_jobs = []
+
+    monkeypatch.setattr("app.worker.promote_delayed_jobs", lambda: 0)
+    monkeypatch.setattr("app.worker.dequeue_job", lambda: job)
+    monkeypatch.setattr("app.worker.handle_job", lambda queued_job: None)
+    monkeypatch.setattr(
+        "app.worker.ack_job",
+        lambda queued_job: acked_jobs.append(queued_job),
+    )
+
+    processed = process_next_job()
+
+    assert processed is True
+    assert acked_jobs == [job]
+
+
 def test_process_next_job_returns_false_without_job(monkeypatch):
+    monkeypatch.setattr("app.worker.promote_delayed_jobs", lambda: 0)
     monkeypatch.setattr("app.worker.dequeue_job", lambda: None)
 
     processed = process_next_job()
@@ -212,46 +226,41 @@ def test_process_next_job_returns_false_without_job(monkeypatch):
     assert processed is False
 
 
-def test_scheduled_maintenance_runs_when_due(monkeypatch):
+def test_scheduled_maintenance_runs_when_lock_acquired(monkeypatch):
     cleanup_calls = []
 
     class FakeSession:
         def close(self):
             pass
 
-    monkeypatch.setattr("app.worker.last_maintenance_run_at", None)
     monkeypatch.setattr("app.worker.settings.worker_maintenance_enabled", True)
-    monkeypatch.setattr(
-        "app.worker.settings.worker_maintenance_interval_seconds",
-        60,
-    )
+    monkeypatch.setattr("app.worker.try_acquire_maintenance_lock", lambda **kwargs: True)
     monkeypatch.setattr("app.worker.SessionLocal", lambda: FakeSession())
     monkeypatch.setattr(
         "app.worker.cleanup_expired_password_reset_tokens",
         lambda db: cleanup_calls.append(db) or 2,
     )
 
-    did_run = run_scheduled_maintenance(now=100)
+    did_run = run_scheduled_maintenance()
 
     assert did_run is True
     assert len(cleanup_calls) == 1
 
 
-def test_scheduled_maintenance_skips_until_interval(monkeypatch):
+def test_scheduled_maintenance_skips_when_lock_not_acquired(monkeypatch):
     cleanup_calls = []
 
-    monkeypatch.setattr("app.worker.last_maintenance_run_at", 100)
     monkeypatch.setattr("app.worker.settings.worker_maintenance_enabled", True)
     monkeypatch.setattr(
-        "app.worker.settings.worker_maintenance_interval_seconds",
-        60,
+        "app.worker.try_acquire_maintenance_lock",
+        lambda **kwargs: False,
     )
     monkeypatch.setattr(
         "app.worker.cleanup_expired_password_reset_tokens",
         lambda db: cleanup_calls.append(db),
     )
 
-    did_run = run_scheduled_maintenance(now=120)
+    did_run = run_scheduled_maintenance()
 
     assert did_run is False
     assert cleanup_calls == []
@@ -266,7 +275,7 @@ def test_scheduled_maintenance_can_be_disabled(monkeypatch):
         lambda db: cleanup_calls.append(db),
     )
 
-    did_run = run_scheduled_maintenance(now=100)
+    did_run = run_scheduled_maintenance()
 
     assert did_run is False
     assert cleanup_calls == []

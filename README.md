@@ -581,19 +581,32 @@ Worker configuration:
 
 - `WORKER_QUEUE_NAME`
 - `WORKER_FAILED_QUEUE_NAME`
+- `WORKER_PROCESSING_QUEUE_NAME`
+- `WORKER_DELAYED_QUEUE_NAME`
 - `WORKER_POLL_TIMEOUT_SECONDS`
 - `WORKER_MAX_RETRIES`
+- `WORKER_RETRY_BACKOFF_BASE_SECONDS`
+- `WORKER_RETRY_BACKOFF_MAX_SECONDS`
 - `WORKER_MAINTENANCE_ENABLED`
 - `WORKER_MAINTENANCE_INTERVAL_SECONDS`
+- `WORKER_MAINTENANCE_LOCK_KEY`
+- `WORKER_MAINTENANCE_LOCK_TTL_SECONDS`
 
-Failed jobs are retried up to `WORKER_MAX_RETRIES`. Jobs that still fail are
-moved to `WORKER_FAILED_QUEUE_NAME` for inspection. Password reset email jobs
-carry only the target `user_id`; the raw reset token is generated inside the
-worker and is never stored in Redis.
+Failed jobs are retried with exponential backoff until `WORKER_MAX_RETRIES` is
+reached. Jobs move through a processing queue for acknowledgement semantics and
+a delayed queue while waiting for retry backoff. Jobs that still fail are moved
+to `WORKER_FAILED_QUEUE_NAME` with `last_error` and `failed_at` metadata.
+Password reset email jobs carry only the target `user_id`; the raw reset token
+is generated inside the worker and is never stored in Redis.
 
-The worker runs scheduled maintenance when `WORKER_MAINTENANCE_ENABLED=true`.
-Current scheduled maintenance removes expired password reset tokens every
-`WORKER_MAINTENANCE_INTERVAL_SECONDS`.
+Scheduled maintenance uses a Redis lock so only one worker instance runs cleanup
+during a given interval when `WORKER_MAINTENANCE_ENABLED=true`.
+
+Worker reliability guidance lives in:
+
+```text
+docs/worker-reliability.md
+```
 
 Inspect failed jobs:
 
