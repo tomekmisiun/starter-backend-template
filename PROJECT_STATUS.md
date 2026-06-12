@@ -204,6 +204,10 @@ Production-readiness summary:
 - Production observability hardening with `prometheus-client` metrics,
   multi-process aggregation support, worker and dependency metrics, Sentry
   request correlation, and `docs/observability-production.md`.
+- Tenant isolation hardening with membership validation on authenticated
+  requests, inactive-tenant rejection, admin tenant lifecycle endpoints,
+  tenant-management permissions, cross-tenant denial regression tests, and
+  `docs/tenant-isolation.md`.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
@@ -212,11 +216,6 @@ Production-readiness summary:
 The project should still be treated as a production-ready template foundation,
 not a finished production platform. The following gaps are template-wide enough
 to track before calling the repository complete for high-scale reuse.
-
-- P1: Tenant isolation.
-  Current multi-tenancy is a foundation and needs tenant membership,
-  tenant-scoped authorization, provisioning lifecycle, and stronger isolation
-  guarantees before reuse in real SaaS products.
 
 - P1: Webhook and idempotency hardening.
   Add timestamped signatures, replay windows, concurrent duplicate handling,
@@ -257,7 +256,6 @@ mark them as completed until the implementation and regression coverage are on
 |----------|------|------|--------------------|
 | P1 | Webhook and idempotency hardening | Improve replay protection, concurrent duplicate handling, timestamp validation, and secret enforcement. | `feature/webhook-idempotency-hardening` |
 | P1 | File upload production hardening | Add streaming-safe upload behavior, actual object verification, and concrete scanner integration boundaries. | `feature/file-upload-production-hardening` |
-| P1 | Tenant isolation hardening | Add membership, tenant roles, provisioning flow, and stronger tenant boundary guarantees. | `feature/tenant-isolation-hardening` |
 | P2 | Backup/restore automation | Add provider-ready backup automation examples and stronger restore rehearsal workflows. | `feature/backup-restore-automation` |
 | P2 | Load and concurrency testing | Add repeatable performance thresholds and concurrency tests for critical infrastructure paths. | `feature/load-concurrency-testing` |
 
@@ -268,19 +266,19 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/tenant-isolation-hardening
+feature/webhook-idempotency-hardening
 ```
 
 Recommended scope:
 
-- Add tenant membership and tenant-scoped authorization rules.
-- Add provisioning lifecycle guidance and stronger tenant boundary guarantees.
-- Add regression coverage for cross-tenant access denial.
+- Add timestamped webhook signatures and replay windows.
+- Harden concurrent duplicate handling and production secret validation.
+- Add clearer provider-specific webhook patterns and regression coverage.
 
 Expected validation:
 
 - `make validate`
-- Tenant-focused tests for changed authorization paths
+- Webhook and idempotency tests for changed paths
 
 ## 6. Rules For Updating This File
 

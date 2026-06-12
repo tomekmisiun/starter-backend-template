@@ -17,6 +17,9 @@ class Permission(StrEnum):
     FILES_DOWNLOAD_SELF = "files.download.self"
     FILES_DELETE = "files.delete"
     FILES_DELETE_SELF = "files.delete.self"
+    TENANTS_LIST = "tenants.list"
+    TENANTS_PROVISION = "tenants.provision"
+    TENANTS_MANAGE = "tenants.manage"
 
 
 USER_PERMISSIONS = frozenset(

@@ -11,6 +11,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
+from app.services.tenant_membership_service import assert_active_tenant_membership
 from app.schemas.auth import UserCreate, UserLogin
 from app.services.user_service import invalidate_users_list_cache
 
@@ -174,5 +175,7 @@ def _get_active_user_from_refresh_payload(db: Session, payload: dict) -> User:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
         )
+
+    assert_active_tenant_membership(user)
 
     return user

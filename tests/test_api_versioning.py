@@ -12,6 +12,8 @@ V1_ROUTE_CHECKS = [
     ("GET", f"{API_V1_PREFIX}/users/", 401),
     ("GET", f"{API_V1_PREFIX}/admin", 401),
     ("GET", f"{API_V1_PREFIX}/admin/audit-logs", 401),
+    ("GET", f"{API_V1_PREFIX}/admin/tenants", 401),
+    ("POST", f"{API_V1_PREFIX}/admin/tenants", 401),
     ("POST", f"{API_V1_PREFIX}/files/upload", 401),
 ]
 

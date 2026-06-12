@@ -20,6 +20,9 @@ def test_admin_role_has_full_permission_set():
     assert Permission.USERS_LIST in permissions
     assert Permission.AUDIT_LOGS_LIST in permissions
     assert Permission.ADMIN_ACCESS in permissions
+    assert Permission.TENANTS_PROVISION in permissions
+    assert Permission.TENANTS_LIST in permissions
+    assert Permission.TENANTS_MANAGE in permissions
 
 
 def test_user_role_has_self_service_permissions_only():
@@ -30,6 +33,7 @@ def test_user_role_has_self_service_permissions_only():
     assert Permission.FILES_UPLOAD in permissions
     assert Permission.USERS_LIST not in permissions
     assert Permission.ADMIN_ACCESS not in permissions
+    assert Permission.TENANTS_PROVISION not in permissions
 
 
 def test_role_hierarchy_allows_admin_to_satisfy_user_role_checks():

@@ -665,6 +665,10 @@ The template includes tenant-aware data isolation:
 - Auth endpoints resolve the tenant from `X-Tenant-Slug` (default: `default`).
 - JWT access and refresh tokens include `tenant_id` and are validated against
   the user's tenant on every authenticated request.
+- Authenticated requests reject mismatched `X-Tenant-Slug` headers and inactive
+  tenant memberships.
+- Admin tenant lifecycle endpoints support provisioning, listing, and
+  activation/deactivation. See `docs/tenant-isolation.md`.
 
 ## Rate Limiting
 

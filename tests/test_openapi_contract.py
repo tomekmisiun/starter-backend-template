@@ -8,6 +8,8 @@ BEARER_PROTECTED_V1_OPERATIONS = [
     ("get", f"{API_V1_PREFIX}/users/"),
     ("get", f"{API_V1_PREFIX}/admin"),
     ("get", f"{API_V1_PREFIX}/admin/audit-logs"),
+    ("get", f"{API_V1_PREFIX}/admin/tenants"),
+    ("post", f"{API_V1_PREFIX}/admin/tenants"),
     ("post", f"{API_V1_PREFIX}/files/upload"),
 ]
 

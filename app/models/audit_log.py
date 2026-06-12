@@ -13,6 +13,9 @@ class AuditAction(StrEnum):
     USER_DELETED = "user.deleted"
     PASSWORD_RESET_REQUESTED = "password_reset.requested"
     PASSWORD_RESET_CONFIRMED = "password_reset.confirmed"
+    TENANT_CREATED = "tenant.created"
+    TENANT_ACTIVATED = "tenant.activated"
+    TENANT_DEACTIVATED = "tenant.deactivated"
 
 
 class AuditLog(Base):

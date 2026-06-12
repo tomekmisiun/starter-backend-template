@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
@@ -9,12 +9,18 @@ from app.core.tenant_context import tenant_id_var, tenant_slug_var
 from app.db.session import get_db
 from app.models.user import User
 from app.services.permission_service import role_includes, user_has_any_permission
+from app.services.tenant_membership_service import (
+    assert_active_tenant_membership,
+    assert_request_tenant_matches_user,
+)
+from app.services.tenant_service import get_active_tenant_by_slug
 
 
 bearer_scheme = HTTPBearer()
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
@@ -46,6 +52,13 @@ def get_current_user(
 
     if user is None or not user.is_active:
         raise credentials_exception
+
+    assert_active_tenant_membership(user)
+
+    requested_slug = request.headers.get("X-Tenant-Slug")
+    if requested_slug is not None:
+        request_tenant = get_active_tenant_by_slug(db, requested_slug)
+        assert_request_tenant_matches_user(user, request_tenant)
 
     tenant_id_var.set(user.tenant_id)
     if user.tenant is not None:
