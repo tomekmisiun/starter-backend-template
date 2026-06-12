@@ -44,7 +44,10 @@ def test_enqueue_and_dequeue_job_round_trip():
         timeout_seconds=1,
     )
 
-    assert dequeued_job == enqueued_job
+    assert dequeued_job == enqueued_job.with_processing_started_at(
+        started_at=dequeued_job.processing_started_at,
+    )
+    assert dequeued_job.processing_started_at is not None
 
 
 def test_dequeue_job_returns_none_when_queue_is_empty():

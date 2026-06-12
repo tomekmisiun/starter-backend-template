@@ -8,6 +8,7 @@ from app.core.job_queue import (
     dequeue_job,
     move_job_to_failed_queue,
     promote_delayed_jobs,
+    reclaim_stale_processing_jobs,
     schedule_retry,
     try_acquire_maintenance_lock,
 )
@@ -45,6 +46,7 @@ def handle_job(job: Job) -> None:
 
 
 def process_next_job() -> bool:
+    reclaim_stale_processing_jobs()
     promote_delayed_jobs()
     job = dequeue_job()
 
