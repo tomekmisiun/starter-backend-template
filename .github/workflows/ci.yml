@@ -85,6 +85,7 @@ jobs:
             --cov=app \
             --cov-report=term-missing \
             --cov-report=xml \
+            --cov-fail-under=85 \
             -v
 
       - name: Upload coverage report
@@ -135,8 +136,19 @@ jobs:
             starter-backend-template-api:latest \
             python -c "import fastapi, uvicorn, app.main"
 
-      - name: Scan API image with Trivy
+      - name: Enforce Trivy policy on API image
         uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: starter-backend-template-api:latest
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Generate Trivy SARIF report
+        uses: aquasecurity/trivy-action@v0.36.0
+        if: always()
+        continue-on-error: true
         with:
           image-ref: starter-backend-template-api:latest
           format: sarif
