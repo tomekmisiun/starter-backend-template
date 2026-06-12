@@ -99,6 +99,8 @@ class Settings(BaseSettings):
     sentry_traces_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
     sentry_send_default_pii: bool = False
     sentry_release: str = ""
+    prometheus_multiproc_dir: str = ""
+    metrics_instance_id: str = ""
     webhook_signature_secret: str = ""
     idempotency_ttl_seconds: int = Field(default=86400, gt=0)
 

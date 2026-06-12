@@ -13,6 +13,7 @@ from app.core.job_queue import (
 )
 from app.core.log_helpers import job_log_extra
 from app.core.logging import configure_logging
+from app.core.metrics import configure_metrics, observe_worker_job, observe_worker_maintenance
 from app.db.session import SessionLocal
 from app.services.password_reset_service import (
     SEND_PASSWORD_RESET_EMAIL_JOB,
@@ -56,6 +57,7 @@ def process_next_job() -> bool:
     except Exception as exc:
         if job.attempts < settings.worker_max_retries:
             retried_job = schedule_retry(job, exc)
+            observe_worker_job(job_type=job.type, status="retry_scheduled")
             logger.exception(
                 "worker_job_scheduled_for_retry",
                 extra={
@@ -69,6 +71,7 @@ def process_next_job() -> bool:
             return True
 
         failed_job = move_job_to_failed_queue(job, exc)
+        observe_worker_job(job_type=job.type, status="failed")
         logger.exception(
             "worker_job_failed",
             extra={**job_log_extra(failed_job), "attempts": failed_job.attempts},
@@ -76,6 +79,7 @@ def process_next_job() -> bool:
         return True
 
     ack_job(job)
+    observe_worker_job(job_type=job.type, status="completed")
     logger.info("worker_job_completed", extra=job_log_extra(job))
     return True
 
@@ -89,6 +93,7 @@ def run_scheduled_maintenance(now: float | None = None) -> bool:
     if not try_acquire_maintenance_lock(
         ttl_seconds=settings.worker_maintenance_interval_seconds,
     ):
+        observe_worker_maintenance(status="skipped")
         return False
 
     db = SessionLocal()
@@ -102,12 +107,14 @@ def run_scheduled_maintenance(now: float | None = None) -> bool:
         "worker_maintenance_completed expired_password_reset_tokens_deleted=%s",
         deleted_count,
     )
+    observe_worker_maintenance(status="completed")
 
     return True
 
 
 def run_worker() -> None:
     configure_logging()
+    configure_metrics()
     logger.info("worker_started queue=%s", settings.worker_queue_name)
 
     while True:

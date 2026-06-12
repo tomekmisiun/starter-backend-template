@@ -1,17 +1,128 @@
-import threading
-from collections import defaultdict
-from time import time
+import os
+from typing import TYPE_CHECKING
 
-
-REQUEST_DURATION_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0)
-PROCESS_START_TIME = time()
-
-_lock = threading.Lock()
-_request_counts: dict[tuple[str, str, str], int] = defaultdict(int)
-_request_duration_counts: dict[tuple[str, str, str], list[int]] = defaultdict(
-    lambda: [0] * len(REQUEST_DURATION_BUCKETS)
+from prometheus_client import (
+    REGISTRY,
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+    multiprocess,
 )
-_request_duration_sums: dict[tuple[str, str, str], float] = defaultdict(float)
+
+from app.core.config import settings
+
+
+REQUEST_DURATION_BUCKETS = (
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    1.0,
+    2.5,
+    5.0,
+)
+
+_registry: CollectorRegistry | None = None
+_multiproc_dir: str | None = None
+_metrics_configured = False
+_http_requests_total: Counter | None = None
+_http_request_duration_seconds: Histogram | None = None
+_worker_jobs_total: Counter | None = None
+_worker_maintenance_runs_total: Counter | None = None
+_dependency_checks_total: Counter | None = None
+_dependency_health_status: Gauge | None = None
+_app_info: Gauge | None = None
+
+if TYPE_CHECKING:
+    from app.core.config import Settings
+
+
+def configure_metrics(app_settings: "Settings | None" = None) -> None:
+    global _registry, _multiproc_dir, _metrics_configured
+    global _http_requests_total, _http_request_duration_seconds
+    global _worker_jobs_total, _worker_maintenance_runs_total
+    global _dependency_checks_total, _dependency_health_status, _app_info
+
+    if _metrics_configured:
+        return
+
+    active_settings = app_settings or settings
+    configured_multiproc_dir = active_settings.prometheus_multiproc_dir.strip()
+
+    if configured_multiproc_dir:
+        os.makedirs(configured_multiproc_dir, exist_ok=True)
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = configured_multiproc_dir
+        _multiproc_dir = configured_multiproc_dir
+        _registry = CollectorRegistry()
+        multiprocess.MultiProcessCollector(_registry)
+    else:
+        _multiproc_dir = None
+        _registry = None
+
+    counter_kwargs = {"multiprocess_mode": "livesum"} if _multiproc_dir else {}
+    gauge_kwargs = {"multiprocess_mode": "mostrecent"} if _multiproc_dir else {}
+
+    _http_requests_total = Counter(
+        "http_requests_total",
+        "Total HTTP requests.",
+        ["method", "path", "status_code"],
+        **counter_kwargs,
+    )
+    _http_request_duration_seconds = Histogram(
+        "http_request_duration_seconds",
+        "HTTP request duration in seconds.",
+        ["method", "path", "status_code"],
+        buckets=REQUEST_DURATION_BUCKETS,
+        **counter_kwargs,
+    )
+    _worker_jobs_total = Counter(
+        "worker_jobs_total",
+        "Total worker jobs processed.",
+        ["job_type", "status"],
+        **counter_kwargs,
+    )
+    _worker_maintenance_runs_total = Counter(
+        "worker_maintenance_runs_total",
+        "Total worker maintenance runs.",
+        ["status"],
+        **counter_kwargs,
+    )
+    _dependency_checks_total = Counter(
+        "dependency_checks_total",
+        "Total dependency health checks.",
+        ["dependency", "status"],
+        **counter_kwargs,
+    )
+    _dependency_health_status = Gauge(
+        "dependency_health_status",
+        "Latest dependency health status (1=ok, 0=unavailable).",
+        ["dependency"],
+        **gauge_kwargs,
+    )
+
+    app_info_labels = ["service", "environment"]
+    app_info_label_values = {
+        "service": "starter-backend-template",
+        "environment": active_settings.environment,
+    }
+
+    if active_settings.metrics_instance_id.strip():
+        app_info_labels.append("instance_id")
+        app_info_label_values["instance_id"] = active_settings.metrics_instance_id.strip()
+
+    _app_info = Gauge(
+        "app_info",
+        "Application info.",
+        app_info_labels,
+        **gauge_kwargs,
+    )
+    _app_info.labels(**app_info_label_values).set(1)
+    _metrics_configured = True
 
 
 def get_route_path(scope: dict) -> str:
@@ -30,76 +141,54 @@ def observe_request(
     status_code: int,
     duration_seconds: float,
 ) -> None:
-    key = (method, path, str(status_code))
+    if _http_requests_total is None or _http_request_duration_seconds is None:
+        configure_metrics()
 
-    with _lock:
-        _request_counts[key] += 1
-        _request_duration_sums[key] += duration_seconds
+    labels = {
+        "method": method,
+        "path": path,
+        "status_code": str(status_code),
+    }
+    _http_requests_total.labels(**labels).inc()
+    _http_request_duration_seconds.labels(**labels).observe(duration_seconds)
 
-        for index, bucket in enumerate(REQUEST_DURATION_BUCKETS):
-            if duration_seconds <= bucket:
-                _request_duration_counts[key][index] += 1
+
+def observe_worker_job(*, job_type: str, status: str) -> None:
+    if _worker_jobs_total is None:
+        configure_metrics()
+
+    _worker_jobs_total.labels(job_type=job_type, status=status).inc()
+
+
+def observe_worker_maintenance(*, status: str) -> None:
+    if _worker_maintenance_runs_total is None:
+        configure_metrics()
+
+    _worker_maintenance_runs_total.labels(status=status).inc()
+
+
+def observe_dependency_check(*, dependency: str, status: str) -> None:
+    if _dependency_checks_total is None or _dependency_health_status is None:
+        configure_metrics()
+
+    _dependency_checks_total.labels(dependency=dependency, status=status).inc()
+    _dependency_health_status.labels(dependency=dependency).set(
+        1 if status == "ok" else 0
+    )
 
 
 def render_metrics() -> str:
-    with _lock:
-        request_counts = dict(_request_counts)
-        duration_counts = {
-            key: list(counts) for key, counts in _request_duration_counts.items()
-        }
-        duration_sums = dict(_request_duration_sums)
+    if _http_requests_total is None:
+        configure_metrics()
 
-    lines = [
-        "# HELP app_info Application info.",
-        "# TYPE app_info gauge",
-        'app_info{service="starter-backend-template"} 1',
-        "# HELP process_start_time_seconds Start time of the process since unix epoch.",
-        "# TYPE process_start_time_seconds gauge",
-        f"process_start_time_seconds {PROCESS_START_TIME}",
-        "# HELP http_requests_total Total HTTP requests.",
-        "# TYPE http_requests_total counter",
-    ]
+    if _registry is not None:
+        return generate_latest(_registry).decode("utf-8")
 
-    for key, count in sorted(request_counts.items()):
-        lines.append(f"http_requests_total{{{_labels_for_key(key)}}} {count}")
-
-    lines.extend(
-        [
-            "# HELP http_request_duration_seconds HTTP request duration in seconds.",
-            "# TYPE http_request_duration_seconds histogram",
-        ]
-    )
-
-    for key, bucket_counts in sorted(duration_counts.items()):
-        labels = _labels_for_key(key)
-
-        for bucket, count in zip(REQUEST_DURATION_BUCKETS, bucket_counts, strict=True):
-            lines.append(
-                "http_request_duration_seconds_bucket"
-                f"{{{labels},le=\"{bucket}\"}} {count}"
-            )
-
-        total_count = request_counts.get(key, 0)
-        lines.append(
-            f"http_request_duration_seconds_bucket{{{labels},le=\"+Inf\"}} {total_count}"
-        )
-        lines.append(
-            f"http_request_duration_seconds_sum{{{labels}}} {duration_sums.get(key, 0.0)}"
-        )
-        lines.append(f"http_request_duration_seconds_count{{{labels}}} {total_count}")
-
-    return "\n".join(lines) + "\n"
+    return generate_latest(REGISTRY).decode("utf-8")
 
 
-def _labels_for_key(key: tuple[str, str, str]) -> str:
-    method, path, status_code = key
+def mark_metrics_process_dead() -> None:
+    if _multiproc_dir is None:
+        return
 
-    return (
-        f'method="{_escape_label_value(method)}",'
-        f'path="{_escape_label_value(path)}",'
-        f'status_code="{_escape_label_value(status_code)}"'
-    )
-
-
-def _escape_label_value(value: str) -> str:
-    return value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
+    multiprocess.mark_process_dead(os.getpid())

@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/worker-reliability`.
+`feature/observability-production-hardening`.
 
 Current architecture:
 
@@ -154,8 +154,10 @@ Production-readiness summary:
 - Local observability stack with Promtail, Loki, and Grafana for Docker log
   collection and inspection.
 - Prometheus-compatible `/metrics` endpoint, request metrics collection,
-  Prometheus service in the local observability stack, Grafana Prometheus
-  datasource provisioning, and a local FastAPI overview dashboard.
+  worker and dependency metrics, optional multi-process aggregation, Sentry
+  request correlation, Prometheus service in the local observability stack,
+  Grafana Prometheus datasource provisioning, and a local FastAPI overview
+  dashboard.
 - Local Alertmanager service, Prometheus alert routing, and baseline FastAPI
   alert rules for target availability, 5xx error rate, and p95 latency.
 - Sentry SDK error tracking and tracing foundation with environment-driven
@@ -199,6 +201,9 @@ Production-readiness summary:
 - Worker reliability improvements with processing acknowledgement, delayed retry
   backoff, dead-letter metadata, Redis-backed maintenance locking, failed-job
   CLI metadata output, and `docs/worker-reliability.md`.
+- Production observability hardening with `prometheus-client` metrics,
+  multi-process aggregation support, worker and dependency metrics, Sentry
+  request correlation, and `docs/observability-production.md`.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
@@ -207,11 +212,6 @@ Production-readiness summary:
 The project should still be treated as a production-ready template foundation,
 not a finished production platform. The following gaps are template-wide enough
 to track before calling the repository complete for high-scale reuse.
-
-- P1: Production observability.
-  Metrics are a local foundation and need production-safe multi-process or
-  multi-instance behavior, dependency metrics, worker metrics, external alert
-  routing, and trace correlation.
 
 - P1: Tenant isolation.
   Current multi-tenancy is a foundation and needs tenant membership,
@@ -255,7 +255,6 @@ mark them as completed until the implementation and regression coverage are on
 
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
-| P1 | Production observability hardening | Make metrics/tracing useful across multi-worker and multi-instance production deployments. | `feature/observability-production-hardening` |
 | P1 | Webhook and idempotency hardening | Improve replay protection, concurrent duplicate handling, timestamp validation, and secret enforcement. | `feature/webhook-idempotency-hardening` |
 | P1 | File upload production hardening | Add streaming-safe upload behavior, actual object verification, and concrete scanner integration boundaries. | `feature/file-upload-production-hardening` |
 | P1 | Tenant isolation hardening | Add membership, tenant roles, provisioning flow, and stronger tenant boundary guarantees. | `feature/tenant-isolation-hardening` |
@@ -269,19 +268,19 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/observability-production-hardening
+feature/tenant-isolation-hardening
 ```
 
 Recommended scope:
 
-- Make metrics safe for multi-process and multi-instance production deployments.
-- Add dependency and worker metrics where useful.
-- Document external alert routing and trace correlation expectations.
+- Add tenant membership and tenant-scoped authorization rules.
+- Add provisioning lifecycle guidance and stronger tenant boundary guarantees.
+- Add regression coverage for cross-tenant access denial.
 
 Expected validation:
 
 - `make validate`
-- Metrics and observability regression coverage for changed paths
+- Tenant-focused tests for changed authorization paths
 
 ## 6. Rules For Updating This File
 

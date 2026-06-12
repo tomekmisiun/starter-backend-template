@@ -15,9 +15,11 @@ from app.api.routes.health import router as health_router
 from app.api.routes.metrics import router as metrics_router
 from app.api.v1 import api_v1_router
 from app.core.config import settings
+from app.core.metrics import configure_metrics
 from app.core.runtime import configure_runtime_middleware
 
 configure_logging()
+configure_metrics()
 initialize_error_tracking()
 
 app = FastAPI(

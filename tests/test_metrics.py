@@ -5,7 +5,8 @@ def test_metrics_endpoint_exposes_prometheus_text(client):
     assert response.headers["content-type"].startswith("text/plain")
     assert "# HELP http_requests_total" in response.text
     assert "# TYPE http_request_duration_seconds histogram" in response.text
-    assert 'app_info{service="starter-backend-template"} 1' in response.text
+    assert 'app_info{environment="' in response.text
+    assert 'service="starter-backend-template"' in response.text
 
 
 def test_metrics_record_requests(client):
@@ -36,3 +37,14 @@ def test_metrics_endpoint_does_not_record_itself(client):
     response = client.get("/metrics")
 
     assert 'path="/metrics"' not in response.text
+
+
+def test_metrics_record_dependency_checks(client):
+    client.get("/health/ready")
+
+    response = client.get("/metrics")
+
+    assert 'dependency_checks_total{dependency="database",status="ok"}' in response.text
+    assert 'dependency_checks_total{dependency="redis",status="ok"}' in response.text
+    assert 'dependency_health_status{dependency="database"} 1.0' in response.text
+    assert 'dependency_health_status{dependency="redis"} 1.0' in response.text

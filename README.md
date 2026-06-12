@@ -800,12 +800,26 @@ Current metrics include:
 
 - `http_requests_total`
 - `http_request_duration_seconds`
+- `worker_jobs_total`
+- `worker_maintenance_runs_total`
+- `dependency_checks_total`
+- `dependency_health_status`
 - `app_info`
-- `process_start_time_seconds`
+
+Observability configuration:
+
+- `PROMETHEUS_MULTIPROC_DIR`: shared directory for multi-worker Uvicorn metrics
+- `METRICS_INSTANCE_ID`: optional per-replica identifier label
 
 Request metric labels use HTTP method, route template, and status code. Route
 templates such as `/users/{user_id}` are used instead of raw request paths to
 avoid exposing request-specific values in metrics labels.
+
+Production observability guidance lives in:
+
+```text
+docs/observability-production.md
+```
 
 ### Sentry Error Tracking
 
@@ -820,7 +834,7 @@ Sentry configuration:
 - `SENTRY_RELEASE`: optional release identifier such as a git SHA or version.
 
 The app uses the configured `ENVIRONMENT` as the Sentry environment and adds
-`X-Request-ID` as a Sentry tag for request correlation.
+request correlation through the `request_id` tag and Sentry request context.
 
 ### Local Loki/Grafana Stack
 
@@ -922,6 +936,6 @@ The production guide covers:
 
 - Production deployment automation still needs a project-specific deployment
   backend configured through GitHub environment secrets.
-- Worker reliability, production observability, tenant isolation, webhook and
-  idempotency hardening, file upload production safety, backup automation, and
-  load/concurrency testing remain open roadmap items.
+- Worker reliability, tenant isolation, webhook and idempotency hardening, file
+  upload production safety, backup automation, and load/concurrency testing
+  remain open roadmap items.
