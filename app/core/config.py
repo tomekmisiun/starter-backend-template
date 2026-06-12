@@ -71,6 +71,7 @@ class Settings(BaseSettings):
     auth_register_rate_limit_limit: int = Field(default=5, gt=0)
     auth_register_rate_limit_window_seconds: int = Field(default=300, gt=0)
     registration_policy: str = "public"
+    legacy_routes_enabled: bool | None = None
     smtp_host: str = ""
     smtp_port: int = Field(default=587, gt=0)
     smtp_username: str = ""
@@ -259,6 +260,17 @@ class Settings(BaseSettings):
                 )
 
         return errors
+
+    @model_validator(mode="after")
+    def apply_legacy_routes_default(self) -> "Settings":
+        if self.legacy_routes_enabled is None:
+            object.__setattr__(
+                self,
+                "legacy_routes_enabled",
+                self.environment != "production",
+            )
+
+        return self
 
     @model_validator(mode="after")
     def validate_staging_settings(self) -> "Settings":

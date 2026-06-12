@@ -175,6 +175,29 @@ def test_settings_accepts_strong_production_secret_key():
 
     assert settings.environment == "production"
     assert settings.secret_key == "strong-production-secret-key-value"
+    assert settings.legacy_routes_enabled is False
+
+
+def test_settings_default_legacy_routes_enabled_in_development():
+    settings = Settings(
+        _env_file=None,
+        secret_key="strong-development-secret-key-value",
+        environment="development",
+    )
+
+    assert settings.legacy_routes_enabled is True
+
+
+def test_settings_allows_explicit_legacy_routes_in_production():
+    settings = Settings(
+        _env_file=None,
+        **{
+            **production_settings_kwargs(),
+            "legacy_routes_enabled": True,
+        },
+    )
+
+    assert settings.legacy_routes_enabled is True
 
 
 def test_settings_rejects_weak_production_webhook_secret():

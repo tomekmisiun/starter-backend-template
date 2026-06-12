@@ -34,7 +34,13 @@ configure_runtime_middleware(app, settings)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
-app.include_router(health_router)
-app.include_router(metrics_router)
-app.include_router(api_v1_router)
-app.include_router(legacy_api_router)
+
+def include_application_routers(application: FastAPI) -> None:
+    application.include_router(health_router)
+    application.include_router(metrics_router)
+    application.include_router(api_v1_router)
+    if settings.legacy_routes_enabled:
+        application.include_router(legacy_api_router)
+
+
+include_application_routers(app)

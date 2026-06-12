@@ -43,6 +43,27 @@ def test_legacy_routes_remain_available_for_backward_compatibility(client):
         )
 
 
+def test_legacy_routes_are_not_mounted_when_disabled(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from app.main import include_application_routers
+
+    monkeypatch.setattr("app.core.config.settings.legacy_routes_enabled", False)
+
+    test_app = FastAPI()
+    include_application_routers(test_app)
+    test_client = TestClient(test_app)
+
+    for method, path, _expected_status in LEGACY_ROUTE_CHECKS:
+        response = test_client.request(method, path)
+        assert response.status_code == 404, f"{method} {path} should be unavailable"
+
+    openapi_paths = test_client.get("/openapi.json").json()["paths"]
+    assert "/auth/login" not in openapi_paths
+    assert "/users/" not in openapi_paths
+
+
 def test_openapi_marks_legacy_routes_as_deprecated(client):
     response = client.get("/openapi.json")
 

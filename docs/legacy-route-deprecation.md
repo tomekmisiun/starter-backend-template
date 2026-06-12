@@ -11,10 +11,15 @@ clients must use `/api/v1`.
 ## Current Behavior
 
 - Versioned routes are mounted from `app/api/v1.py`.
-- Legacy routes are mounted from `app/api/legacy.py` with `deprecated=True`.
-- OpenAPI marks legacy operations as deprecated.
-- Regression tests in `tests/test_api_versioning.py` keep both namespaces
-  available until an explicit removal milestone.
+- Legacy routes are mounted from `app/api/legacy.py` with `deprecated=True` when
+  `LEGACY_ROUTES_ENABLED` is true.
+- Default: legacy routes are **enabled** in development, test, and staging, and
+  **disabled** in production (`ENVIRONMENT=production`).
+- Set `LEGACY_ROUTES_ENABLED=true` explicitly only when production still needs
+  unversioned paths during client migration.
+- OpenAPI marks legacy operations as deprecated when they are mounted.
+- Regression tests in `tests/test_api_versioning.py` cover both enabled and
+  disabled behavior.
 
 ## Recommended Migration Plan
 
@@ -41,9 +46,10 @@ When you are ready to delete legacy routes from your fork:
 
 ## What This Template Keeps
 
-This repository **keeps legacy routes mounted** so existing template consumers can
-migrate gradually. The template documents the policy and OpenAPI deprecation
-signal; it does not pick your production sunset date.
+This repository keeps legacy routes **configurable**. They are off by default in
+production to avoid doubling the protected API surface. Enable them temporarily
+with `LEGACY_ROUTES_ENABLED=true` while downstream clients migrate; remove the
+flag after traffic reaches zero.
 
 ## Related Documents
 
