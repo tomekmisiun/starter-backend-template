@@ -259,6 +259,56 @@ Production containers should run the image entrypoint without bind mounts,
 without dev dependency groups, and with environment variables supplied by the
 deployment platform.
 
+## GitHub Actions Deployment Workflow
+
+The repository includes a manual `deploy.yml` workflow for staging and
+production promotion. It supports three deployment backends:
+
+- `DEPLOY_HOOK_URL`: POST a JSON payload with the target environment, image
+  reference, and migration flag to your platform deploy hook.
+- `DEPLOY_SSH_HOST`: run `docker-compose.prod.yml` on a remote host through SSH.
+- Dry run mode: validate inputs and print the promotion plan without applying
+  changes.
+
+Configure separate GitHub environments named `staging` and `production`. Each
+environment can define its own secrets and variables.
+
+Common environment variables:
+
+- `API_BASE_URL`: base URL used by post-deploy smoke checks.
+- `REMOTE_APP_DIR`: remote directory containing `docker-compose.prod.yml` for
+  SSH deployments.
+- `SMOKE_ADMIN_EMAIL`: smoke-test login email.
+- `ALLOW_LATEST_PRODUCTION`: set to `true` only if production may deploy the
+  `latest` tag.
+
+Common environment secrets:
+
+- `DEPLOY_HOOK_URL`
+- `DEPLOY_HOOK_TOKEN`
+- `DEPLOY_SSH_HOST`
+- `DEPLOY_SSH_USER`
+- `DEPLOY_SSH_PRIVATE_KEY`
+- `DATABASE_URL`: optional runner-side Alembic execution after hook/SSH promotion.
+- `SMOKE_ADMIN_PASSWORD`
+
+Recommended promotion flow:
+
+1. Publish a release image to GHCR from `release.yml`.
+2. Run `Deploy` in GitHub Actions with `dry_run=true` first.
+3. Run the workflow again with `dry_run=false` for the target environment.
+4. Confirm smoke checks pass against `API_BASE_URL`.
+
+For VM-style deployments, copy `docker-compose.prod.yml` and a production `.env`
+file to the remote host, then configure SSH deployment secrets and
+`REMOTE_APP_DIR`.
+
+Local dry run:
+
+```bash
+make deploy-dry-run ENVIRONMENT=staging IMAGE_TAG=1.2.3
+```
+
 Recommended post-deploy smoke checks:
 
 - register/login or a project-specific auth flow
@@ -284,6 +334,7 @@ Before using this template for a real project, define:
 ## Current Template Limits
 
 This guide defines the production operating model, but the repository still
-does not include provider-specific infrastructure as code, production CI/CD
-deployment jobs, alert rules, error tracking, tracing, or automated
-backup/restore verification.
+does not include provider-specific infrastructure as code, alert rules, error
+tracking, tracing, or automated backup/restore verification. The GitHub Actions
+deploy workflow is executable, but each project must still configure its own
+deployment backend, secrets, and hosting platform.
