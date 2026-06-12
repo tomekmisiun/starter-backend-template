@@ -80,6 +80,9 @@ validate:
 		--cov-fail-under=$(COVERAGE_FAIL_UNDER) \
 		-v
 
+policy-guards:
+	bash scripts/ci/run_policy_guards.sh
+
 bootstrap: docker-up migration-upgrade seed smoke
 
 LOAD_REQUESTS ?= 50

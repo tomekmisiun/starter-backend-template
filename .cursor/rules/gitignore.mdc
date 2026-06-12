@@ -1,9 +1,9 @@
 ---
-description: Wrapper for repository hygiene and security AI rules
+description: Gitignore and repository hygiene rules
 globs:
   - ".gitignore"
   - "**/.gitignore"
-alwaysApply: true
+alwaysApply: false
 ---
 
 Source of truth:

@@ -163,3 +163,8 @@ Checks:
    ```bash
    docker compose run --rm worker python -m app.worker_failed_jobs list
    ```
+
+## CI or pre-commit policy guard failures
+
+See `docs/ci-policy-guards.md` for what CI and pre-commit enforce, how to run
+guards locally (`make policy-guards`), and approved bypass mechanisms.

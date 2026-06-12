@@ -4,27 +4,26 @@ Use pytest for backend tests.
 
 ## Requirements
 
-- Add tests for new features.
-- Add tests for every new endpoint.
-- Add regression tests for bug fixes.
-- Add tests for auth, permissions, session logic, migrations, Redis/rate limit
-  behavior, and important business rules when touched.
-- Do not break existing tests.
-- If tests fail, fix the cause and rerun relevant tests.
+- New features MUST include tests.
+- Every new endpoint MUST include tests.
+- Bug fixes MUST include regression tests when behavior changed.
+- Auth, permissions, migrations, Redis, rate limits, tenancy, workers, and
+  important business rules MUST have tests when touched.
+- MUST NOT break existing tests.
 
-## Before Commit
+## Test Integrity
 
-Run relevant validation before committing:
+- MUST NOT delete or skip existing tests to make a change pass.
+- New `@pytest.mark.skip` or `@pytest.mark.xfail` REQUIRES explicit user
+  approval.
 
-- `ruff check .`
-- `pytest`
-- `alembic upgrade head` when a feature requires migrations
+## Local Validation
 
-If local Python tooling is unavailable, use the repository Docker workflow.
+- Run `make validate` before commit when changing application code, tests, or
+  migrations. CI enforces the same coverage floor and test jobs.
+- Pre-commit runs cheap hygiene checks only. See `docs/ci-policy-guards.md`.
 
 ## Test Design
 
-- Prefer focused pytest tests.
-- Test observable behavior rather than implementation details.
+- Prefer focused pytest tests of observable behavior.
 - Keep fixtures simple and explicit.
-- Do not skip tests unless explicitly requested and documented.

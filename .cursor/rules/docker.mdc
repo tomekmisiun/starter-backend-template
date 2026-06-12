@@ -1,13 +1,15 @@
 ---
-description: Wrapper for Docker AI rules
+description: Docker, deploy scripts, and env example rules
 globs:
-  - "dockerfile"
   - "Dockerfile"
-  - "docker-compose.yml"
+  - "docker-compose*.yml"
   - ".env.example"
-alwaysApply: true
+  - "scripts/deploy*.sh"
+  - "scripts/smoke_test.sh"
+alwaysApply: false
 ---
 
-Source of truth: `.ai-rules/docker.md`.
+Source of truth:
 
-Also read `.ai-rules/documentation.md` when Docker, config, or setup changes.
+- `.ai-rules/docker.md`
+- `.ai-rules/documentation.md`

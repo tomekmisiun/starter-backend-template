@@ -1,44 +1,27 @@
 # Repository Rules
 
-Keep the repository clean, predictable, and easy to maintain.
+## Scope
 
-## Project Structure
-
-Expected backend structure:
-
-- `app/main.py`
-- `app/api`
-- `app/core`
-- `app/db`
-- `app/models`
-- `app/schemas`
-- `app/services`
-- `alembic`
-- `tests`
-
-## Maintainability
-
-- Prefer simple, readable code.
-- Use explicit names.
-- Avoid premature abstractions.
-- Avoid duplicated logic.
-- Keep files focused on one responsibility.
-- Keep changes small and reviewable.
-- Preserve existing architecture unless the task explicitly requires changing
-  it.
-- Do not change application code when the task is limited to tooling,
-  documentation, or AI rules.
+- Documentation-only or AI-rules-only tasks MUST NOT modify files under `app/`,
+  `tests/`, `alembic/versions/`, or `.github/workflows/` unless the task
+  explicitly requires it.
+- MUST NOT make unrelated drive-by refactors when implementing a scoped task.
 
 ## Configuration
 
-- Use `.env` for local secrets and environment-specific values.
-- Keep `.env` out of git.
-- Keep `.env.example` safe and up to date.
-- Do not hardcode secrets.
+- Use `.env` for local secrets. MUST NOT commit `.env`.
+- Keep `.env.example` limited to safe placeholders.
+- MUST NOT hardcode secrets in code, Docker files, or docs.
+
+## Enforcement vs Policy
+
+- Mechanical checks (coverage floor, lockfile pairing, migration guards, secrets
+  scans) live in CI, pre-commit, and `docs/ci-policy-guards.md`.
+- `.ai-rules/` keeps judgment rules that automation cannot enforce.
 
 ## Source Of Truth For AI Rules
 
-- `.ai-rules` is the only source of truth for AI/project rules.
-- Tool-specific files such as `.cursor/rules/*.mdc`, `AGENTS.md`, and
-  `CLAUDE.md` must only point to `.ai-rules`.
-- Do not duplicate rule bodies in tool-specific wrappers.
+- `.ai-rules/` is the only source of truth for AI/project rules.
+- `AGENTS.md`, `CLAUDE.md`, and `.cursor/rules/*.mdc` MUST only point to
+  `.ai-rules/`.
+- MUST NOT duplicate rule bodies in tool-specific wrapper files.

@@ -1,9 +1,11 @@
 ---
-description: Wrapper for testing AI rules
+description: Testing and validation rules
 globs:
   - "tests/**/*.py"
-  - "pytest.ini"
-alwaysApply: true
+  - "Makefile"
+  - "pyproject.toml"
+  - ".github/workflows/ci.yml"
+alwaysApply: false
 ---
 
-Source of truth: `.ai-rules/testing.md`.
+Source of truth: `.ai-rules/testing.md` and `docs/ci-policy-guards.md`.

@@ -1,32 +1,35 @@
 # Security Rules
 
-Use a production-ready mindset for backend changes.
+Production-ready mindset for all backend changes.
 
 ## Secrets
 
-- Never hardcode secrets.
-- Never commit real credentials, API keys, private certificates, SSH keys,
-  database dumps, `.env` files, or local database files.
-- Use environment variables for secrets and deployment-specific config.
-- Keep `.env.example` limited to safe placeholders.
-- If secrets are detected, stop and warn immediately.
+- MUST NOT hardcode secrets or commit credentials, API keys, certificates, SSH
+  keys, database dumps, `.env`, or local database files.
+- MUST NOT add production-like secrets to `app/core/config.py` defaults,
+  `.env.example`, Docker files, or documentation. Use obvious placeholders only.
+- If secrets are detected in changes, stop and warn the user.
 
 ## Auth And Sessions
 
-- Keep authentication logic explicit and reviewable.
-- Do not mix auth/session logic with unrelated business logic.
-- Check authorization at route/dependency boundaries.
-- Add regression tests for auth, session, role, and permission changes.
-- Deny unsafe behavior by default.
+- Authentication logic MUST stay explicit and reviewable.
+- Authorization MUST be enforced at route and dependency boundaries.
+- MUST NOT remove or disable auth, permission checks, rate limits, webhook
+  signature verification, or tenant checks without explicit user request.
+- If a security-control test fails, fix the implementation or test. MUST NOT
+  delete the control to make tests pass.
+
+## Production Config Validators
+
+- MUST NOT weaken or bypass `validate_production_settings` or
+  `validate_staging_settings` without explicit user request.
 
 ## API Safety
 
-- Validate input through schemas and FastAPI validation.
-- Avoid leaking internal stack traces or implementation details in responses.
-- Use proper HTTP status codes.
-- Keep rate limiting and Redis-backed protections testable.
+- Validate input through Pydantic schemas and FastAPI validation.
+- Use correct HTTP status codes.
 
-## Dependencies
+## Tenancy
 
-- Do not add security-sensitive libraries without approval.
-- Prefer maintained, well-known libraries already present in the project.
+- Tenant isolation rules live in `.ai-rules/tenancy.md` and MUST be followed
+  for all tenant-owned data.

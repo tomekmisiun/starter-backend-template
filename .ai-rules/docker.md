@@ -1,21 +1,24 @@
 # Docker Rules
 
-Docker is part of the supported development workflow for this project.
-
-## Stack
-
-- API container runs the FastAPI app.
-- PostgreSQL is the primary application database.
-- A separate PostgreSQL test database is used for pytest.
-- Redis is used for rate limiting and future session-related infrastructure.
+Docker Compose is the supported local development and CI dependency workflow.
 
 ## Rules
 
-- Keep Docker and Compose configuration aligned with application config.
-- Do not hardcode production secrets in Docker files or Compose files.
-- Use safe placeholder values only in examples.
-- If Docker, Compose, ports, service names, or env variables change, update
-  README documentation.
-- If test workflow changes, update README documentation.
-- Do not introduce new services without explaining why and getting approval.
-- Prefer reproducible commands that match CI and Makefile usage.
+- Docker and Compose configuration MUST stay aligned with `app/core/config.py`.
+- MUST NOT hardcode production secrets in Docker or Compose files.
+- Example values MUST be safe placeholders only.
+- MUST NOT introduce new Compose services without explaining why and getting
+  user approval.
+
+## Production Runtime
+
+- MUST NOT change production Uvicorn/Docker CMD, pool-related defaults, CORS,
+  or trusted-host behavior without explicit user request and updates to
+  `docs/production-deployment.md` or related runtime docs.
+- `docker-compose.prod.yml` is minimal by design; managed DB/Redis/S3 stay
+  external.
+
+## Documentation
+
+- Docker, Compose, port, service, or env workflow changes MUST update
+  `README.md` and any affected file under `docs/`.

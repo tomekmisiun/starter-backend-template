@@ -1,11 +1,10 @@
 ---
-description: Wrapper for repository and architecture AI rules
+description: Repository structure rules (see project.mdc for full index)
 globs:
   - "**/*"
-alwaysApply: true
+alwaysApply: false
 ---
 
-Source of truth:
+Source of truth: `.ai-rules/repository.md` and `.ai-rules/architecture.md`.
 
-- `.ai-rules/repository.md`
-- `.ai-rules/architecture.md`
+Full rule index: `.cursor/rules/project.mdc`.

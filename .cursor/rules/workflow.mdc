@@ -1,11 +1,8 @@
 ---
-description: Wrapper for Git workflow AI rules
+description: Git workflow rules
 globs:
-  - "**/*"
-alwaysApply: true
+  - ".git/**"
+alwaysApply: false
 ---
 
-Source of truth:
-
-- `.ai-rules/git.md`
-- `.ai-rules/repository.md`
+Source of truth: `.ai-rules/git.md`.

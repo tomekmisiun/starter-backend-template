@@ -1,27 +1,34 @@
 # Database Rules
 
-The project uses SQLAlchemy, Alembic, PostgreSQL, and a separate test database.
+SQLAlchemy, Alembic, PostgreSQL, and a separate test database.
 
 ## SQLAlchemy
 
-- Use SQLAlchemy consistently.
-- Prefer SQLAlchemy 2.0 style when adding new code.
-- Keep models in `app/models`.
-- Access the database through the existing SQLAlchemy session dependency.
-- Do not hardcode database credentials.
+- Use SQLAlchemy consistently. Prefer SQLAlchemy 2.0 style in new code.
+- Models MUST live in `app/models`.
+- Database access MUST go through the existing session dependency.
+- MUST NOT hardcode database credentials.
 
 ## Alembic
 
-- Any database schema change requires an Alembic migration.
-- Do not modify existing migrations unless explicitly requested.
-- Create a new migration for each schema change.
-- Run `alembic upgrade head` when a feature requires migrations.
-- Keep migrations reviewable and focused.
+- Any schema change REQUIRES a new Alembic revision in `alembic/versions/`.
+- MUST NOT modify existing migration files unless the user explicitly requested
+  it.
+- MUST NOT mix unrelated schema changes and refactors in one migration.
+- CI enforces model changes → new migration. See `docs/ci-policy-guards.md`.
+
+## Destructive Migrations
+
+- MUST NOT drop columns or tables in the same release that removes application
+  code. Use expand/contract across releases.
+- MUST NOT use `op.drop_*` unless the user explicitly requested a breaking
+  migration.
+- CI flags new destructive operations. See `docs/migration-rollback.md` and
+  `docs/ci-policy-guards.md`.
 
 ## Data Access
 
-- Keep database access explicit.
-- Avoid hiding queries inside unrelated helpers.
-- Use indexes when appropriate for filtering, searching, sorting, or foreign
-  keys.
-- Do not mix database schema changes with unrelated refactors.
+- Keep queries explicit in services unless a dedicated repository pattern
+  already exists in the touched area.
+- Add indexes when adding filters, search, sorting, or foreign keys that need
+  them.
