@@ -13,9 +13,18 @@ Jobs move through these Redis structures:
 - delayed queue: jobs waiting for retry backoff to expire
 - failed queue: dead-letter jobs that exceeded retry limits
 
-The worker promotes due delayed jobs, dequeues with a processing acknowledgement,
-acks successful jobs, schedules retries with exponential backoff, and stores
-failure metadata when a job becomes a dead letter.
+The worker promotes due delayed jobs, reclaims stale processing jobs after
+`WORKER_PROCESSING_VISIBILITY_TIMEOUT_SECONDS`, dequeues with a processing
+acknowledgement, acks successful jobs, schedules retries with exponential
+backoff, and stores failure metadata when a job becomes a dead letter.
+
+## Processing Visibility Timeout
+
+When a worker dequeues a job, it moves into the processing queue with a
+`processing_started_at` timestamp. If the worker crashes or is killed before
+acking the job, a reaper returns stale processing jobs to the main queue after
+`WORKER_PROCESSING_VISIBILITY_TIMEOUT_SECONDS` (default 300). Reclaimed jobs are
+not treated as failures and do not increment `attempts`.
 
 ## Retry Backoff
 

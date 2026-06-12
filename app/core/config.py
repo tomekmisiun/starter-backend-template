@@ -88,6 +88,7 @@ class Settings(BaseSettings):
     worker_max_retries: int = Field(default=3, ge=0)
     worker_retry_backoff_base_seconds: int = Field(default=5, gt=0)
     worker_retry_backoff_max_seconds: int = Field(default=300, gt=0)
+    worker_processing_visibility_timeout_seconds: int = Field(default=300, gt=0)
     worker_maintenance_enabled: bool = True
     worker_maintenance_interval_seconds: int = Field(default=3600, gt=0)
     worker_maintenance_lock_key: str = "app_jobs_maintenance_lock"
