@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from uuid import uuid4
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
@@ -13,6 +12,7 @@ from app.core.file_validation import (
     validate_content_sniff,
     validate_declared_content_type,
 )
+from app.core.ids import uuid7
 from app.core.permissions import Permission
 from app.models.uploaded_file import UploadedFile
 from app.models.user import User
@@ -336,7 +336,7 @@ def read_upload_body(file: UploadFile) -> bytes:
 def build_object_key(tenant_id: int, owner_id: int, filename: str) -> str:
     safe_filename = filename.replace("/", "_").replace("\\", "_")
     tenant_prefix = build_tenant_object_key_prefix(tenant_id)
-    return f"{tenant_prefix}/uploads/{owner_id}/{uuid4().hex}-{safe_filename}"
+    return f"{tenant_prefix}/uploads/{owner_id}/{uuid7().hex}-{safe_filename}"
 
 
 def ensure_object_key_belongs_to_owner(*, object_key: str, owner: User) -> None:

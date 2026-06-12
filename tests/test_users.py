@@ -1,8 +1,8 @@
 import pytest
 from time import sleep
-from uuid import uuid4
 
 from app.core.cache import delete_cache_pattern, get_json_cache, set_json_cache
+from app.core.ids import uuid7
 from app.models.user import User
 
 
@@ -27,7 +27,7 @@ def regular_user(db, client):
     token, user_id = create_user_and_login(
         db,
         client,
-        f"regular-user-{uuid4().hex}@example.com",
+        f"regular-user-{uuid7().hex}@example.com",
     )
 
     return {
@@ -39,7 +39,7 @@ def regular_user(db, client):
 
 @pytest.fixture
 def admin_user(db, client):
-    email = f"admin-user-{uuid4().hex}@example.com"
+    email = f"admin-user-{uuid7().hex}@example.com"
 
     token, user_id = create_user_and_login(
         db,
@@ -446,7 +446,7 @@ def test_admin_list_users_uses_cached_result_for_same_query(
     client,
     admin_user,
 ):
-    email_prefix = f"cache-hit-{uuid4().hex}"
+    email_prefix = f"cache-hit-{uuid7().hex}"
     original_email = f"{email_prefix}@example.com"
     updated_email = f"{email_prefix}-updated@example.com"
 
@@ -475,7 +475,7 @@ def test_admin_list_users_cache_is_invalidated_after_user_update(
     client,
     admin_user,
 ):
-    email_prefix = f"cache-invalidate-{uuid4().hex}"
+    email_prefix = f"cache-invalidate-{uuid7().hex}"
     original_email = f"{email_prefix}@example.com"
     updated_email = f"{email_prefix}-updated@example.com"
 
@@ -508,7 +508,7 @@ def test_admin_list_users_cache_is_invalidated_after_user_update(
 
 
 def test_json_cache_expires_values():
-    cache_key = f"test-cache-expiry:{uuid4().hex}"
+    cache_key = f"test-cache-expiry:{uuid7().hex}"
 
     set_json_cache(cache_key, {"cached": True}, ttl_seconds=1)
 

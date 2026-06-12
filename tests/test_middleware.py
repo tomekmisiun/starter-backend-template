@@ -7,7 +7,7 @@ def test_request_id_header_is_added(client):
     assert response.status_code == 200
 
     request_id = response.headers["X-Request-ID"]
-    UUID(request_id)
+    assert UUID(request_id).version == 7
 
 
 def test_request_id_header_is_preserved(client):

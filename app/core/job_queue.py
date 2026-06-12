@@ -1,10 +1,10 @@
 import json
 from dataclasses import dataclass
-from uuid import uuid4
 
 from redis import Redis
 
 from app.core.config import settings
+from app.core.ids import uuid7
 from app.core.redis import redis_client
 from app.core.request_context import get_request_id
 
@@ -59,7 +59,7 @@ def enqueue_job(
     queue_name: str = settings.worker_queue_name,
 ) -> Job:
     job = Job(
-        id=str(uuid4()),
+        id=str(uuid7()),
         type=job_type,
         payload=payload,
         request_id=get_request_id(),

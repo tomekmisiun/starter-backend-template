@@ -1,6 +1,6 @@
 import json
-from uuid import uuid4
 
+from app.core.ids import uuid7
 from app.core.webhook_security import compute_hmac_signature
 
 
@@ -11,7 +11,7 @@ WEBHOOK_SECRET = "test-webhook-secret"
 def build_webhook_payload(event_id: str | None = None):
     return {
         "provider": "payments",
-        "event_id": event_id or f"evt_{uuid4().hex}",
+        "event_id": event_id or f"evt_{uuid7().hex}",
         "event_type": "payment.succeeded",
         "payload": {"amount": 1000, "currency": "usd"},
     }

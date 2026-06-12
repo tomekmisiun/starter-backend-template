@@ -1,8 +1,7 @@
-from uuid import uuid4
-
 import pytest
 
 from app.core.cache import get_json_cache, set_json_cache
+from app.core.ids import uuid7
 from tests.test_users import auth_headers, create_user_and_login, make_admin
 
 
@@ -11,7 +10,7 @@ def test_admin_list_users_propagates_cache_read_failures(
     client,
     monkeypatch,
 ):
-    email = f"redis-read-fail-{uuid4().hex}@example.com"
+    email = f"redis-read-fail-{uuid7().hex}@example.com"
     token, _ = create_user_and_login(db, client, email)
     make_admin(db, email)
 
@@ -32,7 +31,7 @@ def test_admin_list_users_propagates_cache_write_failures(
     client,
     monkeypatch,
 ):
-    email = f"redis-write-fail-{uuid4().hex}@example.com"
+    email = f"redis-write-fail-{uuid7().hex}@example.com"
     token, _ = create_user_and_login(db, client, email)
     make_admin(db, email)
 
@@ -49,7 +48,7 @@ def test_admin_list_users_propagates_cache_write_failures(
 
 
 def test_users_list_cache_misses_return_consistent_results(db, client, monkeypatch):
-    email = f"cache-stampede-{uuid4().hex}@example.com"
+    email = f"cache-stampede-{uuid7().hex}@example.com"
     token, _ = create_user_and_login(db, client, email)
     make_admin(db, email)
     headers = auth_headers(token)
@@ -92,7 +91,7 @@ def test_limited_endpoint_returns_server_error_when_redis_is_unavailable(
 
 
 def test_json_cache_helpers_require_working_redis():
-    cache_key = f"ops-redis-smoke:{uuid4().hex}"
+    cache_key = f"ops-redis-smoke:{uuid7().hex}"
 
     set_json_cache(cache_key, {"ok": True}, ttl_seconds=30)
 

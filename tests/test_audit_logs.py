@@ -1,6 +1,6 @@
 import pytest
-from uuid import uuid4
 
+from app.core.ids import uuid7
 from app.models.audit_log import AuditAction, AuditLog
 from app.models.user import User
 
@@ -36,7 +36,7 @@ def admin_user(db, client):
     token, user_id = create_user_and_login(
         db,
         client,
-        f"audit-admin-{uuid4().hex}@example.com",
+        f"audit-admin-{uuid7().hex}@example.com",
     )
 
     make_admin(db, user_id)
@@ -52,7 +52,7 @@ def regular_user(db, client):
     token, user_id = create_user_and_login(
         db,
         client,
-        f"audit-user-{uuid4().hex}@example.com",
+        f"audit-user-{uuid7().hex}@example.com",
     )
 
     return {
@@ -243,7 +243,7 @@ def test_admin_can_filter_audit_logs_by_admin_id(
     other_admin_token, other_admin_id = create_user_and_login(
         db,
         client,
-        f"audit-other-admin-{uuid4().hex}@example.com",
+        f"audit-other-admin-{uuid7().hex}@example.com",
     )
     make_admin(db, other_admin_id)
 
@@ -278,7 +278,7 @@ def test_admin_can_filter_audit_logs_by_target_user_id(
     _, other_target_user_id = create_user_and_login(
         db,
         client,
-        f"audit-other-target-{uuid4().hex}@example.com",
+        f"audit-other-target-{uuid7().hex}@example.com",
     )
 
     client.patch(

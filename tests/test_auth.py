@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlparse
 from types import SimpleNamespace
-from uuid import uuid4
 
+from app.core.ids import uuid7
 from app.core.security import hash_password_reset_token, verify_password
 from app.models.audit_log import AuditAction, AuditLog
 from app.models.password_reset_token import PasswordResetToken
@@ -367,7 +367,7 @@ def test_password_reset_request_for_active_user_enqueues_email_job(
 
 
 def test_password_reset_request_is_rate_limited(client):
-    email = f"rate-limit-reset-{uuid4().hex}@example.com"
+    email = f"rate-limit-reset-{uuid7().hex}@example.com"
 
     responses = [
         client.post(

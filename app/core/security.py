@@ -3,12 +3,12 @@ import secrets
 from hashlib import sha256
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from uuid import uuid4
 
 from jose import jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
+from app.core.ids import uuid7
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -54,7 +54,7 @@ def create_access_token(
         "tenant_id": tenant_id,
         "exp": expire,
         "type": "access",
-        "jti": str(uuid4()),
+        "jti": str(uuid7()),
     }
 
     return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)
@@ -74,7 +74,7 @@ def create_refresh_token(
         "tenant_id": tenant_id,
         "exp": expire,
         "type": "refresh",
-        "jti": str(uuid4()),
+        "jti": str(uuid7()),
     }
 
     return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)

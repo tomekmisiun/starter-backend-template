@@ -1,11 +1,11 @@
 import logging
 import time
-from uuid import uuid4
 
 import sentry_sdk
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.ids import uuid7
 from app.core.metrics import get_route_path, observe_request
 from app.core.request_context import request_id_var
 
@@ -16,7 +16,7 @@ logger = logging.getLogger("app.requests")
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         start_time = time.perf_counter()
-        request_id = request.headers.get("X-Request-ID") or str(uuid4())
+        request_id = request.headers.get("X-Request-ID") or str(uuid7())
         request.state.request_id = request_id
         request_id_token = request_id_var.set(request_id)
         sentry_sdk.set_tag("request_id", request_id)
