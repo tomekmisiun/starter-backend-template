@@ -13,7 +13,6 @@ from app.core.ids import uuid7
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-ALGORITHM = "HS256"
 
 
 def hash_password(password: str) -> str:
@@ -59,7 +58,7 @@ def create_access_token(
         "jti": str(uuid7()),
     }
 
-    return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
 def create_refresh_token(
@@ -79,7 +78,7 @@ def create_refresh_token(
         "jti": str(uuid7()),
     }
 
-    return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
 def decode_token(token: str) -> dict[str, Any]:
