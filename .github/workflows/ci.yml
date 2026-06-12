@@ -112,6 +112,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
+          target: production
           push: false
           load: true
           tags: |
@@ -119,6 +120,20 @@ jobs:
             starter-backend-template-api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Verify production image excludes dev dependencies
+        run: |
+          docker run --rm \
+            -e SECRET_KEY=test-secret-key-for-ci-only \
+            -e ENVIRONMENT=test \
+            starter-backend-template-api:latest \
+            python -c "import importlib.util; assert importlib.util.find_spec('pytest') is None"
+
+          docker run --rm \
+            -e SECRET_KEY=test-secret-key-for-ci-only \
+            -e ENVIRONMENT=test \
+            starter-backend-template-api:latest \
+            python -c "import fastapi, uvicorn, app.main"
 
       - name: Scan API image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0

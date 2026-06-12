@@ -237,6 +237,28 @@ uvicorn app.main:app \
 Adjust worker count, proxy header trust, and forwarded IP allowlists to match
 the hosting platform.
 
+## Container Images
+
+The `Dockerfile` defines two build targets:
+
+- `development`: installs runtime and dev/test dependencies for local Compose,
+  pytest, Ruff, and pre-commit workflows.
+- `production`: installs runtime dependencies only and uses a production-oriented
+  Uvicorn entrypoint with `--proxy-headers`.
+
+Build the production image:
+
+```bash
+docker build --target production -t starter-backend-template-api:production .
+```
+
+Local Docker Compose explicitly builds the `development` target for `api` and
+`worker`. Release and CI image builds use the `production` target.
+
+Production containers should run the image entrypoint without bind mounts,
+without dev dependency groups, and with environment variables supplied by the
+deployment platform.
+
 Recommended post-deploy smoke checks:
 
 - register/login or a project-specific auth flow

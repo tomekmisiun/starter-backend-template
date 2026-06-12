@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/production-runtime-hardening`.
+`feature/docker-production-runtime`.
 
 Current architecture:
 
@@ -57,11 +57,10 @@ Production-readiness summary:
 - PostgreSQL database setup through SQLAlchemy.
 - Alembic migration setup.
 - Docker Compose setup for API, main database, test database, and Redis.
-- Production-oriented API Dockerfile foundation with a non-root runtime user,
-  Python/uv runtime defaults, explicit build file configuration, and
-  `.dockerignore`. It still needs a production/development dependency split and
-  runtime-process hardening before being treated as final production image
-  guidance.
+- Production-oriented API Dockerfile with non-root runtime user, Python/uv
+  defaults, `.dockerignore`, separate `development` and `production` build
+  targets, production-only runtime dependencies, and a production Uvicorn
+  entrypoint documented in `docs/production-deployment.md`.
 - Python dependency management through `pyproject.toml` and `uv.lock`.
 - Documented dependency update policy with runtime and dev dependency
   separation.
@@ -204,10 +203,6 @@ to track before calling the repository complete for high-scale reuse.
   The repository has provider-neutral deployment documentation and a placeholder
   workflow, but no executable staging/production deployment path.
 
-- P0: Docker production image split.
-  Runtime images should not install development dependencies, and production
-  runtime behavior should be separated from local development behavior.
-
 - P0: CI enforcement hardening.
   Security scans, dependency review, and coverage checks should fail builds when
   thresholds are violated instead of only reporting results.
@@ -264,7 +259,6 @@ mark them as completed until the implementation and regression coverage are on
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
 | P0 | Production deployment automation | Add an executable staging/production deployment path beyond the placeholder workflow. | `feature/production-deployment-automation` |
-| P0 | Docker production image split | Separate production runtime dependencies from development/test dependencies and document the production container entrypoint. | `feature/docker-production-runtime` |
 | P0 | CI enforcement hardening | Make security scans and coverage policies enforceable instead of advisory. | `feature/ci-security-enforcement` |
 | P1 | Worker reliability | Improve retries, backoff, failed-job metadata, scheduler coordination, and job idempotency patterns. | `feature/worker-reliability` |
 | P1 | Production observability hardening | Make metrics/tracing useful across multi-worker and multi-instance production deployments. | `feature/observability-production-hardening` |
@@ -281,24 +275,20 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/docker-production-runtime
+feature/ci-security-enforcement
 ```
 
 Recommended scope:
 
-- Split production runtime dependencies from development/test dependencies in
-  the Docker image build.
-- Keep local development behavior available through Compose or documented dev
-  workflows.
-- Document the production container entrypoint and runtime expectations.
-- Add focused regression coverage for the production image build path when
-  practical in CI.
+- Fail CI when Trivy finds critical/high vulnerabilities above policy.
+- Enforce dependency review outcomes where appropriate.
+- Add coverage thresholds or other enforceable quality gates.
+- Keep advisory-only checks clearly separated from blocking checks.
 
 Expected validation:
 
 - `make validate`
-- `make smoke` when API behavior changes
-- `make load-smoke` when performance-sensitive paths change
+- CI workflow changes verified on a pull request
 
 ## 6. Rules For Updating This File
 

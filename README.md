@@ -140,6 +140,18 @@ The API image is built from `Dockerfile`, runs as a non-root `app` user, and
 uses `.dockerignore` to keep local secrets, VCS metadata, virtual environments,
 and cache files out of the build context.
 
+`Dockerfile` exposes two build targets:
+
+- `development`: used by Docker Compose for local API/worker containers with
+  pytest, Ruff, and other dev dependencies installed.
+- `production`: used by CI release builds with runtime dependencies only.
+
+Build the production image locally:
+
+```bash
+docker build --target production -t starter-backend-template-api:production .
+```
+
 ### Local developer workflow
 
 Bootstrap a fresh local environment:
@@ -885,7 +897,6 @@ The production guide covers:
 
 - Production deployment automation still needs an executable staging/production
   deployment path.
-- Docker production images still install development dependencies.
 - CI security scans and coverage checks are still partly advisory.
 - Worker reliability, production observability, tenant isolation, webhook and
   idempotency hardening, file upload production safety, backup automation, and
