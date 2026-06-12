@@ -176,6 +176,16 @@ def test_admin_can_update_user_is_active(client, admin_user, regular_user):
     assert response.json()["is_active"] is False
 
 
+def test_admin_invalid_role_update_returns_422(client, admin_user, regular_user):
+    response = client.patch(
+        f"/users/{regular_user['id']}",
+        json={"role": "banana"},
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 422
+
+
 def test_user_cannot_update_other_user(db, client, regular_user):
     _, other_user_id = create_user_and_login(
         db,
