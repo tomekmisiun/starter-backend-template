@@ -797,7 +797,8 @@ The upload flow validates filename metadata, declared content type, file size,
 magic-byte content sniffing, and malware scanning before writing metadata.
 Presigned completion verifies the stored object size, content type, sniffed
 bytes, and scan result before metadata is persisted. See
-`docs/file-upload-production.md` for production guidance and scanner integration
+`docs/file-upload-production.md` and `docs/malware-scanning.md` for production
+guidance and scanner integration boundaries.
 boundaries.
 
 The local MinIO console is available at:
@@ -1026,7 +1027,7 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` includes malware
-scanning boundary docs and related docs/tests.
+Template hardening work tracked in `PROJECT_STATUS.md` includes legacy route
+deprecation policy and related docs/tests.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.

@@ -13,8 +13,7 @@ The current implementation is a strong local-development and testable backend
 foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
-Current branch for active feature work:
-`feature/load-threshold-ci-smoke` (audit remediation).
+Current branch: `docs/malware-scanning` (audit remediation).
 
 Current architecture:
 
@@ -236,7 +235,8 @@ Production-readiness summary:
   `docs/webhook-idempotency.md`.
 - File upload production hardening with streaming-safe multipart reads, stored
   object verification after presigned uploads, metadata validation, HTTP
-  malware scanner integration boundaries, and `docs/file-upload-production.md`.
+  malware scanner integration boundaries documented in `docs/malware-scanning.md`,
+  and `docs/file-upload-production.md`.
 - Load and concurrency testing with repeatable threshold profiles in
   `perf/profiles.json`, threshold-enforced load targets, pull-request load smoke
   checks in CI, concurrency regression coverage for idempotency, workers,
@@ -263,7 +263,6 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- Malware scanning: integration point only, not a bundled scanner.
 - Legacy unversioned routes still mounted alongside `/api/v1`.
 - `make validate` does not yet enforce local coverage floor like CI.
 
@@ -283,15 +282,15 @@ Audit remediation order (separate PRs):
 | P2 | Production runtime docs | `docs/production-runtime-examples` ✅ |
 | P2 | Scheduled backup + PITR checklist | `feature/scheduled-backup-docs` ✅ |
 | P2 | Load threshold CI smoke | `feature/load-threshold-ci-smoke` ✅ |
-| P2 | Malware scanning boundary docs/tests | `docs/malware-scanning` |
+| P2 | Malware scanning boundary docs/tests | `docs/malware-scanning` ✅ |
 | P2 | Legacy route deprecation policy | `docs/legacy-route-deprecation` |
 | P2 | Makefile validate + coverage | `chore/validate-with-coverage` |
 
 ## 5. Next Immediate Task
 
-Current PR: pull-request load threshold smoke in CI.
+Current PR: malware scanning integration boundary docs and tests.
 
-Next branch: `docs/malware-scanning`.
+Next branch: `docs/legacy-route-deprecation`.
 
 ## 6. Rules For Updating This File
 
