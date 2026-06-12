@@ -84,20 +84,20 @@ LOAD_MAX_P99_MS ?=
 LOAD_MIN_THROUGHPUT_RPS ?=
 
 load-smoke:
-	docker compose run --rm api python perf/load_baseline.py \
+	docker compose run --rm api python -m perf.load_baseline \
 		--base-url $(LOAD_API_BASE_URL) \
 		--requests $(LOAD_REQUESTS) \
 		--concurrency $(LOAD_CONCURRENCY)
 
 load-smoke-ready:
-	docker compose run --rm api python perf/load_baseline.py \
+	docker compose run --rm api python -m perf.load_baseline \
 		--base-url $(LOAD_API_BASE_URL) \
 		--path /health/ready \
 		--requests $(LOAD_REQUESTS) \
 		--concurrency $(LOAD_CONCURRENCY)
 
 load-smoke-thresholds:
-	docker compose run --rm api python perf/load_baseline.py \
+	docker compose run --rm api python -m perf.load_baseline \
 		--base-url $(LOAD_API_BASE_URL) \
 		--profile health \
 		--check-thresholds \
@@ -108,7 +108,7 @@ load-smoke-thresholds:
 		$(if $(LOAD_MIN_THROUGHPUT_RPS),--min-throughput-rps $(LOAD_MIN_THROUGHPUT_RPS),)
 
 load-smoke-ready-thresholds:
-	docker compose run --rm api python perf/load_baseline.py \
+	docker compose run --rm api python -m perf.load_baseline \
 		--base-url $(LOAD_API_BASE_URL) \
 		--profile health-ready \
 		--check-thresholds \
@@ -119,3 +119,12 @@ load-smoke-ready-thresholds:
 		$(if $(LOAD_MIN_THROUGHPUT_RPS),--min-throughput-rps $(LOAD_MIN_THROUGHPUT_RPS),)
 
 load-validate: load-smoke-thresholds load-smoke-ready-thresholds
+
+# Lighter threshold check used by CI pull-request smoke (see .github/workflows/ci.yml).
+load-smoke-ci:
+	docker compose run --rm api python -m perf.load_baseline \
+		--base-url $(LOAD_API_BASE_URL) \
+		--profile health \
+		--check-thresholds \
+		--requests 30 \
+		--concurrency 3

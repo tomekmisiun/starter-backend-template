@@ -209,7 +209,11 @@ Run threshold-enforced load profiles and concurrency docs:
 
 ```bash
 make load-validate
+make load-smoke-ci
 ```
+
+Pull requests also run a reduced `health` threshold smoke check in CI. Use
+`.github/workflows/load-threshold.yml` for manual full-profile checks.
 
 See `perf/README.md` for result format and tuning options. Concurrency regression
 coverage and threshold profiles are documented in
@@ -1022,7 +1026,7 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` includes load threshold
-CI smoke and related docs/tests.
+Template hardening work tracked in `PROJECT_STATUS.md` includes malware
+scanning boundary docs and related docs/tests.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.
