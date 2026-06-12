@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies.rate_limit import (
@@ -9,6 +9,7 @@ from app.api.dependencies.rate_limit import (
 from app.api.dependencies.auth import get_current_user
 from app.api.dependencies.tenant import get_request_tenant
 from app.api.openapi import AUTH_ERROR_RESPONSES, RATE_LIMITED_ERROR_RESPONSES
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.tenant import Tenant
 from app.models.user import User
@@ -50,6 +51,12 @@ def register(
     db: Session = Depends(get_db),
     tenant: Tenant = Depends(get_request_tenant),
 ):
+    if not settings.registration_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Registration is disabled",
+        )
+
     return create_user(db, user_data, tenant.id)
 
 

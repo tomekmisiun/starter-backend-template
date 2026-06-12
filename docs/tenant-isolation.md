@@ -37,7 +37,7 @@ Recommended lifecycle for new tenants:
 1. Provision the tenant with `POST /api/v1/admin/tenants`.
 2. Share the tenant slug with the customer application.
 3. Register or invite users through `/api/v1/auth/register` with
-   `X-Tenant-Slug: <tenant-slug>`.
+   `X-Tenant-Slug: <tenant-slug>` when `REGISTRATION_POLICY=public`.
 4. Deactivate the tenant with `PATCH /api/v1/admin/tenants/{tenant_id}` when
    the customer offboards.
 

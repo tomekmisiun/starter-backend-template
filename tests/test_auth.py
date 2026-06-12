@@ -58,6 +58,21 @@ def test_register(client):
     assert data["is_active"] is True
 
 
+def test_register_returns_403_when_registration_disabled(client, monkeypatch):
+    monkeypatch.setattr("app.api.routes.auth.settings.registration_policy", "disabled")
+
+    response = client.post(
+        "/auth/register",
+        json={
+            "email": "disabled-register@example.com",
+            "password": "password123",
+        },
+    )
+
+    assert response.status_code == 403
+    assert response.json()["error"]["message"] == "Registration is disabled"
+
+
 def test_register_duplicate_email(client):
     payload = {
         "email": "test@example.com",

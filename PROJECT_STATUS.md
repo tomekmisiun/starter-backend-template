@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/platform-admin-model` (audit remediation).
+`feature/registration-policy` (audit remediation).
 
 Current architecture:
 
@@ -63,7 +63,8 @@ Production-readiness summary:
 - Python dependency management through `pyproject.toml` and `uv.lock`.
 - Documented dependency update policy with runtime and dev dependency
   separation.
-- User registration.
+- User registration with environment-driven `REGISTRATION_POLICY` gate
+  (`public` or `disabled`).
 - User login with access and refresh JWTs.
 - Password hashing with bcrypt/passlib.
 - `/auth/me` endpoint.
@@ -255,7 +256,6 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- Registration policy gate (public vs disabled; email verification not built).
 - Access-token invalidation beyond short TTL + refresh revocation.
 - Production runtime examples (reverse proxy/TLS) and GitHub Environment checklist.
 - Scheduled backup workflow example; PITR documented as provider responsibility.
@@ -275,7 +275,7 @@ Audit remediation order (separate PRs):
 | P1 | Worker password-reset idempotency | `feature/worker-idempotency` |
 | P1 | Staging config validators | `feature/staging-config-parity` ✅ |
 | P1 | Platform vs tenant admin model | `feature/platform-admin-model` ✅ |
-| P1 | Registration policy gate | `feature/registration-policy` |
+| P1 | Registration policy gate | `feature/registration-policy` ✅ |
 | P1 | Access token invalidation strategy | `feature/access-token-revocation` |
 | P2 | Production runtime docs | `docs/production-runtime-examples` |
 | P2 | Scheduled backup + PITR checklist | `feature/scheduled-backup-docs` |
@@ -286,9 +286,9 @@ Audit remediation order (separate PRs):
 
 ## 5. Next Immediate Task
 
-Current PR: platform vs tenant admin role boundary.
+Current PR: registration policy env gate.
 
-Next branch: `feature/registration-policy`.
+Next branch: `feature/access-token-revocation`.
 
 ## 6. Rules For Updating This File
 
