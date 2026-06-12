@@ -204,6 +204,28 @@ ENVIRONMENT=development
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_DB=0
+REDIS_USERNAME=
+REDIS_PASSWORD=
+REDIS_SSL=false
+REDIS_SSL_CERT_REQS=required
+REDIS_SOCKET_TIMEOUT_SECONDS=5
+REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS=5
+DB_POOL_SIZE=5
+DB_MAX_OVERFLOW=10
+DB_POOL_RECYCLE_SECONDS=1800
+DB_POOL_PRE_PING=true
+DB_POOL_TIMEOUT_SECONDS=30
+DB_STATEMENT_TIMEOUT_MS=0
+CORS_ENABLED=false
+CORS_ALLOW_ORIGINS=
+CORS_ALLOW_CREDENTIALS=false
+CORS_ALLOW_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS
+CORS_ALLOW_HEADERS=*
+TRUSTED_HOSTS_ENABLED=false
+TRUSTED_HOSTS=
+SECURITY_HEADERS_ENABLED=true
+HSTS_ENABLED=false
+HSTS_MAX_AGE_SECONDS=31536000
 LOG_LEVEL=INFO
 RATE_LIMIT_DEFAULT_LIMIT=5
 RATE_LIMIT_DEFAULT_WINDOW_SECONDS=60
@@ -252,6 +274,9 @@ When `ENVIRONMENT=production`, the application rejects local/default
 deployment-critical placeholders. Production must provide non-local values for:
 
 - `DATABASE_URL`
+- `REDIS_HOST`
+- `REDIS_PASSWORD`
+- `TRUSTED_HOSTS`
 - `SMTP_HOST`
 - `SMTP_USERNAME`
 - `SMTP_PASSWORD`
@@ -261,6 +286,13 @@ deployment-critical placeholders. Production must provide non-local values for:
 - `S3_ACCESS_KEY_ID`
 - `S3_SECRET_ACCESS_KEY`
 - `S3_BUCKET_NAME`
+
+Production also requires `TRUSTED_HOSTS_ENABLED=true`. If `CORS_ENABLED=true`,
+`CORS_ALLOW_ORIGINS` must list explicit origins and must not use a wildcard.
+
+Runtime hardening settings cover database pool sizing, Redis TLS/auth options,
+security headers, CORS, and trusted host enforcement. See
+`docs/production-deployment.md` for production server guidance.
 
 Use the production deployment guide for environment separation and secret
 management expectations:
@@ -851,5 +883,10 @@ The production guide covers:
 
 ## Known Production Gaps
 
-- API versioning and OpenAPI documentation still need production-template
-  polish.
+- Production deployment automation still needs an executable staging/production
+  deployment path.
+- Docker production images still install development dependencies.
+- CI security scans and coverage checks are still partly advisory.
+- Worker reliability, production observability, tenant isolation, webhook and
+  idempotency hardening, file upload production safety, backup automation, and
+  load/concurrency testing remain open roadmap items.
