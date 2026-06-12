@@ -9,7 +9,7 @@ from app.core.permissions import Permission
 from app.db.session import get_db
 from app.models.audit_log import AuditAction
 from app.models.user import User
-from app.schemas.user import UserAdminUpdate, UserRead, UserSelfUpdate
+from app.schemas.user import UserAdminUpdate, UserRead, UserRole, UserSelfUpdate
 from app.services.audit_log_service import create_audit_log
 from app.services.permission_service import (
     can_read_user,
@@ -36,12 +36,6 @@ class UserSortBy(str, Enum):
 class SortOrder(str, Enum):
     asc = "asc"
     desc = "desc"
-
-
-class UserRole(str, Enum):
-    admin = "admin"
-    platform_admin = "platform_admin"
-    user = "user"
 
 
 router = APIRouter(prefix="/users", tags=["users"])
