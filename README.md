@@ -198,7 +198,15 @@ Run a lightweight local load baseline:
 make load-smoke
 ```
 
-See `perf/README.md` for result format and tuning options.
+Run threshold-enforced load profiles and concurrency docs:
+
+```bash
+make load-validate
+```
+
+See `perf/README.md` for result format and tuning options. Concurrency regression
+coverage and threshold profiles are documented in
+`docs/load-concurrency-testing.md`.
 
 ## Environment Variables
 

@@ -79,6 +79,9 @@ bootstrap: docker-up migration-upgrade seed smoke
 LOAD_REQUESTS ?= 50
 LOAD_CONCURRENCY ?= 5
 LOAD_API_BASE_URL ?= http://api:8000
+LOAD_MAX_P95_MS ?=
+LOAD_MAX_P99_MS ?=
+LOAD_MIN_THROUGHPUT_RPS ?=
 
 load-smoke:
 	docker compose run --rm api python perf/load_baseline.py \
@@ -92,3 +95,27 @@ load-smoke-ready:
 		--path /health/ready \
 		--requests $(LOAD_REQUESTS) \
 		--concurrency $(LOAD_CONCURRENCY)
+
+load-smoke-thresholds:
+	docker compose run --rm api python perf/load_baseline.py \
+		--base-url $(LOAD_API_BASE_URL) \
+		--profile health \
+		--check-thresholds \
+		--requests $(LOAD_REQUESTS) \
+		--concurrency $(LOAD_CONCURRENCY) \
+		$(if $(LOAD_MAX_P95_MS),--max-p95-ms $(LOAD_MAX_P95_MS),) \
+		$(if $(LOAD_MAX_P99_MS),--max-p99-ms $(LOAD_MAX_P99_MS),) \
+		$(if $(LOAD_MIN_THROUGHPUT_RPS),--min-throughput-rps $(LOAD_MIN_THROUGHPUT_RPS),)
+
+load-smoke-ready-thresholds:
+	docker compose run --rm api python perf/load_baseline.py \
+		--base-url $(LOAD_API_BASE_URL) \
+		--profile health-ready \
+		--check-thresholds \
+		--requests $(LOAD_REQUESTS) \
+		--concurrency $(LOAD_CONCURRENCY) \
+		$(if $(LOAD_MAX_P95_MS),--max-p95-ms $(LOAD_MAX_P95_MS),) \
+		$(if $(LOAD_MAX_P99_MS),--max-p99-ms $(LOAD_MAX_P99_MS),) \
+		$(if $(LOAD_MIN_THROUGHPUT_RPS),--min-throughput-rps $(LOAD_MIN_THROUGHPUT_RPS),)
+
+load-validate: load-smoke-thresholds load-smoke-ready-thresholds

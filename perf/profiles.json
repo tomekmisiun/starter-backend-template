@@ -1,0 +1,10 @@
+{
+  "health": {
+    "max_p95_ms": 500,
+    "min_throughput_rps": 10
+  },
+  "health-ready": {
+    "max_p95_ms": 2000,
+    "min_throughput_rps": 5
+  }
+}

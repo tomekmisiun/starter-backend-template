@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/observability-production-hardening`.
+`feature/load-concurrency-testing`.
 
 Current architecture:
 
@@ -43,11 +43,10 @@ Production-readiness summary:
   users/admin flows, audit logs, rate limiting, caching, worker jobs, password
   reset, file uploads, health checks, metrics, logs, CI, and migration-aware
   tests.
-- The project is a strong universal FastAPI backend template foundation, but it
-  is not yet fully production-ready for high-scale SaaS/API workloads.
-  Remaining work is concentrated around production runtime hardening,
-  deployment automation, worker reliability, production observability, tenant
-  isolation, storage safety, CI enforcement, and recovery automation.
+- The project is a strong universal FastAPI backend template foundation. The
+  tracked template-wide production roadmap is complete; remaining work is
+  project-specific verification and downstream deployment choices rather than
+  missing template features.
 - Anything not listed in "Completed Features" should be treated as not
   implemented unless a new roadmap item is added explicitly.
 
@@ -150,7 +149,9 @@ Production-readiness summary:
 - Local developer experience improvements with development-only seed data,
   `make bootstrap`, `make smoke`, `make validate`, and troubleshooting docs.
 - Lightweight load/performance baseline with `perf/load_baseline.py`,
-  `make load-smoke`, and documented JSON result format.
+  `make load-smoke`, documented JSON result format, named threshold profiles,
+  `make load-validate`, concurrency regression tests, and
+  `docs/load-concurrency-testing.md`.
 - Local observability stack with Promtail, Loki, and Grafana for Docker log
   collection and inspection.
 - Prometheus-compatible `/metrics` endpoint, request metrics collection,
@@ -221,19 +222,21 @@ Production-readiness summary:
   core-table restore verification, Makefile dry-run targets, CI backup
   rehearsal, manual GitHub Actions workflow, and
   `docs/backup-restore-automation.md`.
+- Load and concurrency testing with repeatable threshold profiles in
+  `perf/profiles.json`, threshold-enforced load targets, concurrency regression
+  coverage for idempotency, workers, auth/session rotation, Redis, storage, and
+  slow dependency paths, atomic refresh-token revocation under concurrent reuse,
+  manual GitHub Actions load-threshold workflow, and
+  `docs/load-concurrency-testing.md`.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
 ## 3. Main Production Gaps
 
 The project should still be treated as a production-ready template foundation,
-not a finished production platform. The following gaps are template-wide enough
-to track before calling the repository complete for high-scale reuse.
-
-- P2: Load, performance, and concurrency testing.
-  The repository has a lightweight baseline, but needs repeatable thresholds and
-  race-condition coverage for idempotency, workers, auth/session behavior,
-  Redis, storage, and high-latency dependencies.
+not a finished production platform. The tracked template-wide roadmap is
+complete. Remaining gaps are project-specific verification items rather than
+missing template features.
 
 Items requiring verification before being treated as implemented:
 
@@ -247,34 +250,20 @@ Items requiring verification before being treated as implemented:
 
 ## 4. Recommended Roadmap Ordered By ROI
 
-Template-wide roadmap items should be completed on separate branches. Do not
-mark them as completed until the implementation and regression coverage are on
-`main`.
+The template-wide roadmap is complete. Future work should come from downstream
+project needs rather than additional tracked template gaps.
 
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
-| P2 | Load and concurrency testing | Add repeatable performance thresholds and concurrency tests for critical infrastructure paths. | `feature/load-concurrency-testing` |
+| — | Template roadmap complete | No additional tracked template-wide gaps remain. | — |
 
 ## 5. Next Immediate Task
 
-Implementation should happen in a separate future branch, not on `main`.
+There is no remaining tracked template-wide roadmap item.
 
-Recommended next branch:
-
-```text
-feature/load-concurrency-testing
-```
-
-Recommended scope:
-
-- Add repeatable performance thresholds for critical infrastructure paths.
-- Add concurrency and race-condition coverage for idempotency, workers, auth,
-  Redis, storage, and high-latency dependencies.
-
-Expected validation:
-
-- `make validate`
-- Load and concurrency tests for changed paths
+Before starting a downstream project, verify the project-specific items listed
+in "Main Production Gaps": hosting target, secret manager, backup provider,
+runtime platform, and tracing stack preference.
 
 ## 6. Rules For Updating This File
 

@@ -92,7 +92,11 @@ def rotate_refresh_token(db: Session, refresh_token: str) -> tuple[str, str]:
     payload = _decode_refresh_token(refresh_token)
     user = _get_active_user_from_refresh_payload(db, payload)
 
-    revoke_refresh_token(payload["jti"], payload["exp"])
+    if not revoke_refresh_token(payload["jti"], payload["exp"], require_new=True):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has been revoked",
+        )
 
     access_token = create_access_token(
         subject=str(user.id),

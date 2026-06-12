@@ -8,6 +8,9 @@ Lightweight local performance smoke for the API template.
 endpoint. It is intended for local regression checks before larger load-testing
 work in downstream projects.
 
+Repeatable thresholds are available through named profiles in
+`perf/profiles.json` and the threshold helpers in `perf/thresholds.py`.
+
 ## Run
 
 Start the stack first:
@@ -20,6 +23,14 @@ Run the baseline against the API service from inside Docker:
 
 ```bash
 make load-smoke
+```
+
+Run threshold-enforced profiles:
+
+```bash
+make load-smoke-thresholds
+make load-smoke-ready-thresholds
+make load-validate
 ```
 
 Override defaults when needed:
@@ -38,6 +49,15 @@ docker compose run --rm api python perf/load_baseline.py \
   --concurrency 5
 ```
 
+Use a named profile with threshold enforcement:
+
+```bash
+docker compose run --rm api python perf/load_baseline.py \
+  --base-url http://api:8000 \
+  --profile health-ready \
+  --check-thresholds
+```
+
 ## Result format
 
 The script prints JSON with:
@@ -49,23 +69,41 @@ The script prints JSON with:
 - `min_ms`, `max_ms`, `mean_ms`
 - `p50_ms`, `p95_ms`, `p99_ms`
 
+When `--check-thresholds` is enabled, the payload also includes:
+
+- `summary`: latency and throughput metrics
+- `thresholds`: active threshold values
+- `threshold_violations`: list of failed checks
+- `passed`: boolean result
+
 Example:
 
 ```json
 {
-  "target": "http://api:8000/health",
-  "count": 50,
-  "total_seconds": 0.84,
-  "throughput_rps": 59.52,
-  "min_ms": 1.42,
-  "max_ms": 18.77,
-  "mean_ms": 4.91,
-  "p50_ms": 4.12,
-  "p95_ms": 11.36,
-  "p99_ms": 18.77
+  "summary": {
+    "target": "http://api:8000/health",
+    "count": 50,
+    "total_seconds": 0.84,
+    "throughput_rps": 59.52,
+    "min_ms": 1.42,
+    "max_ms": 18.77,
+    "mean_ms": 4.91,
+    "p50_ms": 4.12,
+    "p95_ms": 11.36,
+    "p99_ms": 18.77
+  },
+  "thresholds": {
+    "max_p95_ms": 500,
+    "min_throughput_rps": 10
+  },
+  "threshold_violations": [],
+  "passed": true
 }
 ```
 
 Record results in project notes or CI artifacts when comparing changes over
-time. This template does not enforce hard latency thresholds because hardware and
-Docker overhead vary between machines.
+time. Default profile thresholds are generous for local Docker environments.
+Tighten them for your hosting target.
+
+See `docs/load-concurrency-testing.md` for concurrency regression coverage and
+the manual GitHub Actions workflow.

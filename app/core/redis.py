@@ -40,17 +40,24 @@ def build_redis_client(app_settings: Settings) -> Redis:
 redis_client = build_redis_client(settings)
 
 
-def revoke_refresh_token(jti: str, expires_at: int) -> None:
+def revoke_refresh_token(
+    jti: str,
+    expires_at: int,
+    *,
+    require_new: bool = False,
+) -> bool:
     ttl_seconds = expires_at - int(datetime.now(timezone.utc).timestamp())
 
     if ttl_seconds <= 0:
-        return
+        return not require_new
 
-    redis_client.set(
-        f"revoked_refresh_token:{jti}",
-        "1",
-        ex=ttl_seconds,
-    )
+    key = f"revoked_refresh_token:{jti}"
+
+    if require_new:
+        return redis_client.set(key, "1", nx=True, ex=ttl_seconds) is True
+
+    redis_client.set(key, "1", ex=ttl_seconds)
+    return True
 
 
 def is_refresh_token_revoked(jti: str) -> bool:
