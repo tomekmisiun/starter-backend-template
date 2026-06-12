@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/docker-production-runtime`.
+`feature/ci-security-enforcement`.
 
 Current architecture:
 
@@ -137,9 +137,10 @@ Production-readiness summary:
   tests. The malware scanner remains an integration point until a concrete
   scanner/provider is wired in by a downstream project.
 - CI/CD quality foundation with pre-commit enforcement, pytest coverage
-  artifacts, Trivy image scanning, dependency review workflow, GHCR release
-  image publishing, and a manual deployment placeholder workflow. Deployment
-  automation and stricter CI failure gates still need production hardening.
+  artifacts, enforced coverage floor, blocking Trivy image policy checks,
+  advisory SARIF upload, blocking runtime dependency review on pull requests,
+  GHCR release image publishing, and a manual deployment placeholder workflow.
+  Deployment automation still needs production hardening.
 - Operations and scale regression coverage for migration downgrade/upgrade
   rehearsal, logical backup/restore rehearsal, worker failed-job CLI replay,
   Redis outage behavior, cache-miss consistency, and OpenAPI contract checks.
@@ -203,10 +204,6 @@ to track before calling the repository complete for high-scale reuse.
   The repository has provider-neutral deployment documentation and a placeholder
   workflow, but no executable staging/production deployment path.
 
-- P0: CI enforcement hardening.
-  Security scans, dependency review, and coverage checks should fail builds when
-  thresholds are violated instead of only reporting results.
-
 - P1: Worker reliability.
   Background jobs need stronger retry backoff, dead-letter metadata, visibility
   or acknowledgement semantics, scheduler locking, and job idempotency guidance.
@@ -259,7 +256,6 @@ mark them as completed until the implementation and regression coverage are on
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
 | P0 | Production deployment automation | Add an executable staging/production deployment path beyond the placeholder workflow. | `feature/production-deployment-automation` |
-| P0 | CI enforcement hardening | Make security scans and coverage policies enforceable instead of advisory. | `feature/ci-security-enforcement` |
 | P1 | Worker reliability | Improve retries, backoff, failed-job metadata, scheduler coordination, and job idempotency patterns. | `feature/worker-reliability` |
 | P1 | Production observability hardening | Make metrics/tracing useful across multi-worker and multi-instance production deployments. | `feature/observability-production-hardening` |
 | P1 | Webhook and idempotency hardening | Improve replay protection, concurrent duplicate handling, timestamp validation, and secret enforcement. | `feature/webhook-idempotency-hardening` |
@@ -275,20 +271,22 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/ci-security-enforcement
+feature/production-deployment-automation
 ```
 
 Recommended scope:
 
-- Fail CI when Trivy finds critical/high vulnerabilities above policy.
-- Enforce dependency review outcomes where appropriate.
-- Add coverage thresholds or other enforceable quality gates.
-- Keep advisory-only checks clearly separated from blocking checks.
+- Replace the manual deploy placeholder with an executable staging/production
+  promotion path appropriate for the chosen hosting model.
+- Wire image promotion, migration execution, and smoke checks into deployment
+  automation.
+- Keep provider-specific secrets and infrastructure outside the repository.
 
 Expected validation:
 
+- Deployment workflow dry run or staging rehearsal
 - `make validate`
-- CI workflow changes verified on a pull request
+- Post-deploy smoke checks documented in `docs/production-deployment.md`
 
 ## 6. Rules For Updating This File
 

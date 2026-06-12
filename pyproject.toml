@@ -41,6 +41,7 @@ data_file = "/tmp/.coverage"
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+fail_under = 85
 
 [tool.uv]
 package = false

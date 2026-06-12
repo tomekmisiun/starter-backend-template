@@ -414,23 +414,27 @@ uv run ruff check .
 
 GitHub Actions workflows:
 
-- `ci.yml` — pre-commit, Docker-based pytest with coverage artifact upload,
-  Docker image build, and Trivy vulnerability scanning.
-- `dependency-review.yml` — pull request dependency vulnerability review.
+- `ci.yml` — pre-commit, host-side pytest with an enforced 85% coverage floor,
+  production Docker image build, blocking Trivy policy checks for unfixed
+  `CRITICAL`/`HIGH` findings, and advisory SARIF upload to GitHub Security.
+- `dependency-review.yml` — blocking pull request dependency review for runtime
+  dependency changes with `high` or `critical` vulnerabilities.
 - `dependabot.yml` — weekly version update PRs for uv, GitHub Actions, and Docker.
 - `release.yml` — publishes tagged API images to GHCR on `v*` tags.
 - `deploy.yml` — manual deployment placeholder for staging/production promotion.
 
-The CI pipeline builds the Docker stack, starts PostgreSQL, the test database,
-Redis, and MinIO, then runs pytest in the API container. Redis-backed rate limit
-tests are also run explicitly before the full test suite so Redis integration
-failures are visible in CI.
+The CI pipeline starts PostgreSQL, the test database, Redis, and MinIO through
+Docker Compose, then runs pytest on the GitHub runner. Coverage below 85% fails
+the build. The production image build runs in parallel and must pass Trivy
+policy enforcement before merge.
 
 Local coverage run:
 
 ```bash
 make test-coverage
 ```
+
+This uses the same 85% coverage floor as CI.
 
 Release images are published to `ghcr.io/<owner>/<repository>/api:<version>`.
 Replace the deploy workflow placeholder with your hosting provider steps.
@@ -897,7 +901,6 @@ The production guide covers:
 
 - Production deployment automation still needs an executable staging/production
   deployment path.
-- CI security scans and coverage checks are still partly advisory.
 - Worker reliability, production observability, tenant isolation, webhook and
   idempotency hardening, file upload production safety, backup automation, and
   load/concurrency testing remain open roadmap items.
