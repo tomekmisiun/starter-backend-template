@@ -42,10 +42,11 @@ Production-readiness summary:
   users/admin flows, audit logs, rate limiting, caching, worker jobs, password
   reset, file uploads, health checks, metrics, logs, CI, and migration-aware
   tests.
-- The template-wide ROI roadmap below is complete. Remaining work is
-  project-specific: choose hosting, secret manager, backup provider, runtime,
-  and production observability stack, then wire the placeholder deploy workflow
-  to that environment.
+- The project is a strong universal FastAPI backend template foundation, but it
+  is not yet fully production-ready for high-scale SaaS/API workloads.
+  Remaining work is concentrated around production runtime hardening,
+  deployment automation, worker reliability, production observability, tenant
+  isolation, storage safety, CI enforcement, and recovery automation.
 - Anything not listed in "Completed Features" should be treated as not
   implemented unless a new roadmap item is added explicitly.
 
@@ -55,8 +56,11 @@ Production-readiness summary:
 - PostgreSQL database setup through SQLAlchemy.
 - Alembic migration setup.
 - Docker Compose setup for API, main database, test database, and Redis.
-- Production-oriented API Dockerfile with a non-root runtime user, Python/uv
-  runtime defaults, explicit build file configuration, and `.dockerignore`.
+- Production-oriented API Dockerfile foundation with a non-root runtime user,
+  Python/uv runtime defaults, explicit build file configuration, and
+  `.dockerignore`. It still needs a production/development dependency split and
+  runtime-process hardening before being treated as final production image
+  guidance.
 - Python dependency management through `pyproject.toml` and `uv.lock`.
 - Documented dependency update policy with runtime and dev dependency
   separation.
@@ -122,16 +126,20 @@ Production-readiness summary:
   helpers, and regression tests while preserving existing `admin`/`user` roles.
 - Multi-tenancy foundation with tenant model/migration, `X-Tenant-Slug` auth
   resolution, tenant-scoped users/audit logs/uploads, tenant-safe cache/object
-  key prefixes, JWT tenant claims, and regression tests.
+  key prefixes, JWT tenant claims, and regression tests. This is a foundation,
+  not a complete SaaS tenant isolation model.
 - Idempotency and webhook security foundation with persisted idempotency keys,
   signed inbound webhook endpoint, replay-protected webhook event storage, and
   regression tests.
-- File storage hardening with private object uploads, presigned download/upload
-  flows, content sniffing, malware-scan integration point, bucket access
-  verification, delete cleanup, and storage failure regression tests.
-- CI/CD quality improvements with pre-commit enforcement, pytest coverage
+- File storage hardening foundation with private object uploads, presigned
+  download/upload flows, content sniffing, malware-scan integration point,
+  bucket access verification, delete cleanup, and storage failure regression
+  tests. The malware scanner remains an integration point until a concrete
+  scanner/provider is wired in by a downstream project.
+- CI/CD quality foundation with pre-commit enforcement, pytest coverage
   artifacts, Trivy image scanning, dependency review workflow, GHCR release
-  image publishing, and a manual deployment placeholder workflow.
+  image publishing, and a manual deployment placeholder workflow. Deployment
+  automation and stricter CI failure gates still need production hardening.
 - Operations and scale regression coverage for migration downgrade/upgrade
   rehearsal, logical backup/restore rehearsal, worker failed-job CLI replay,
   Redis outage behavior, cache-miss consistency, and OpenAPI contract checks.
@@ -150,7 +158,8 @@ Production-readiness summary:
   alert rules for target availability, 5xx error rate, and p95 latency.
 - Sentry SDK error tracking and tracing foundation with environment-driven
   configuration, disabled-by-default behavior without `SENTRY_DSN`, request ID
-  correlation, and regression tests without real external events.
+  correlation, and regression tests without real external events. This is not a
+  complete distributed tracing or incident-response setup.
 - Pytest test suite for auth, users, admin, audit logs, and basic health.
 - Migration-aware pytest setup that resets the test database and applies
   Alembic migrations before running application tests.
@@ -165,7 +174,9 @@ Production-readiness summary:
   staging/production separation, planned rotation, emergency rotation, and
   `SECRET_KEY` rotation impact.
 - Local PostgreSQL backup and restore rehearsal workflow with Makefile targets,
-  ignored dump files, and provider-neutral backup/restore runbook.
+  ignored dump files, and provider-neutral backup/restore runbook. Production
+  backup automation, PITR, and provider-specific restore drills remain
+  downstream responsibilities.
 - Migration and rollback support with Makefile Alembic helper targets and a
   provider-neutral migration/rollback runbook covering expand/contract,
   failed migrations, forward-fix policy, and release checklists.
@@ -180,49 +191,88 @@ Production-readiness summary:
 
 ## 3. Main Production Gaps
 
-No open template gaps are tracked here right now. Future projects should still
-verify hosting, secret management, backup targets, runtime choice, and
-observability stack preferences before production rollout.
+The project should still be treated as a production-ready template foundation,
+not a finished production platform. The following gaps are template-wide enough
+to track before calling the repository complete for high-scale reuse.
+
+- P0: Production runtime hardening.
+  Database pool settings, Redis production connectivity, CORS/trusted hosts,
+  security headers, timeout settings, and production server process guidance
+  need to be explicit and configurable.
+
+- P0: Production deployment automation.
+  The repository has provider-neutral deployment documentation and a placeholder
+  workflow, but no executable staging/production deployment path.
+
+- P0: Docker production image split.
+  Runtime images should not install development dependencies, and production
+  runtime behavior should be separated from local development behavior.
+
+- P0: CI enforcement hardening.
+  Security scans, dependency review, and coverage checks should fail builds when
+  thresholds are violated instead of only reporting results.
+
+- P1: Worker reliability.
+  Background jobs need stronger retry backoff, dead-letter metadata, visibility
+  or acknowledgement semantics, scheduler locking, and job idempotency guidance.
+
+- P1: Production observability.
+  Metrics are a local foundation and need production-safe multi-process or
+  multi-instance behavior, dependency metrics, worker metrics, external alert
+  routing, and trace correlation.
+
+- P1: Tenant isolation.
+  Current multi-tenancy is a foundation and needs tenant membership,
+  tenant-scoped authorization, provisioning lifecycle, and stronger isolation
+  guarantees before reuse in real SaaS products.
+
+- P1: Webhook and idempotency hardening.
+  Add timestamped signatures, replay windows, concurrent duplicate handling,
+  stricter production secret validation, and clearer provider-specific patterns.
+
+- P1: File upload production safety.
+  Add streaming-safe upload handling, actual object verification after presigned
+  uploads, concrete malware scanner integration, and stronger metadata
+  validation.
+
+- P2: Disaster recovery automation.
+  Backup/restore docs and local rehearsal exist, but production provider
+  automation, PITR strategy, and automated restore rehearsal remain
+  project-specific gaps.
+
+- P2: Load, performance, and concurrency testing.
+  The repository has a lightweight baseline, but needs repeatable thresholds and
+  race-condition coverage for idempotency, workers, auth/session behavior,
+  Redis, storage, and high-latency dependencies.
 
 Items requiring verification before being treated as implemented:
 
 - Production hosting target and deployment platform.
 - Real production secret manager choice.
-- Real backup provider and restore target.
+- Real backup provider, PITR policy, and restore target.
 - Whether deployment should use Kubernetes, a PaaS, Docker Compose on a VM, or
   another runtime.
-- Whether the preferred error tracking/tracing stack should be Sentry,
+- Whether the preferred production tracing stack should be Sentry,
   OpenTelemetry, or both.
 
-## 4. Completed Roadmap Ordered By ROI
+## 4. Recommended Roadmap Ordered By ROI
 
-All template-wide roadmap items below are implemented on `main`.
+Template-wide roadmap items should be completed on separate branches. Do not
+mark them as completed until the implementation and regression coverage are on
+`main`.
 
-| # | Item | Status | Delivered in |
-|---|------|--------|--------------|
-| 1 | API versioning and OpenAPI polish | Done | `app/api/v1.py`, `app/api/legacy.py`, `app/api/openapi.py`, `tests/test_api_versioning.py`, `tests/test_openapi.py`, `tests/test_openapi_contract.py` |
-| 2 | Permission model foundation | Done | `app/core/permissions.py`, `app/services/permission_service.py`, `tests/test_permissions.py` |
-| 3 | Idempotency and webhook security | Done | `app/api/routes/webhooks.py`, `app/services/idempotency_service.py`, `app/services/webhook_service.py`, `tests/test_idempotency.py`, `tests/test_webhooks.py` |
-| 4 | File storage hardening | Done | `app/services/storage_service.py`, `app/core/file_validation.py`, `tests/test_files.py`, `tests/test_file_validation.py` |
-| 5 | CI/CD and security scanning | Done | `.github/workflows/ci.yml`, `release.yml`, `deploy.yml`, `dependency-review.yml`, `.github/dependabot.yml` |
-| 6 | Load/performance testing baseline | Done | `perf/load_baseline.py`, `make load-smoke`, `perf/README.md`, `tests/test_load_baseline.py` |
-
-Additional template-wide work completed outside the original ROI ordering:
-
-- Structured logging foundation
-- Multi-tenancy foundation
-- Operations/scale regression coverage
-- Dependabot automation
-- Local developer experience (`make bootstrap`, `make smoke`, `make validate`)
-
-Suggested follow-up scenarios for downstream projects:
-
-- Run `make load-smoke` against `/health/ready` to include database and Redis
-  dependency latency in local baselines.
-- Replace `.github/workflows/deploy.yml` placeholder steps with the target
-  hosting provider commands.
-- Add project-specific permissions, tenants, and integrations on top of the
-  existing foundations.
+| Priority | Item | Goal | Recommended branch |
+|----------|------|------|--------------------|
+| P0 | Production runtime hardening | Add explicit production settings for DB pools, Redis connectivity, CORS/trusted hosts, security headers, timeouts, and runtime server behavior. | `feature/production-runtime-hardening` |
+| P0 | Docker production image split | Separate production runtime dependencies from development/test dependencies and document the production container entrypoint. | `feature/docker-production-runtime` |
+| P0 | CI enforcement hardening | Make security scans and coverage policies enforceable instead of advisory. | `feature/ci-security-enforcement` |
+| P1 | Worker reliability | Improve retries, backoff, failed-job metadata, scheduler coordination, and job idempotency patterns. | `feature/worker-reliability` |
+| P1 | Production observability hardening | Make metrics/tracing useful across multi-worker and multi-instance production deployments. | `feature/observability-production-hardening` |
+| P1 | Webhook and idempotency hardening | Improve replay protection, concurrent duplicate handling, timestamp validation, and secret enforcement. | `feature/webhook-idempotency-hardening` |
+| P1 | File upload production hardening | Add streaming-safe upload behavior, actual object verification, and concrete scanner integration boundaries. | `feature/file-upload-production-hardening` |
+| P1 | Tenant isolation hardening | Add membership, tenant roles, provisioning flow, and stronger tenant boundary guarantees. | `feature/tenant-isolation-hardening` |
+| P2 | Backup/restore automation | Add provider-ready backup automation examples and stronger restore rehearsal workflows. | `feature/backup-restore-automation` |
+| P2 | Load and concurrency testing | Add repeatable performance thresholds and concurrency tests for critical infrastructure paths. | `feature/load-concurrency-testing` |
 
 ## 5. Next Immediate Task
 
@@ -231,13 +281,20 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/<next-project-specific-task>
+feature/production-runtime-hardening
 ```
 
 Recommended scope:
 
-- Start from a project-specific requirement rather than another template-wide
-  production gap. Update `PROJECT_STATUS.md` when new roadmap items emerge.
+- Add database pool, recycle, health, and timeout configuration.
+- Add Redis production connection options such as auth/TLS-friendly settings
+  and stricter production validation.
+- Add CORS, trusted host, and security header configuration suitable for a
+  reusable API template.
+- Document production server/runtime behavior and avoid development-only
+  defaults in production paths.
+- Add focused regression tests for new configuration validation and middleware
+  behavior.
 
 Expected validation:
 
