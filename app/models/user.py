@@ -18,6 +18,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     role: Mapped[str] = mapped_column(String, nullable=False, default="user")
+    token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     tenant = relationship("Tenant")
     password_reset_tokens = relationship(
         "PasswordResetToken",

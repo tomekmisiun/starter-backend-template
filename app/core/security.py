@@ -43,6 +43,7 @@ def verify_password_reset_token(token: str, token_hash: str) -> bool:
 def create_access_token(
     subject: str,
     tenant_id: int,
+    token_version: int,
     expires_delta: timedelta | None = None,
 ) -> str:
     expire = datetime.now(timezone.utc) + (
@@ -52,6 +53,7 @@ def create_access_token(
     payload: dict[str, Any] = {
         "sub": subject,
         "tenant_id": tenant_id,
+        "token_version": token_version,
         "exp": expire,
         "type": "access",
         "jti": str(uuid7()),

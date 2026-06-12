@@ -79,6 +79,7 @@ def login_user(db: Session, login_data: UserLogin, tenant_id: int) -> tuple[str,
     access_token = create_access_token(
         subject=str(user.id),
         tenant_id=user.tenant_id,
+        token_version=user.token_version,
     )
     refresh_token = create_refresh_token(
         subject=str(user.id),
@@ -101,6 +102,7 @@ def rotate_refresh_token(db: Session, refresh_token: str) -> tuple[str, str]:
     access_token = create_access_token(
         subject=str(user.id),
         tenant_id=user.tenant_id,
+        token_version=user.token_version,
     )
     new_refresh_token = create_refresh_token(
         subject=str(user.id),

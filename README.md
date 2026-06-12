@@ -565,7 +565,10 @@ Supported audit actions:
    delivered by email and the new password.
 
 Refresh token revocation is stored in Redis until the revoked token would have
-expired.
+expired. Access tokens include a `token_version` claim that is validated against
+the user's stored version. The version increments on password reset, user
+deactivation, and admin role changes, which invalidates previously issued
+access tokens before they expire.
 
 Password reset requests enqueue a Redis-backed background job for email
 delivery. The worker generates the raw token, sends the email, and stores only
@@ -1016,7 +1019,7 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` includes access-token
-invalidation strategy and related docs/tests.
+Template hardening work tracked in `PROJECT_STATUS.md` includes production
+runtime docs and related docs/tests.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.

@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/registration-policy` (audit remediation).
+`feature/access-token-revocation` (audit remediation).
 
 Current architecture:
 
@@ -86,6 +86,9 @@ Production-readiness summary:
 - Password-reset worker job idempotency with Redis completion markers keyed by
   `job.id` and retry-safe delivery regression tests.
 - Refresh token rotation with Redis-backed refresh token revocation.
+- Access-token invalidation through per-user `token_version` claims validated on
+  every authenticated request and incremented on password reset, deactivation,
+  and role changes.
 - Inactive users are blocked from login, access-token use, and refresh-token
   use.
 - Basic role-based access control with `user`, tenant `admin`, and
@@ -256,7 +259,6 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- Access-token invalidation beyond short TTL + refresh revocation.
 - Production runtime examples (reverse proxy/TLS) and GitHub Environment checklist.
 - Scheduled backup workflow example; PITR documented as provider responsibility.
 - Load thresholds: manual workflow only; not a PR gate.
@@ -276,7 +278,7 @@ Audit remediation order (separate PRs):
 | P1 | Staging config validators | `feature/staging-config-parity` ✅ |
 | P1 | Platform vs tenant admin model | `feature/platform-admin-model` ✅ |
 | P1 | Registration policy gate | `feature/registration-policy` ✅ |
-| P1 | Access token invalidation strategy | `feature/access-token-revocation` |
+| P1 | Access token invalidation strategy | `feature/access-token-revocation` ✅ |
 | P2 | Production runtime docs | `docs/production-runtime-examples` |
 | P2 | Scheduled backup + PITR checklist | `feature/scheduled-backup-docs` |
 | P2 | Load threshold CI smoke | `feature/load-threshold-ci-smoke` |
@@ -286,9 +288,9 @@ Audit remediation order (separate PRs):
 
 ## 5. Next Immediate Task
 
-Current PR: registration policy env gate.
+Current PR: access token invalidation via token_version.
 
-Next branch: `feature/access-token-revocation`.
+Next branch: `docs/production-runtime-examples`.
 
 ## 6. Rules For Updating This File
 

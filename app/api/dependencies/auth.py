@@ -35,11 +35,18 @@ def get_current_user(
         token_type = payload.get("type")
         user_id = payload.get("sub")
         tenant_id = payload.get("tenant_id")
+        token_version = payload.get("token_version")
 
-        if token_type != "access" or user_id is None or tenant_id is None:
+        if (
+            token_type != "access"
+            or user_id is None
+            or tenant_id is None
+            or token_version is None
+        ):
             raise credentials_exception
         parsed_user_id = int(user_id)
         parsed_tenant_id = int(tenant_id)
+        parsed_token_version = int(token_version)
 
     except (JWTError, ValueError):
         raise credentials_exception
@@ -51,6 +58,9 @@ def get_current_user(
     )
 
     if user is None or not user.is_active:
+        raise credentials_exception
+
+    if user.token_version != parsed_token_version:
         raise credentials_exception
 
     assert_active_tenant_membership(user)
