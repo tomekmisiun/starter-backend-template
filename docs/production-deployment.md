@@ -185,6 +185,26 @@ Database pool settings:
 - `DB_POOL_TIMEOUT_SECONDS`
 - `DB_STATEMENT_TIMEOUT_MS`
 
+Each API process opens at most `DB_POOL_SIZE + DB_MAX_OVERFLOW` PostgreSQL
+connections. The API logs the effective values at startup (`db_pool_configured`
+in application logs).
+
+Size PostgreSQL `max_connections` with:
+
+```text
+required_connections >= api_workers_or_replicas * (DB_POOL_SIZE + DB_MAX_OVERFLOW)
+                       + worker_replicas * worker_pool
+                       + admin/backup headroom
+```
+
+Example: `DB_POOL_SIZE=5`, `DB_MAX_OVERFLOW=10`, two Uvicorn workers, and two
+API replicas need up to `2 * 2 * 15 = 60` API connections before workers and
+headroom.
+
+For sync route handlers, prefer explicit multi-worker or horizontal replica
+scaling with a sized pool. See `docs/production-runtime-examples.md` for Gunicorn
+and Uvicorn worker examples.
+
 Redis production connectivity:
 
 - `REDIS_USERNAME`

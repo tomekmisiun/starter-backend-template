@@ -14,7 +14,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 
 | ID | Issue | Impact | Recommendation | Effort | Status |
 |----|-------|--------|----------------|--------|--------|
-| TD-001 | Production Docker image runs single-process Uvicorn (`Dockerfile` CMD, no `--workers`). | One CPU core serves all traffic; auth path saturates under login spikes. | Document and encode multi-worker deployment (gunicorn+uvicorn workers or horizontal scaling with sizing guide). | M | Open |
+| TD-001 | Production Docker image runs single-process Uvicorn (`Dockerfile` CMD, no `--workers`). | One CPU core serves all traffic; auth path saturates under login spikes. | Document and encode multi-worker deployment (gunicorn+uvicorn workers or horizontal scaling with sizing guide). | M | Done |
 | TD-002 | Legacy API router remounts auth/users/admin/tenants/files at unversioned paths (`app/api/legacy.py`, `app/main.py`). | Doubles protected attack surface; forks forget to remove deprecated routes. | Gate behind env flag (default off in production) or remove in next major version. | S | Done |
 | TD-003 | Worker processing queue has no visibility timeout or reaper (`brpoplpush` in `app/core/job_queue.py`). | Worker crash/OOM during deploy leaves jobs stuck in `app_jobs_processing` forever. | Add stale-job reclaim (visibility timeout, heartbeat, or periodic reaper). | M | Done |
 | TD-004 | Hard dependency on Redis with no degradation policy (rate limits, refresh rotation, cache, idempotency locks, job queue). | Redis blip causes auth failures, 429/500 cascades, and queue stall across the system. | Define fail-open vs fail-closed per feature; add circuit breaker and Redis HA guidance. | L | Open |
@@ -33,7 +33,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-010 | Idempotency records expire logically but are never deleted (`app/services/idempotency_service.py`). | Table bloat slows lookups and increases backup/storage cost. | Scheduled purge of rows where `expires_at < now()`. | S | Open |
 | TD-011 | Unknown worker job types log a warning then are acknowledged (`app/worker.py`). | Schema drift or typos silently drop jobs. | Route unknown types to DLQ instead of ack. | S | Open |
 | TD-012 | Nearly all routes are sync `def` with sync SQLAlchemy sessions. | Thread pool exhaustion under concurrent DB-bound load before DB maxes out. | Async SQLAlchemy + async routes, or explicit multi-worker sync sizing. | XL | Open |
-| TD-013 | Default DB pool (`pool_size=5`, `max_overflow=10`) with no startup visibility. | Naive horizontal scaling exhausts Postgres `max_connections`. | Log effective pool; document `(workers × replicas × pool)` formula. | S | Open |
+| TD-013 | Default DB pool (`pool_size=5`, `max_overflow=10`) with no startup visibility. | Naive horizontal scaling exhausts Postgres `max_connections`. | Log effective pool; document `(workers × replicas × pool)` formula. | S | Done |
 | TD-014 | Refresh tokens omit `token_version` (`app/core/security.py`). | Compromised refresh remains valid until rotation after role change/password reset. | Embed and validate `token_version` on refresh. | M | Open |
 | TD-015 | `/auth/refresh` and `/auth/logout` have no rate limits (`app/api/routes/auth.py`). | Refresh grinding amplifies Redis and DB load. | Add per-IP and per-token-hash limits. | S | Open |
 

@@ -42,7 +42,7 @@ Only mark **Done** when verified in code and tests.
 |---|------|----------|--------|------|-----|--------|
 | 1 | **Legacy route production gate** — `LEGACY_ROUTES_ENABLED` env (default off in production); tests + deprecation doc update | TD-002 | S | Low | Very High | Done |
 | 2 | **Worker processing-queue recovery** — reaper or visibility timeout for `app_jobs_processing` | TD-003 | M | Medium | Very High | Done |
-| 3 | **Production runtime scaling baseline** — multi-worker/gunicorn guidance, pool sizing formula, startup log of effective DB pool | TD-001, TD-013 | M | Low | Very High | Not started |
+| 3 | **Production runtime scaling baseline** — multi-worker/gunicorn guidance, pool sizing formula, startup log of effective DB pool | TD-001, TD-013 | M | Low | Very High | Done |
 | 4 | **Proxy-aware rate limiting** — trusted forwarded client IP; required for any reverse-proxy deployment | TD-006 | M | Medium | Very High | Not started |
 | 5 | **Metrics endpoint hardening** — internal bind, auth middleware option, and deployment doc for network restriction | TD-005 | S | Low | High | Not started |
 | 6 | **JWT algorithm single source of truth** — unify encode/decode on `settings.algorithm` | TD-007 | S | Low | High | Not started |

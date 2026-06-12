@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -17,15 +19,25 @@ from app.api.v1 import api_v1_router
 from app.core.config import settings
 from app.core.metrics import configure_metrics
 from app.core.runtime import configure_runtime_middleware
+from app.db.pool_config import log_db_pool_configuration
 
 configure_logging()
 configure_metrics()
 initialize_error_tracking()
 
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    del application
+    log_db_pool_configuration()
+    yield
+
+
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
     summary="Reusable FastAPI backend template",
+    lifespan=lifespan,
 )
 configure_openapi(app)
 
