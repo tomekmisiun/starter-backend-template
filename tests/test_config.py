@@ -23,6 +23,7 @@ def production_settings_kwargs():
         "trusted_hosts_enabled": True,
         "trusted_hosts": "api.example.test",
         "rate_limit_trust_forwarded_headers": True,
+        "metrics_bearer_token": "metrics-bearer-token-with-32-characters-min",
         "webhook_signature_secret": "production-webhook-secret-with-32-characters",
     }
 

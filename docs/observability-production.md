@@ -8,6 +8,14 @@ metrics and traces as per-instance signals that are aggregated externally.
 
 The API and worker expose Prometheus metrics from `/metrics`.
 
+Production defaults:
+
+- `METRICS_REQUIRE_AUTH` defaults to `true` when `ENVIRONMENT=production`
+- set `METRICS_BEARER_TOKEN` to a long random secret and scrape with
+  `Authorization: Bearer <token>`
+- restrict network access to `/metrics` (internal load balancer, private subnet,
+  or sidecar scrape) even when bearer auth is enabled
+
 Core HTTP metrics:
 
 - `http_requests_total`

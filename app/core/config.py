@@ -114,6 +114,8 @@ class Settings(BaseSettings):
     sentry_release: str = ""
     prometheus_multiproc_dir: str = ""
     metrics_instance_id: str = ""
+    metrics_require_auth: bool | None = None
+    metrics_bearer_token: str = ""
     webhook_signature_secret: str = ""
     webhook_signature_tolerance_seconds: int = Field(default=300, gt=0)
     idempotency_ttl_seconds: int = Field(default=86400, gt=0)
@@ -267,7 +269,24 @@ class Settings(BaseSettings):
                     f"in {environment_name}",
                 )
 
+        if require_trusted_hosts and self.metrics_require_auth:
+            if self.metrics_bearer_token.strip() == "":
+                errors.append(
+                    f"metrics_bearer_token is required in {environment_name}",
+                )
+
         return errors
+
+    @model_validator(mode="after")
+    def apply_metrics_auth_default(self) -> "Settings":
+        if self.metrics_require_auth is None:
+            object.__setattr__(
+                self,
+                "metrics_require_auth",
+                self.environment == "production",
+            )
+
+        return self
 
     @model_validator(mode="after")
     def apply_legacy_routes_default(self) -> "Settings":

@@ -25,7 +25,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 
 | ID | Issue | Impact | Recommendation | Effort | Status |
 |----|-------|--------|----------------|--------|--------|
-| TD-005 | `/metrics` is unauthenticated (`app/api/routes/metrics.py`). | Traffic patterns and dependency health leak if exposed beyond internal network. | Restrict via network ACL, mTLS, or auth middleware; document requirement. | S | Open |
+| TD-005 | `/metrics` is unauthenticated (`app/api/routes/metrics.py`). | Traffic patterns and dependency health leak if exposed beyond internal network. | Restrict via network ACL, mTLS, or auth middleware; document requirement. | S | Done |
 | TD-006 | Rate limits key on `request.client.host` only (`app/api/dependencies/rate_limit.py`). | Behind reverse proxy: limits are ineffective or block all users on one IP. | Parse trusted forwarded headers; align with Uvicorn `--proxy-headers` and allowlist. | M | Done |
 | TD-007 | JWT encode uses hardcoded `ALGORITHM`; decode uses `settings.algorithm` (`app/core/security.py`). | Misconfigured env breaks auth or creates inconsistent token validation. | Single source of truth for signing algorithm. | S | Open |
 | TD-008 | `UserAdminUpdate.role` accepts arbitrary strings (`app/schemas/user.py`). | Invalid roles get empty permissions or accidental lockout. | Validate against allowed role enum in schema/service. | S | Open |

@@ -44,7 +44,7 @@ Only mark **Done** when verified in code and tests.
 | 2 | **Worker processing-queue recovery** — reaper or visibility timeout for `app_jobs_processing` | TD-003 | M | Medium | Very High | Done |
 | 3 | **Production runtime scaling baseline** — multi-worker/gunicorn guidance, pool sizing formula, startup log of effective DB pool | TD-001, TD-013 | M | Low | Very High | Done |
 | 4 | **Proxy-aware rate limiting** — trusted forwarded client IP; required for any reverse-proxy deployment | TD-006 | M | Medium | Very High | Done |
-| 5 | **Metrics endpoint hardening** — internal bind, auth middleware option, and deployment doc for network restriction | TD-005 | S | Low | High | Not started |
+| 5 | **Metrics endpoint hardening** — internal bind, auth middleware option, and deployment doc for network restriction | TD-005 | S | Low | High | Done |
 | 6 | **JWT algorithm single source of truth** — unify encode/decode on `settings.algorithm` | TD-007 | S | Low | High | Not started |
 | 7 | **RBAC role input validation** — reject arbitrary `role` strings on admin update | TD-008 | S | Low | High | Not started |
 | 8 | **Upload production guard** — fail startup in production when file features are used without a real malware scanner URL | TD-009 | S | Low | High | Not started |

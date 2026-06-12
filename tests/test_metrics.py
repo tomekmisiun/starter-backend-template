@@ -39,6 +39,23 @@ def test_metrics_endpoint_does_not_record_itself(client):
     assert 'path="/metrics"' not in response.text
 
 
+def test_metrics_requires_bearer_token_when_auth_enabled(monkeypatch, client):
+    monkeypatch.setattr("app.core.config.settings.metrics_require_auth", True)
+    monkeypatch.setattr(
+        "app.core.config.settings.metrics_bearer_token",
+        "metrics-test-token",
+    )
+
+    unauthorized = client.get("/metrics")
+    assert unauthorized.status_code == 401
+
+    authorized = client.get(
+        "/metrics",
+        headers={"Authorization": "Bearer metrics-test-token"},
+    )
+    assert authorized.status_code == 200
+
+
 def test_metrics_record_dependency_checks(client):
     client.get("/health/ready")
 
