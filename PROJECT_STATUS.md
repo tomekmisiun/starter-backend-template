@@ -14,7 +14,7 @@ foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
 Current branch for active feature work:
-`feature/scheduled-backup-docs` (audit remediation).
+`feature/load-threshold-ci-smoke` (audit remediation).
 
 Current architecture:
 
@@ -238,11 +238,11 @@ Production-readiness summary:
   object verification after presigned uploads, metadata validation, HTTP
   malware scanner integration boundaries, and `docs/file-upload-production.md`.
 - Load and concurrency testing with repeatable threshold profiles in
-  `perf/profiles.json`, threshold-enforced load targets, concurrency regression
-  coverage for idempotency, workers, auth/session rotation, Redis, storage, and
-  slow dependency paths, atomic refresh-token revocation under concurrent reuse,
-  manual GitHub Actions load-threshold workflow, and
-  `docs/load-concurrency-testing.md`.
+  `perf/profiles.json`, threshold-enforced load targets, pull-request load smoke
+  checks in CI, concurrency regression coverage for idempotency, workers,
+  auth/session rotation, Redis, storage, and slow dependency paths, atomic
+  refresh-token revocation under concurrent reuse, manual GitHub Actions
+  load-threshold workflow, and `docs/load-concurrency-testing.md`.
 - Template onboarding guide in `docs/template-onboarding.md`.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
@@ -263,7 +263,6 @@ These are not missing template code; each project must choose and configure:
 
 Known gaps in the template itself before calling it safe for public SaaS reuse:
 
-- Load thresholds: manual workflow only; not a PR gate.
 - Malware scanning: integration point only, not a bundled scanner.
 - Legacy unversioned routes still mounted alongside `/api/v1`.
 - `make validate` does not yet enforce local coverage floor like CI.
@@ -283,16 +282,16 @@ Audit remediation order (separate PRs):
 | P1 | Access token invalidation strategy | `feature/access-token-revocation` ✅ |
 | P2 | Production runtime docs | `docs/production-runtime-examples` ✅ |
 | P2 | Scheduled backup + PITR checklist | `feature/scheduled-backup-docs` ✅ |
-| P2 | Load threshold CI smoke | `feature/load-threshold-ci-smoke` |
+| P2 | Load threshold CI smoke | `feature/load-threshold-ci-smoke` ✅ |
 | P2 | Malware scanning boundary docs/tests | `docs/malware-scanning` |
 | P2 | Legacy route deprecation policy | `docs/legacy-route-deprecation` |
 | P2 | Makefile validate + coverage | `chore/validate-with-coverage` |
 
 ## 5. Next Immediate Task
 
-Current PR: scheduled backup workflow and PITR checklist.
+Current PR: pull-request load threshold smoke in CI.
 
-Next branch: `feature/load-threshold-ci-smoke`.
+Next branch: `docs/malware-scanning`.
 
 ## 6. Rules For Updating This File
 

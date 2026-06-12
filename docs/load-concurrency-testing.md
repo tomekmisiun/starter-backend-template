@@ -96,11 +96,14 @@ Run the suite with the standard validation workflow:
 make validate
 ```
 
-## Manual GitHub Actions Workflow
+## CI And Manual Load Workflows
 
-Use `.github/workflows/load-threshold.yml` to run threshold checks manually in
-CI against a Docker Compose stack when you want post-merge performance
-verification outside the default pytest job.
+Pull requests run a lightweight load threshold smoke check in `.github/workflows/ci.yml`
+(`load-smoke` job) against the `health` profile with reduced request volume.
+
+Use `.github/workflows/load-threshold.yml` to run full threshold checks manually
+(`health` or `health-ready`) when you want deeper post-merge performance
+verification outside the default PR smoke job.
 
 ## Notes
 
