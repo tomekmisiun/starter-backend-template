@@ -212,6 +212,9 @@ Production-readiness summary:
   windows, Redis-backed in-flight idempotency locking, concurrent duplicate
   fallback handling, production webhook secret validation, and
   `docs/webhook-idempotency.md`.
+- File upload production hardening with streaming-safe multipart reads, stored
+  object verification after presigned uploads, metadata validation, HTTP
+  malware scanner integration boundaries, and `docs/file-upload-production.md`.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
@@ -220,11 +223,6 @@ Production-readiness summary:
 The project should still be treated as a production-ready template foundation,
 not a finished production platform. The following gaps are template-wide enough
 to track before calling the repository complete for high-scale reuse.
-
-- P1: File upload production safety.
-  Add streaming-safe upload handling, actual object verification after presigned
-  uploads, concrete malware scanner integration, and stronger metadata
-  validation.
 
 - P2: Disaster recovery automation.
   Backup/restore docs and local rehearsal exist, but production provider
@@ -254,7 +252,6 @@ mark them as completed until the implementation and regression coverage are on
 
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
-| P1 | File upload production hardening | Add streaming-safe upload behavior, actual object verification, and concrete scanner integration boundaries. | `feature/file-upload-production-hardening` |
 | P2 | Backup/restore automation | Add provider-ready backup automation examples and stronger restore rehearsal workflows. | `feature/backup-restore-automation` |
 | P2 | Load and concurrency testing | Add repeatable performance thresholds and concurrency tests for critical infrastructure paths. | `feature/load-concurrency-testing` |
 
@@ -265,20 +262,18 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/file-upload-production-hardening
+feature/backup-restore-automation
 ```
 
 Recommended scope:
 
-- Add streaming-safe upload handling and actual object verification after
-  presigned uploads.
-- Add concrete malware scanner integration boundaries and stronger metadata
-  validation.
+- Add provider-ready backup automation examples.
+- Strengthen restore rehearsal workflows and operational guidance.
 
 Expected validation:
 
 - `make validate`
-- File upload tests for changed paths
+- Backup/restore rehearsal tests for changed paths
 
 ## 6. Rules For Updating This File
 

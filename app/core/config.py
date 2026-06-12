@@ -94,7 +94,10 @@ class Settings(BaseSettings):
     upload_max_size_bytes: int = Field(default=5_242_880, gt=0)
     upload_allowed_content_types: str = "image/png,image/jpeg,application/pdf"
     upload_presigned_url_expire_seconds: int = Field(default=300, gt=0)
+    upload_stream_chunk_size_bytes: int = Field(default=65_536, gt=0)
     upload_malware_scan_enabled: bool = False
+    upload_malware_scanner_url: str = ""
+    upload_malware_scanner_timeout_seconds: float = Field(default=5.0, gt=0)
     sentry_dsn: str = ""
     sentry_traces_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
     sentry_send_default_pii: bool = False

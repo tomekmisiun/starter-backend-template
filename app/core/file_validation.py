@@ -1,8 +1,9 @@
-from dataclasses import dataclass
-
 from fastapi import HTTPException, status
 
 from app.core.config import settings
+from app.core.malware_scan import MalwareScanResult, ensure_malware_scan_is_clean
+from app.core.upload_metadata import validate_content_type_format
+from app.services.malware_scanner import get_malware_scanner
 
 
 CONTENT_SIGNATURES: dict[str, tuple[bytes, ...]] = {
@@ -10,12 +11,6 @@ CONTENT_SIGNATURES: dict[str, tuple[bytes, ...]] = {
     "image/png": (b"\x89PNG\r\n\x1a\n",),
     "image/jpeg": (b"\xff\xd8\xff",),
 }
-
-
-@dataclass(frozen=True)
-class MalwareScanResult:
-    clean: bool
-    detail: str
 
 
 def sniff_content_type(body: bytes) -> str | None:
@@ -26,18 +21,27 @@ def sniff_content_type(body: bytes) -> str | None:
     return None
 
 
-def validate_declared_content_type(content_type: str | None) -> None:
-    allowed_content_types = {
-        value.strip()
-        for value in settings.upload_allowed_content_types.split(",")
-        if value.strip()
-    }
-
-    if content_type not in allowed_content_types:
+def validate_declared_content_type(content_type: str | None) -> str:
+    if content_type is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported file type",
         )
+
+    normalized_content_type = validate_content_type_format(content_type)
+    allowed_content_types = {
+        value.strip().lower()
+        for value in settings.upload_allowed_content_types.split(",")
+        if value.strip()
+    }
+
+    if normalized_content_type not in allowed_content_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported file type",
+        )
+
+    return normalized_content_type
 
 
 def validate_content_sniff(declared_content_type: str, body: bytes) -> None:
@@ -51,24 +55,21 @@ def validate_content_sniff(declared_content_type: str, body: bytes) -> None:
 
 
 def run_malware_scan(body: bytes, filename: str) -> MalwareScanResult:
-    if not settings.upload_malware_scan_enabled:
-        return MalwareScanResult(clean=True, detail="malware_scan_disabled")
-
-    return scan_uploaded_file(body, filename)
+    return get_malware_scanner().scan(body, filename)
 
 
 def scan_uploaded_file(body: bytes, filename: str) -> MalwareScanResult:
-    """Integration point for external malware scanners in downstream projects."""
+    """Backward-compatible wrapper for downstream scanner overrides in tests."""
 
-    _ = body, filename
-    return MalwareScanResult(clean=True, detail="malware_scan_passed")
+    return run_malware_scan(body, filename)
 
 
-def ensure_malware_scan_is_clean(scan_result: MalwareScanResult) -> None:
-    if scan_result.clean:
-        return
-
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="File failed malware scanning",
-    )
+__all__ = [
+    "MalwareScanResult",
+    "ensure_malware_scan_is_clean",
+    "run_malware_scan",
+    "scan_uploaded_file",
+    "sniff_content_type",
+    "validate_content_sniff",
+    "validate_declared_content_type",
+]

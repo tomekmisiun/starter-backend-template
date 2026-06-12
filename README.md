@@ -723,11 +723,17 @@ Upload configuration:
 - `UPLOAD_MAX_SIZE_BYTES`
 - `UPLOAD_ALLOWED_CONTENT_TYPES`
 - `UPLOAD_PRESIGNED_URL_EXPIRE_SECONDS`
+- `UPLOAD_STREAM_CHUNK_SIZE_BYTES`
 - `UPLOAD_MALWARE_SCAN_ENABLED`
+- `UPLOAD_MALWARE_SCANNER_URL`
+- `UPLOAD_MALWARE_SCANNER_TIMEOUT_SECONDS`
 
-The upload flow validates declared content type, file size, and magic-byte
-content sniffing before writing metadata. `scan_uploaded_file()` is the malware
-scanner integration point for downstream projects.
+The upload flow validates filename metadata, declared content type, file size,
+magic-byte content sniffing, and malware scanning before writing metadata.
+Presigned completion verifies the stored object size, content type, sniffed
+bytes, and scan result before metadata is persisted. See
+`docs/file-upload-production.md` for production guidance and scanner integration
+boundaries.
 
 The local MinIO console is available at:
 

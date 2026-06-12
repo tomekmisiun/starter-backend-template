@@ -1,7 +1,12 @@
 from botocore.exceptions import ClientError
+from fastapi import HTTPException
 
 from app.models.uploaded_file import UploadedFile
-from app.services.storage_service import PresignedUrl, StorageService
+from app.services.storage_service import (
+    PresignedUrl,
+    StorageService,
+    StoredObjectMetadata,
+)
 
 
 PDF_BYTES = b"%PDF-1.4 test-content"
@@ -10,7 +15,7 @@ PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"png-content"
 
 class FakeStorageProvider:
     def __init__(self):
-        self.objects: dict[str, bytes] = {}
+        self.objects: dict[str, dict[str, object]] = {}
         self.deleted_keys: list[str] = []
         self.bucket_ready = True
 
@@ -20,7 +25,10 @@ class FakeStorageProvider:
                 {"Error": {"Code": "500", "Message": "bucket unavailable"}},
                 "PutObject",
             )
-        self.objects[object_key] = body
+        self.objects[object_key] = {
+            "body": body,
+            "content_type": content_type,
+        }
 
     def delete_object(self, *, object_key: str) -> None:
         self.deleted_keys.append(object_key)
@@ -28,6 +36,40 @@ class FakeStorageProvider:
 
     def object_exists(self, *, object_key: str) -> bool:
         return object_key in self.objects
+
+    def get_object_metadata(self, *, object_key: str) -> StoredObjectMetadata:
+        stored_object = self.objects.get(object_key)
+
+        if stored_object is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded object was not found in storage",
+            )
+
+        body = stored_object["body"]
+        assert isinstance(body, bytes)
+
+        return StoredObjectMetadata(
+            size_bytes=len(body),
+            content_type=str(stored_object["content_type"]),
+        )
+
+    def download_object_body(self, *, object_key: str, max_bytes: int) -> bytes:
+        stored_object = self.objects.get(object_key)
+
+        if stored_object is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded object could not be verified",
+            )
+
+        body = stored_object["body"]
+        assert isinstance(body, bytes)
+
+        if len(body) > max_bytes:
+            raise HTTPException(status_code=413, detail="File too large")
+
+        return body
 
     def generate_presigned_download_url(self, *, object_key: str) -> PresignedUrl:
         return PresignedUrl(
@@ -144,6 +186,22 @@ def test_upload_rejects_unsupported_content_type(client):
     assert response.status_code == 400
 
 
+def test_upload_rejects_invalid_filename(client, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.files.get_storage_service",
+        lambda: StorageService(provider=FakeStorageProvider()),
+    )
+    token = create_user_and_login(client, email="filename-user@example.com")
+
+    response = client.post(
+        "/files/upload",
+        files={"file": ("../example.pdf", PDF_BYTES, "application/pdf")},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+
+
 def test_upload_rejects_content_type_and_sniff_mismatch(client, monkeypatch):
     monkeypatch.setattr(
         "app.api.routes.files.get_storage_service",
@@ -171,6 +229,45 @@ def test_upload_rejects_files_above_size_limit(client, monkeypatch):
     )
 
     assert response.status_code == 413
+
+
+def test_upload_reads_stream_in_chunks_before_rejecting_large_files(client, monkeypatch):
+    monkeypatch.setattr("app.services.storage_service.settings.upload_max_size_bytes", 10)
+    monkeypatch.setattr(
+        "app.services.storage_service.settings.upload_stream_chunk_size_bytes",
+        4,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.files.get_storage_service",
+        lambda: StorageService(provider=FakeStorageProvider()),
+    )
+    token = create_user_and_login(client, email="stream-user@example.com")
+
+    response = client.post(
+        "/files/upload",
+        files={"file": ("example.pdf", PDF_BYTES, "application/pdf")},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 413
+
+
+def test_upload_rejects_infected_filename_when_scanning_enabled(client, monkeypatch):
+    monkeypatch.setattr("app.core.config.settings.upload_malware_scan_enabled", True)
+    monkeypatch.setattr(
+        "app.api.routes.files.get_storage_service",
+        lambda: StorageService(provider=FakeStorageProvider()),
+    )
+    token = create_user_and_login(client, email="scan-user@example.com")
+
+    response = client.post(
+        "/files/upload",
+        files={"file": ("report.infected.pdf", PDF_BYTES, "application/pdf")},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"]["message"] == "File failed malware scanning"
 
 
 def test_user_can_get_presigned_download_url_for_own_file(client, monkeypatch):
@@ -263,3 +360,147 @@ def test_upload_returns_503_when_storage_is_unavailable(client, monkeypatch):
     )
 
     assert response.status_code == 503
+
+
+def test_presigned_upload_complete_verifies_stored_object(client, monkeypatch):
+    provider = FakeStorageProvider()
+    monkeypatch.setattr(
+        "app.api.routes.files.get_storage_service",
+        lambda: StorageService(provider=provider),
+    )
+    token = create_user_and_login(client, email="presigned-user@example.com")
+
+    presigned_response = client.post(
+        "/files/presigned-upload",
+        json={"filename": "invoice.pdf", "content_type": "application/pdf"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert presigned_response.status_code == 200
+
+    object_key = presigned_response.json()["object_key"]
+    provider.upload_file(
+        object_key=object_key,
+        body=PDF_BYTES,
+        content_type="application/pdf",
+    )
+
+    complete_response = client.post(
+        "/files/presigned-upload/complete",
+        json={
+            "object_key": object_key,
+            "filename": "invoice.pdf",
+            "content_type": "application/pdf",
+            "size_bytes": len(PDF_BYTES),
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert complete_response.status_code == 201
+    assert complete_response.json()["filename"] == "invoice.pdf"
+    assert complete_response.json()["size_bytes"] == len(PDF_BYTES)
+
+
+def test_presigned_upload_complete_rejects_missing_object(client, monkeypatch):
+    provider = FakeStorageProvider()
+    monkeypatch.setattr(
+        "app.api.routes.files.get_storage_service",
+        lambda: StorageService(provider=provider),
+    )
+    token = create_user_and_login(client, email="missing-object-user@example.com")
+
+    presigned_response = client.post(
+        "/files/presigned-upload",
+        json={"filename": "invoice.pdf", "content_type": "application/pdf"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    object_key = presigned_response.json()["object_key"]
+
+    response = client.post(
+        "/files/presigned-upload/complete",
+        json={
+            "object_key": object_key,
+            "filename": "invoice.pdf",
+            "content_type": "application/pdf",
+            "size_bytes": len(PDF_BYTES),
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+
+
+def test_presigned_upload_complete_rejects_size_mismatch(client, monkeypatch):
+    provider = FakeStorageProvider()
+    monkeypatch.setattr(
+        "app.api.routes.files.get_storage_service",
+        lambda: StorageService(provider=provider),
+    )
+    token = create_user_and_login(client, email="size-mismatch-user@example.com")
+
+    presigned_response = client.post(
+        "/files/presigned-upload",
+        json={"filename": "invoice.pdf", "content_type": "application/pdf"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    object_key = presigned_response.json()["object_key"]
+    provider.upload_file(
+        object_key=object_key,
+        body=PDF_BYTES,
+        content_type="application/pdf",
+    )
+
+    response = client.post(
+        "/files/presigned-upload/complete",
+        json={
+            "object_key": object_key,
+            "filename": "invoice.pdf",
+            "content_type": "application/pdf",
+            "size_bytes": len(PDF_BYTES) + 10,
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+    assert (
+        response.json()["error"]["message"]
+        == "Uploaded object size does not match declared size"
+    )
+
+
+def test_presigned_upload_complete_rejects_content_sniff_mismatch(client, monkeypatch):
+    provider = FakeStorageProvider()
+    monkeypatch.setattr(
+        "app.api.routes.files.get_storage_service",
+        lambda: StorageService(provider=provider),
+    )
+    token = create_user_and_login(client, email="presigned-sniff-user@example.com")
+
+    presigned_response = client.post(
+        "/files/presigned-upload",
+        json={"filename": "invoice.pdf", "content_type": "application/pdf"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    object_key = presigned_response.json()["object_key"]
+    provider.upload_file(
+        object_key=object_key,
+        body=PNG_BYTES,
+        content_type="application/pdf",
+    )
+
+    response = client.post(
+        "/files/presigned-upload/complete",
+        json={
+            "object_key": object_key,
+            "filename": "invoice.pdf",
+            "content_type": "application/pdf",
+            "size_bytes": len(PNG_BYTES),
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+    assert (
+        response.json()["error"]["message"]
+        == "File content does not match declared content type"
+    )
