@@ -21,7 +21,7 @@ pytest.
 
 ## Requirements
 
-- Python 3.12
+- Python 3.14
 - uv
 - Docker and Docker Compose
 - Make
