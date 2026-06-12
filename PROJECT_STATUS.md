@@ -1,315 +1,184 @@
 # Project Status
 
-This file preserves the current backend state and roadmap so future Codex
-sessions can continue without losing context.
+Verified implementation state of the starter backend template.  
+Planned work: `ROADMAP.md`. Known issues: `TECH_DEBT.md`.
 
-## 1. Current Project Status
+Do not treat this file as a roadmap or debt register.
 
-The project is a universal, reusable FastAPI backend template for future
-SaaS/API/backend projects. It is intended to be a production-ready foundation,
-not a template for one specific business domain.
+## Overview
 
-The current implementation is a strong local-development and testable backend
-foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
-Compose, pytest, Ruff, uv, and GitHub Actions.
+Reusable FastAPI backend template for SaaS/API projects — a testable
+foundation, not a finished multi-tenant SaaS platform.
 
-Current branch: `main` (audit remediation complete).
+**Stack:** FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, S3-compatible
+storage, Docker Compose, pytest, Ruff, uv, GitHub Actions.
 
-Test baseline: **304 pytest tests**, **~89% coverage**, CI load-smoke on pull
-requests, `make validate` enforces the 85% coverage floor locally.
+**Test baseline (verified):** 304 pytest tests, ~89% line coverage, 85%
+coverage floor enforced in CI and `make validate`.
 
-Current architecture:
+**Architecture:**
 
-- API routes live in `app/api/routes`.
-- Reusable API dependencies live in `app/api/dependencies`.
-- Business logic lives in `app/services`.
-- SQLAlchemy models live in `app/models`.
-- Pydantic schemas live in `app/schemas`.
-- Database session setup lives in `app/db/session.py`.
-- Core config/security/Redis/middleware live in `app/core`.
-- Alembic migrations live in `alembic/versions`.
-- Regression tests live in `tests`.
+- API routes: `app/api/routes`
+- API dependencies: `app/api/dependencies`
+- Business logic: `app/services`
+- Models: `app/models`
+- Schemas: `app/schemas`
+- Database session: `app/db/session.py`
+- Core config/security/infra: `app/core`
+- Migrations: `alembic/versions` (9 revisions)
+- Tests: `tests/` (43 modules)
 
-Current documentation/rules setup:
+**Documentation and rules:**
 
-- `AGENTS.md` is a minimal wrapper that points to `.ai-rules`.
-- `.ai-rules` is the source of truth for AI/project rules.
-- `.cursor/rules/*.mdc` files are thin wrappers pointing to `.ai-rules`.
-- `README.md` documents project purpose, stack, setup, Docker, env variables,
-  migrations, tests, API overview, auth flow, roles, rate limiting, file
-  uploads, observability, and known production gaps.
+- `README.md` — setup, API, Docker, env vars, operations
+- `docs/` — deployment, security, workers, tenancy, backups, load testing
+- `.ai-rules/` — AI/project rules (source of truth for agent behavior)
+- `AGENTS.md`, `.cursor/rules/*.mdc` — thin wrappers pointing to `.ai-rules`
 
-Production-readiness summary:
+---
 
-- The template has a broad backend feature baseline: auth/session hardening,
-  users/admin flows, audit logs, rate limiting, caching, worker jobs, password
-  reset, file uploads, health checks, metrics, logs, CI, and migration-aware
-  tests.
-- The project is a **production-ready foundation** for new APIs, not a
-  finished multi-tenant SaaS platform. The June 2026 audit remediation pass
-  closed tracked template-hardening gaps; downstream projects still must choose
-  hosting, secrets, backups, tracing, and product policy before real traffic.
-- Anything not listed in "Completed Features" should be treated as not
-  implemented unless a new roadmap item is added explicitly.
+## Verified Capabilities
 
-## 2. Completed Features
+### Application core
 
-- FastAPI application bootstrap with route registration.
-- PostgreSQL database setup through SQLAlchemy.
-- Alembic migration setup.
-- Docker Compose setup for API, main database, test database, and Redis.
-- Production-oriented API Dockerfile with non-root runtime user, Python/uv
-  defaults, `.dockerignore`, separate `development` and `production` build
-  targets, production-only runtime dependencies, and a production Uvicorn
-  entrypoint documented in `docs/production-deployment.md`.
-- Python dependency management through `pyproject.toml` and `uv.lock`.
-- Documented dependency update policy with runtime and dev dependency
-  separation.
-- User registration with environment-driven `REGISTRATION_POLICY` gate
-  (`public` or `disabled`).
-- User login with access and refresh JWTs.
-- Password hashing with bcrypt/passlib.
-- `/auth/me` endpoint.
-- `/auth/refresh` endpoint.
-- `/auth/logout` endpoint.
-- Password reset request and confirm endpoints with single-use hashed reset
-  tokens and SMTP-backed email delivery abstraction.
-- Password reset hardening with dedicated Redis-backed rate limiting, system
-  audit log entries for reset request/confirm events, and cleanup command for
-  expired reset tokens.
-- Redis-backed background worker, Docker Compose worker service, job retry
-  handling with exponential backoff, processing and delayed queues, failed job
-  dead-letter metadata, Redis-backed maintenance locking, failed job queue, and
-  password reset email delivery through worker jobs.
-- Environment-driven worker scheduled maintenance for expired password reset
-  token cleanup.
-- Worker failed-job inspection and requeue command for Redis-backed failed
-  jobs.
-- Password-reset worker job idempotency with Redis completion markers keyed by
-  `job.id` and retry-safe delivery regression tests.
-- Refresh token rotation with Redis-backed refresh token revocation.
-- Access-token invalidation through per-user `token_version` claims validated on
-  every authenticated request and incremented on password reset, deactivation,
-  and role changes.
-- Inactive users are blocked from login, access-token use, and refresh-token
-  use.
-- Basic role-based access control with `user`, tenant `admin`, and
-  `platform_admin` roles.
-- Admin-only `/admin` endpoint.
-- User listing with pagination, sorting, filtering, and email search.
-- User self-read and self-update.
-- Separate self-update and admin-update behavior for admin-managed fields.
-- Admin user read/update/delete.
-- Admin activate/deactivate user endpoints.
-- Audit log model, migrations, service, admin listing endpoint, action
-  constants, filtering, query indexes, and audit writes for admin user
-  update/deactivate/activate/delete actions.
-- Basic app health check.
-- Dedicated liveness endpoint.
-- Readiness endpoint that checks database and Redis dependencies.
-- Database and Redis health checks with consistent `503` failure responses.
-- Redis-backed example rate-limited endpoint with environment-driven defaults
-  and regression coverage for limit enforcement, Redis TTLs, and per-IP
-  counters.
-- Redis-backed rate limiting on `/auth/login` and `/auth/register` with separate
-  per-IP keys, configurable limits/windows, and regression tests.
-- Redis-backed caching for admin user listing with environment-driven TTL,
-  query-parameter cache keys, and invalidation after user writes.
-- File upload endpoint, uploaded file metadata model, S3-compatible storage
-  abstraction, local MinIO service, and upload validation for size and content
-  type.
-- Centralized API error response envelope for HTTP errors, validation errors,
-  auth failures, not found responses, and rate limit failures.
-- Request ID middleware that generates or preserves `X-Request-ID`, adds it to
-  responses, keeps `X-Process-Time`, and logs request start/finish events.
-- Configured stdout logging with request context fields visible in Docker logs.
-- Structured logging foundation with env-driven `text`/`json` output, sensitive
-  field redaction, request/job correlation via `request_id` propagation into
-  worker jobs, and regression tests for formatters and redaction policy.
-- API versioning with `/api/v1` route namespace, deprecated legacy route
-  compatibility for existing unversioned paths, documented deprecation policy in
-  `docs/legacy-route-deprecation.md`, and route availability regression tests.
-- OpenAPI documentation polish with tag descriptions, endpoint summaries,
-  documented error envelope schema, bearer auth scheme, request examples, and
-  contract regression tests.
-- Reusable permission model with role-to-permission policies, role hierarchy,
-  `require_permission` dependency helpers, resource-level user authorization
-  helpers, and regression tests while preserving existing `admin`/`user` roles.
-- Multi-tenancy foundation with tenant model/migration, `X-Tenant-Slug` auth
-  resolution, tenant-scoped users/audit logs/uploads, tenant-safe cache/object
-  key prefixes, JWT tenant claims, and regression tests. This is a foundation,
-  not a complete SaaS tenant isolation model.
-- Idempotency and webhook security foundation with persisted idempotency keys,
-  signed inbound webhook endpoint, replay-protected webhook event storage, and
-  regression tests.
-- File storage hardening foundation with private object uploads, presigned
-  download/upload flows, content sniffing, malware-scan integration point,
-  bucket access verification, delete cleanup, and storage failure regression
-  tests. Malware scanning is an integration boundary documented in
-  `docs/malware-scanning.md`; downstream projects wire a concrete scanner.
-- CI/CD quality foundation with pre-commit enforcement, pytest coverage
-  artifacts, enforced coverage floor, blocking Trivy image policy checks,
-  advisory SARIF upload, blocking runtime dependency review on pull requests,
-  GHCR release image publishing, and a manual GitHub Actions deploy workflow
-  with hook/SSH promotion, optional migrations, and smoke checks.
-- Operations and scale regression coverage for migration downgrade/upgrade
-  rehearsal, logical backup/restore rehearsal, worker failed-job CLI replay,
-  Redis outage behavior, cache-miss consistency, and OpenAPI contract checks.
-- Dependabot automation for weekly uv, GitHub Actions, and Docker image update
-  pull requests with documented review cadence in `README.md`.
-- Local developer experience improvements with development-only seed data,
-  `make bootstrap`, `make smoke`, `make validate` (Ruff + pytest with 85%
-  coverage floor), and troubleshooting docs.
-- Lightweight load/performance baseline with `perf/load_baseline.py`,
-  `make load-smoke`, documented JSON result format, named threshold profiles,
-  `make load-validate`, concurrency regression tests, and
-  `docs/load-concurrency-testing.md`.
-- Local observability stack with Promtail, Loki, and Grafana for Docker log
-  collection and inspection.
-- Prometheus-compatible `/metrics` endpoint, request metrics collection,
-  worker and dependency metrics, optional multi-process aggregation, Sentry
-  request correlation, Prometheus service in the local observability stack,
-  Grafana Prometheus datasource provisioning, and a local FastAPI overview
-  dashboard.
-- Local Alertmanager service, Prometheus alert routing, and baseline FastAPI
-  alert rules for target availability, 5xx error rate, and p95 latency.
-- Sentry SDK error tracking and tracing foundation with environment-driven
-  configuration, disabled-by-default behavior without `SENTRY_DSN`, request ID
-  correlation, and regression tests without real external events. This is not a
-  complete distributed tracing or incident-response setup.
-- Pytest test suite for auth, users, admin, audit logs, and basic health.
-- Migration-aware pytest setup that resets the test database and applies
-  Alembic migrations before running application tests.
-- Regression test confirming the test database is at the current Alembic head.
-- GitHub Actions CI for Docker build, Ruff, backup/restore rehearsal,
-  Redis-backed rate limit tests, pull-request load threshold smoke, and the
-  full pytest suite with PostgreSQL, test PostgreSQL, and Redis started.
-- README documentation for project setup, API, auth flow, and production gaps.
-- Provider-neutral production deployment guide covering runtime shape,
-  staging/production expectations, secrets, deployment flow, migrations,
-  rollback, backup/restore expectations, health checks, and smoke checks.
-- Provider-neutral secret management runbook covering secret inventory,
-  staging/production separation, planned rotation, emergency rotation, and
-  `SECRET_KEY` rotation impact.
-- Local PostgreSQL backup and restore rehearsal workflow with Makefile targets,
-  ignored dump files, and provider-neutral backup/restore runbook.
-- Backup and restore automation scripts, core-table verification, CI rehearsal,
-  scheduled backup workflow example, PITR provider checklist in
-  `docs/pitr-and-scheduled-backups.md`, and provider-hook examples documented in
-  `docs/backup-restore-automation.md`. Provider-specific PITR policies and
-  live-environment restore targets remain downstream responsibilities.
-- Migration and rollback support with Makefile Alembic helper targets and a
-  provider-neutral migration/rollback runbook covering expand/contract,
-  failed migrations, forward-fix policy, and release checklists.
-- Config hardening for required non-placeholder `SECRET_KEY`, production secret
-  length validation, allowed environment validation, and env-driven Redis
-  settings.
-- Environment/config hardening with explicit `staging` support and
-  production-only validation that rejects local/default values for database,
-  SMTP, password reset URL, and S3 storage settings.
-- Staging environment validation that rejects the same local/default remote
-  service placeholders as production for database, Redis, SMTP, password reset
-  URL, and S3 settings, without requiring trusted hosts or webhook secrets.
-- Production runtime hardening with environment-driven database pool settings,
-  Redis auth/TLS/timeouts, CORS and trusted host middleware, security headers,
-  production validation for Redis and trusted hosts, and production server
-  guidance in `docs/production-deployment.md`.
-- Production deployment automation with a manual GitHub Actions workflow,
-  provider-neutral promotion scripts for deploy hooks and SSH compose rollout,
-  optional runner-side Alembic migrations, post-deploy smoke checks, and
-  `docker-compose.prod.yml` for VM-style deployments.
-- Production runtime examples in `docs/production-runtime-examples.md` covering
-  Nginx, Caddy, and Traefik reverse-proxy patterns, `docker-compose.prod.yml`
-  scope, and GitHub environment checklists for staging/production deploys.
-- Worker reliability improvements with processing acknowledgement, delayed retry
-  backoff, dead-letter metadata, Redis-backed maintenance locking, failed-job
-  CLI metadata output, and `docs/worker-reliability.md`.
-- Production observability hardening with `prometheus-client` metrics,
-  multi-process aggregation support, worker and dependency metrics, Sentry
-  request correlation, and `docs/observability-production.md`.
-- Tenant isolation hardening with membership validation on authenticated
-  requests, inactive-tenant rejection, admin tenant lifecycle endpoints,
-  tenant-management permissions, cross-tenant denial regression tests, and
-  `docs/tenant-isolation.md`.
-- Platform vs tenant admin boundary with `platform_admin` role for global
-  tenant lifecycle APIs and tenant-scoped `admin` role without `tenants.*`
-  permissions.
-- Webhook and idempotency hardening with timestamped HMAC verification, replay
-  windows, Redis-backed in-flight idempotency locking, concurrent duplicate
-  fallback handling, production webhook secret validation, and
-  `docs/webhook-idempotency.md`.
-- File upload production hardening with streaming-safe multipart reads, stored
-  object verification after presigned uploads, metadata validation, HTTP
-  malware scanner integration boundaries documented in `docs/malware-scanning.md`,
-  and `docs/file-upload-production.md`.
-- Load and concurrency testing with repeatable threshold profiles in
-  `perf/profiles.json`, threshold-enforced load targets, pull-request load smoke
-  checks in CI, concurrency regression coverage for idempotency, workers,
-  auth/session rotation, Redis, storage, and slow dependency paths, atomic
-  refresh-token revocation under concurrent reuse, manual GitHub Actions
-  load-threshold workflow, and `docs/load-concurrency-testing.md`.
-- Template onboarding guide in `docs/template-onboarding.md`.
-- AI rules refactor with separated rules for repository, architecture, API,
-  backend, database, security, testing, Docker, documentation, and git workflow.
+- FastAPI bootstrap with versioned API (`/api/v1`) and deprecated legacy
+  unversioned routes (`app/api/legacy.py`, policy in
+  `docs/legacy-route-deprecation.md`)
+- Centralized error envelope for HTTP, validation, auth, not-found, and rate-limit
+  responses
+- Request ID middleware (`X-Request-ID`, `X-Process-Time`) with structured
+  logging (`text`/`json`), sensitive-field redaction, and worker job
+  `request_id` correlation
+- Production/staging config validation rejecting weak secrets and local/default
+  remote service placeholders (`app/core/config.py`)
+- CORS, trusted hosts, and security headers middleware (env-driven)
+- Optional Sentry error tracking (disabled without `SENTRY_DSN`)
 
-## 3. Main Production Gaps
+### Authentication and sessions
 
-These are **downstream project decisions**, not missing template code:
+- Registration with `REGISTRATION_POLICY` (`public` | `disabled`)
+- Login with bcrypt-hashed passwords and JWT access + refresh tokens
+- `/auth/me`, `/auth/refresh`, `/auth/logout`
+- Refresh token rotation with Redis-backed `jti` revocation
+- Access token invalidation via per-user `token_version` (password reset,
+  deactivation, role change)
+- Inactive users blocked on login, access, and refresh
+- Redis rate limits on `/auth/login`, `/auth/register`, and password-reset
+  request (per-IP; reset also keyed by email hash)
+- Password reset request/confirm with hashed single-use tokens, SMTP email
+  abstraction, worker job delivery, audit log entries, and expired-token
+  cleanup maintenance
 
-- Production hosting target and deployment platform.
-- Real production secret manager choice.
-- Real backup provider, PITR policy, and restore target.
-- Runtime choice: Kubernetes, PaaS, Docker Compose on a VM, or other.
-- Tracing stack: Sentry, OpenTelemetry, or both.
-- Client migration off deprecated unversioned routes (policy in
-  `docs/legacy-route-deprecation.md`).
-- Concrete malware scanner service when uploads are enabled in production.
+### Authorization and users
 
-The June 2026 audit remediation pass (PRs #29–#41) closed all tracked
-template-hardening gaps from the initial production-readiness audit.
+- RBAC roles: `user`, tenant `admin`, `platform_admin` with static permission
+  map (`app/core/permissions.py`)
+- Tenant `admin` excludes `tenants.*`; `platform_admin` includes tenant
+  lifecycle permissions
+- Admin `/admin` endpoint; user CRUD, activate/deactivate, self-read/update
+- User listing with pagination, sorting, filters, and email search
+- Redis-backed user-list cache with tenant-scoped keys and invalidation on writes
+- Audit log model, indexes, admin listing, and writes for admin user actions
 
-## 4. Completed Audit Remediation (June 2026)
+### Multi-tenancy
 
-| PR | Item |
-|----|------|
-| #29 | Docs/status sync + `docs/template-onboarding.md` |
-| #30 | Auth login/register rate limits |
-| #31 | Worker password-reset idempotency |
-| #32 | Staging config validators |
-| #33 | Platform vs tenant admin roles |
-| #34 | Registration policy gate |
-| #35 | Access token `token_version` invalidation |
-| #36 | Production runtime examples + deploy checklist |
-| #37 | Scheduled backup workflow + PITR checklist |
-| #38 | Pull-request load threshold CI smoke |
-| #39 | Malware scanning boundary docs/tests |
-| #40 | Legacy route deprecation policy |
-| #41 | `make validate` coverage floor parity |
+- Tenant model with default `default` tenant seeded in migration
+- `X-Tenant-Slug` resolution for unauthenticated flows; JWT `tenant_id` on
+  authenticated requests with optional header cross-check
+- Tenant-scoped users (unique `(tenant_id, email)`), audit logs, uploads, cache
+  keys, and object key prefixes
+- Tenant lifecycle API for `platform_admin`; cross-tenant denial tests
 
-## 5. Next Immediate Task
+### Files and storage
 
-No active template-hardening branch. For new work:
+- Multipart upload and presigned upload/complete/download/delete flows
+- S3-compatible storage abstraction (MinIO in local Compose)
+- Size limits, content-type allowlist, magic-byte sniffing (PNG/JPEG/PDF)
+- Malware scanner integration point (disabled by default; HTTP scanner or
+  filename stub; documented in `docs/malware-scanning.md`)
+- Private object keys under `tenants/{tenant_id}/uploads/{owner_id}/...`
 
-1. Fork/clone and follow `docs/template-onboarding.md`.
-2. Configure staging/production env vars, GitHub environments, and provider
-   services.
-3. Add product-specific features on feature branches using the usual
-   branch → PR → merge workflow.
+### Webhooks and idempotency
 
-## 6. Rules For Updating This File
+- `POST /api/v1/webhooks/inbound` with timestamped HMAC verification and replay
+  window
+- Event deduplication on `(provider, event_id)`; payload stored as hash only
+- Redis in-flight lock and persisted idempotency response cache
 
-Update `PROJECT_STATUS.md` after every completed feature before commit.
+### Background worker
 
-When updating this file:
+- Redis job queue with main, processing, delayed, and failed queues
+- Exponential backoff retries, DLQ metadata, maintenance lock
+- Password-reset email job with Redis completion marker keyed by `job.id`
+- Failed-job inspection/requeue CLI (`app/worker_failed_jobs.py`)
+- Docker Compose worker service
 
-- Move completed work into "Completed Features".
-- Remove or rewrite production gaps that were closed.
-- Adjust roadmap ordering if ROI changes.
-- Update "Next Immediate Task" to the next recommended branch and scope.
-- Mention any new migrations, endpoints, auth behavior, Redis behavior, Docker
-  changes, or CI workflow changes.
-- Keep this file factual; do not document planned work as completed.
-- Keep `.ai-rules` as the source of truth for rules. This file records project
-  state and roadmap, not detailed AI behavior rules.
-- Do not update this file for tiny refactors that do not change behavior,
-  architecture, setup, tests, docs, migrations, or production gaps.
+### Health and metrics
+
+- `/health`, `/health/live`, `/health/ready` (DB + Redis), `/health/db`,
+  `/health/redis`
+- Prometheus `/metrics` endpoint (unauthenticated) with HTTP, dependency, and
+  worker counter instrumentation in-process
+- Optional Prometheus multiprocess aggregation via `PROMETHEUS_MULTIPROC_DIR`
+
+### Local observability stack (partial)
+
+Verified in repo:
+
+- `docker-compose.observability.yml`
+- Prometheus (`observability/prometheus/`) with scrape config and alert rules
+- Loki, Promtail, Alertmanager configs
+- Grafana with **Loki datasource provisioning only**
+
+Not present in repo (README references them incorrectly — see `TECH_DEBT.md`
+TD-037):
+
+- `.env.observability.example`
+- Grafana Prometheus datasource provisioning
+- Provisioned Grafana dashboards
+
+### Docker and CI/CD
+
+- Multi-stage `Dockerfile` (development/production targets, non-root user)
+- Local Compose: api, worker, db, test_db, redis, minio
+- Minimal `docker-compose.prod.yml` (api + worker image only)
+- CI: pre-commit, pytest with 85% coverage, backup/restore rehearsal,
+  load-smoke, Trivy CRITICAL/HIGH gate, dependency review on PRs
+- Release workflow (GHCR image on tag), manual deploy workflow with dry-run
+  default, promotion scripts, optional migrations and smoke checks
+- Dependabot for uv, GitHub Actions, and Docker base image
+- Scheduled backup workflow example (requires operator secrets/hooks)
+
+### Operations tooling
+
+- Alembic migrations with Makefile helpers; migration downgrade rehearsal tests
+- `scripts/db_backup.sh`, `db_restore_rehearsal.sh` with CI rehearsal
+- `perf/load_baseline.py`, load threshold profiles, CI load-smoke job
+- `make bootstrap`, `make smoke`, `make validate`, development seed data
+- Runbooks in `docs/` for deployment, secrets, migrations, backups, workers,
+  tenant isolation, observability, and template onboarding
+
+---
+
+## What this template does not include
+
+See `ROADMAP.md` (P0–P3) and `TECH_DEBT.md` for tracked gaps. Examples:
+
+- Production multi-worker defaults, legacy-route production gate, processing-queue
+  recovery
+- Proxy-aware rate limiting, metrics access control, idempotency row cleanup
+- Real malware scanner, webhook processing pipeline, OAuth/MFA
+- Managed hosting, secret manager, PITR, or live backup targets
+- Complete local Grafana/Prometheus dashboard provisioning
+
+---
+
+## Updating this file
+
+Update after merged work that changes behavior, architecture, setup, tests,
+migrations, or CI.
+
+- Add only **verified** capabilities (code + tests exist).
+- Do not list planned work here — use `ROADMAP.md`.
+- Do not list open defects here — use `TECH_DEBT.md`.
+- Keep `.ai-rules` as the source of truth for AI behavior rules.
