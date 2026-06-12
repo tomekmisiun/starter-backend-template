@@ -6,7 +6,12 @@ from app.core.config import settings
 from app.core.redis import redis_client
 
 
-def rate_limit(limit: int | None = None, window_seconds: int | None = None):
+def rate_limit(
+    limit: int | None = None,
+    window_seconds: int | None = None,
+    *,
+    key_prefix: str = "rate_limit",
+):
     if limit is not None and limit <= 0:
         raise ValueError("rate limit must be greater than 0")
 
@@ -23,7 +28,7 @@ def rate_limit(limit: int | None = None, window_seconds: int | None = None):
             else settings.rate_limit_default_window_seconds
         )
         client_ip = request.client.host
-        key = f"rate_limit:{client_ip}"
+        key = f"{key_prefix}:{client_ip}"
 
         current_count = redis_client.incr(key)
 
@@ -37,6 +42,22 @@ def rate_limit(limit: int | None = None, window_seconds: int | None = None):
             )
 
     return dependency
+
+
+def auth_login_rate_limit():
+    return rate_limit(
+        limit=settings.auth_login_rate_limit_limit,
+        window_seconds=settings.auth_login_rate_limit_window_seconds,
+        key_prefix="rate_limit:auth_login",
+    )
+
+
+def auth_register_rate_limit():
+    return rate_limit(
+        limit=settings.auth_register_rate_limit_limit,
+        window_seconds=settings.auth_register_rate_limit_window_seconds,
+        key_prefix="rate_limit:auth_register",
+    )
 
 
 def password_reset_rate_limit(request: Request):

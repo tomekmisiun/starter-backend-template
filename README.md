@@ -258,6 +258,10 @@ RATE_LIMIT_DEFAULT_LIMIT=5
 RATE_LIMIT_DEFAULT_WINDOW_SECONDS=60
 PASSWORD_RESET_RATE_LIMIT_LIMIT=3
 PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS=300
+AUTH_LOGIN_RATE_LIMIT_LIMIT=10
+AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS=60
+AUTH_REGISTER_RATE_LIMIT_LIMIT=5
+AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS=300
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USERNAME=
@@ -569,6 +573,17 @@ Password reset requests have dedicated Redis-backed rate limiting:
 
 - `PASSWORD_RESET_RATE_LIMIT_LIMIT=3`
 - `PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS=300`
+
+Login and registration endpoints use the same Redis counter mechanism with
+separate per-IP keys:
+
+- `AUTH_LOGIN_RATE_LIMIT_LIMIT=10` (default)
+- `AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS=60`
+- `AUTH_REGISTER_RATE_LIMIT_LIMIT=5`
+- `AUTH_REGISTER_RATE_LIMIT_WINDOW_SECONDS=300`
+
+Failed login attempts count toward the login limit to reduce credential
+stuffing. Registration limits reduce automated account creation spam.
 
 Password reset request and confirm events are written to audit logs as system
 audit entries. Expired password reset tokens can be cleaned up with:
@@ -988,9 +1003,9 @@ still decide and wire up:
 - tracing stack preference (Sentry, OpenTelemetry, or both)
 - GitHub Environment secrets for deploy workflows
 
-Template hardening work tracked in `PROJECT_STATUS.md` (audit remediation)
-includes auth endpoint rate limits, worker idempotency, staging config parity,
-platform vs tenant admin boundaries, registration policy gates, access-token
-invalidation strategy, and related docs/tests.
+Template hardening work tracked in `PROJECT_STATUS.md` includes worker
+idempotency, staging config parity, platform vs tenant admin boundaries,
+registration policy gates, access-token invalidation strategy, and related
+docs/tests.
 
 See `docs/template-onboarding.md` for the full clone → local → staging path.

@@ -45,3 +45,20 @@ def client(db):
         yield test_client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def clean_rate_limit_keys():
+    from app.core.redis import redis_client
+
+    keys = list(redis_client.scan_iter("rate_limit:*"))
+
+    if keys:
+        redis_client.delete(*keys)
+
+    yield
+
+    keys = list(redis_client.scan_iter("rate_limit:*"))
+
+    if keys:
+        redis_client.delete(*keys)
