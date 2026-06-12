@@ -15,6 +15,7 @@ from app.api.routes.health import router as health_router
 from app.api.routes.metrics import router as metrics_router
 from app.api.v1 import api_v1_router
 from app.core.config import settings
+from app.core.runtime import configure_runtime_middleware
 
 configure_logging()
 initialize_error_tracking()
@@ -27,6 +28,7 @@ app = FastAPI(
 configure_openapi(app)
 
 app.add_middleware(RequestContextMiddleware)
+configure_runtime_middleware(app, settings)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 

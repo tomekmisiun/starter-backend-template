@@ -13,7 +13,8 @@ The current implementation is a strong local-development and testable backend
 foundation using FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Docker
 Compose, pytest, Ruff, uv, and GitHub Actions.
 
-Current branch for active feature work: `main`.
+Current branch for active feature work:
+`feature/production-runtime-hardening`.
 
 Current architecture:
 
@@ -186,6 +187,10 @@ Production-readiness summary:
 - Environment/config hardening with explicit `staging` support and
   production-only validation that rejects local/default values for database,
   SMTP, password reset URL, and S3 storage settings.
+- Production runtime hardening with environment-driven database pool settings,
+  Redis auth/TLS/timeouts, CORS and trusted host middleware, security headers,
+  production validation for Redis and trusted hosts, and production server
+  guidance in `docs/production-deployment.md`.
 - AI rules refactor with separated rules for repository, architecture, API,
   backend, database, security, testing, Docker, documentation, and git workflow.
 
@@ -194,11 +199,6 @@ Production-readiness summary:
 The project should still be treated as a production-ready template foundation,
 not a finished production platform. The following gaps are template-wide enough
 to track before calling the repository complete for high-scale reuse.
-
-- P0: Production runtime hardening.
-  Database pool settings, Redis production connectivity, CORS/trusted hosts,
-  security headers, timeout settings, and production server process guidance
-  need to be explicit and configurable.
 
 - P0: Production deployment automation.
   The repository has provider-neutral deployment documentation and a placeholder
@@ -263,7 +263,7 @@ mark them as completed until the implementation and regression coverage are on
 
 | Priority | Item | Goal | Recommended branch |
 |----------|------|------|--------------------|
-| P0 | Production runtime hardening | Add explicit production settings for DB pools, Redis connectivity, CORS/trusted hosts, security headers, timeouts, and runtime server behavior. | `feature/production-runtime-hardening` |
+| P0 | Production deployment automation | Add an executable staging/production deployment path beyond the placeholder workflow. | `feature/production-deployment-automation` |
 | P0 | Docker production image split | Separate production runtime dependencies from development/test dependencies and document the production container entrypoint. | `feature/docker-production-runtime` |
 | P0 | CI enforcement hardening | Make security scans and coverage policies enforceable instead of advisory. | `feature/ci-security-enforcement` |
 | P1 | Worker reliability | Improve retries, backoff, failed-job metadata, scheduler coordination, and job idempotency patterns. | `feature/worker-reliability` |
@@ -281,20 +281,18 @@ Implementation should happen in a separate future branch, not on `main`.
 Recommended next branch:
 
 ```text
-feature/production-runtime-hardening
+feature/docker-production-runtime
 ```
 
 Recommended scope:
 
-- Add database pool, recycle, health, and timeout configuration.
-- Add Redis production connection options such as auth/TLS-friendly settings
-  and stricter production validation.
-- Add CORS, trusted host, and security header configuration suitable for a
-  reusable API template.
-- Document production server/runtime behavior and avoid development-only
-  defaults in production paths.
-- Add focused regression tests for new configuration validation and middleware
-  behavior.
+- Split production runtime dependencies from development/test dependencies in
+  the Docker image build.
+- Keep local development behavior available through Compose or documented dev
+  workflows.
+- Document the production container entrypoint and runtime expectations.
+- Add focused regression coverage for the production image build path when
+  practical in CI.
 
 Expected validation:
 
