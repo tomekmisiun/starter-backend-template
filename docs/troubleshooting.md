@@ -164,6 +164,22 @@ Checks:
    docker compose run --rm worker python -m app.worker_failed_jobs list
    ```
 
+## Redis connectivity or auth refresh failures in production
+
+Symptoms:
+
+- `/health/ready` fails while PostgreSQL is healthy.
+- `/auth/refresh` returns `401` or `500` spikes during Redis maintenance.
+- Worker stops dequeuing jobs.
+
+Checks:
+
+1. Hit `GET /health/redis` on the API instance.
+2. Verify production Redis host, password, TLS, and network ACLs match
+   `docs/production-deployment.md`.
+3. Review HA/failover behavior against `docs/redis-production-contract.md`
+   (refresh rotation is fail-closed when Redis cannot record revocations).
+
 ## CI or pre-commit policy guard failures
 
 See `docs/ci-policy-guards.md` for what CI and pre-commit enforce, how to run

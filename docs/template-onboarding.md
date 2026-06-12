@@ -134,6 +134,7 @@ patterns, not your provider accounts.
 | Topic | Document |
 |-------|----------|
 | Production deployment | `docs/production-deployment.md` |
+| Redis production contract | `docs/redis-production-contract.md` |
 | Reverse proxy / runtime examples | `docs/production-runtime-examples.md` |
 | Secrets | `docs/secret-management.md` |
 | Migrations / rollback | `docs/migration-rollback.md` |

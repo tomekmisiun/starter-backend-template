@@ -214,6 +214,9 @@ Redis production connectivity:
 - `REDIS_SOCKET_TIMEOUT_SECONDS`
 - `REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS`
 
+See `docs/redis-production-contract.md` for HA expectations, feature-level
+fail-closed behavior (especially refresh rotation), and operational checks.
+
 Production validation requires a non-local `REDIS_HOST`, a non-empty
 `REDIS_PASSWORD`, and explicit trusted host configuration.
 

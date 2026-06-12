@@ -49,7 +49,7 @@ Only mark **Done** when verified in code and tests.
 | 7 | **RBAC role input validation** — reject arbitrary `role` strings on admin update | TD-008 | S | Low | High | Done |
 | 8 | **Upload production guard** — fail startup in production when file features are used without a real malware scanner URL | TD-009 | S | Low | High | Done |
 | 9 | **Worker poison-message handling** — unknown job types → DLQ, never silent ack | TD-011 | S | Low | High | Done |
-| 10 | **Redis production contract** — document Redis as a hard dependency, HA requirements, and explicit fail-closed behavior for refresh rotation | TD-004 | M | Medium | High | Not started |
+| 10 | **Redis production contract** — document Redis as a hard dependency, HA requirements, and explicit fail-closed behavior for refresh rotation | TD-004 | M | Medium | High | Done |
 
 **P0 exit criteria:** A team can deploy behind a reverse proxy without broken rate limits, doubled API surface, or silently lost worker jobs; production config rejects unsafe upload defaults; metrics are not public by default.
 

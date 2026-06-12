@@ -17,7 +17,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-001 | Production Docker image runs single-process Uvicorn (`Dockerfile` CMD, no `--workers`). | One CPU core serves all traffic; auth path saturates under login spikes. | Document and encode multi-worker deployment (gunicorn+uvicorn workers or horizontal scaling with sizing guide). | M | Done |
 | TD-002 | Legacy API router remounts auth/users/admin/tenants/files at unversioned paths (`app/api/legacy.py`, `app/main.py`). | Doubles protected attack surface; forks forget to remove deprecated routes. | Gate behind env flag (default off in production) or remove in next major version. | S | Done |
 | TD-003 | Worker processing queue has no visibility timeout or reaper (`brpoplpush` in `app/core/job_queue.py`). | Worker crash/OOM during deploy leaves jobs stuck in `app_jobs_processing` forever. | Add stale-job reclaim (visibility timeout, heartbeat, or periodic reaper). | M | Done |
-| TD-004 | Hard dependency on Redis with no degradation policy (rate limits, refresh rotation, cache, idempotency locks, job queue). | Redis blip causes auth failures, 429/500 cascades, and queue stall across the system. | Define fail-open vs fail-closed per feature; add circuit breaker and Redis HA guidance. | L | Open |
+| TD-004 | Hard dependency on Redis with no degradation policy (rate limits, refresh rotation, cache, idempotency locks, job queue). | Redis blip causes auth failures, 429/500 cascades, and queue stall across the system. | Production contract in `docs/redis-production-contract.md`; resilience implementation in ROADMAP P1 #14. | L | Open |
 
 ---
 
