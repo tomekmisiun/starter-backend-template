@@ -1,7 +1,11 @@
+import logging
+from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.webhook_security import (
     WebhookSignatureError,
     hash_payload,
@@ -9,6 +13,7 @@ from app.core.webhook_security import (
 )
 from app.models.webhook_event import WebhookEvent
 
+logger = logging.getLogger("app.webhooks")
 
 def persist_webhook_event(
     db: Session,
@@ -37,6 +42,22 @@ def persist_webhook_event(
     db.refresh(event)
 
     return event
+
+
+def cleanup_old_webhook_events(db: Session) -> int:
+    cutoff = datetime.now(timezone.utc) - timedelta(
+        days=settings.webhook_event_retention_days,
+    )
+    deleted_count = (
+        db.query(WebhookEvent)
+        .filter(WebhookEvent.received_at < cutoff)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+
+    logger.info("webhook_events_cleaned count=%s cutoff=%s", deleted_count, cutoff.isoformat())
+
+    return deleted_count
 
 
 def verify_inbound_webhook_signature(

@@ -124,6 +124,7 @@ class Settings(BaseSettings):
     metrics_bearer_token: str = ""
     webhook_signature_secret: str = ""
     webhook_signature_tolerance_seconds: int = Field(default=300, gt=0)
+    webhook_event_retention_days: int = Field(default=90, gt=0)
     idempotency_ttl_seconds: int = Field(default=86400, gt=0)
     idempotency_processing_lock_ttl_seconds: int = Field(default=60, gt=0)
     api_shutdown_grace_seconds: float = Field(default=30.0, ge=0)
