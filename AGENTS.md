@@ -3,7 +3,8 @@
 Binding project rules live in **`.ai-rules/`**. Read the relevant files before
 making changes. Do not duplicate rule bodies here.
 
-Workflow overview: **`docs/ai-workflows.md`**
+Workflow overview: **`docs/ai-workflows.md`** · Two-agent review:
+**`docs/two-agent-review-workflow.md`**
 
 ## Binding rules (`.ai-rules/`)
 
@@ -34,7 +35,9 @@ Workflow overview: **`docs/ai-workflows.md`**
 ## Optional (not binding)
 
 - **`agents/`** — review personas (backend, security, tenancy, DB, CI, onboarding)
-- **`.commands/`** — copy-paste prompts (spec, plan, review, audit, onboard)
+- **`.commands/`** — copy-paste prompts (spec, plan, builder handoff, two-agent
+  review, audit, onboard)
+- **`docs/two-agent-review-workflow.md`** — Builder / Reviewer handoff pattern
 - **`docs/specs/`** — feature spec conventions
 - **`docs/decisions/`** → ADRs in **`docs/adr/`**
 

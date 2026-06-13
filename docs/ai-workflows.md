@@ -23,6 +23,23 @@ How AI tooling should use this repository's rules, personas, and commands.
    `.ai-rules/planning-and-task-breakdown.md` → `.ai-rules/incremental-work.md`
 4. Before merge: `.ai-rules/review.md`
 
+## Two-agent review (Builder + Reviewer)
+
+For non-trivial branches, split **implementation** and **review** across two
+agent sessions:
+
+1. **Builder Agent** — implements on a feature branch, runs validation, then
+   outputs handoff via **`.commands/builder-handoff.md`** (objective, changed
+   files, diff, validation, impact sections).
+2. **Reviewer Agent** — fresh session; paste this handoff plus
+   **`.commands/two-agent-review.md`**. Reviews only; does not edit code unless
+   explicitly asked.
+
+Full workflow: **`docs/two-agent-review-workflow.md`**.
+
+AI review is advisory; CI, tests, branch protection, and human approval remain
+the merge gate.
+
 ## Common commands (copy from `.commands/`)
 
 | Goal | File |
@@ -31,6 +48,8 @@ How AI tooling should use this repository's rules, personas, and commands.
 | Break into tasks | `.commands/plan.md` |
 | Implement next roadmap item | `.commands/build-next-roadmap-task.md` |
 | Pre-PR review | `.commands/review-current-branch.md` |
+| Two-agent handoff (Builder) | `.commands/builder-handoff.md` — pairs with Reviewer command below |
+| Two-agent review (Reviewer) | `.commands/two-agent-review.md` |
 | Security audit | `.commands/security-audit.md` |
 | Clone for new product | `.commands/template-onboard.md` |
 | Sync tracking docs | `.commands/update-project-status.md` |
