@@ -29,7 +29,7 @@ Only mark **Done** when verified in code and tests.
 |------|-------|-------------|---------------|---------------------|
 | P0 | 10 | ~2–3 weeks | Security defaults, production deploy safety, auth path viability | **Complete (10/10 Done)** |
 | P1 | 12 | ~3–4 weeks | Session hardening, data lifecycle, CI/ops credibility | **Complete (12/12 Done)** |
-| P2 | 14 | ~6–10 weeks | Scale, maintainability, and fork ergonomics | **In progress (13/14 Done)** |
+| P2 | 14 | ~6–10 weeks | Scale, maintainability, and fork ergonomics | **In progress (14/14 Done)** |
 | P3 | 8 | ~4–6 weeks | Enterprise observability, test depth, optional hardening | Not started |
 
 **Recommended sequence:** P0 and P1 complete → P2 as scale signals appear → P3 for enterprise forks.
@@ -109,7 +109,7 @@ repo, and TTL-backed tables have retention jobs.
 | 33 | **Schema consolidation** — merge duplicate `UserRead` definitions | TD-047 | S | Low | Medium | Done |
 | 34 | **Tenant seed refactor** — move default tenant out of migration bulk insert | TD-039 | M | High | Medium | Done |
 | 35 | **Platform admin model clarity** — document demo-only boundary or separate operator table design | TD-040 | L | High | Medium | Done |
-| 36 | **Service layer decoupling** — domain exceptions instead of `HTTPException` in services | TD-041 | L | High | Medium | Not started |
+| 36 | **Service layer decoupling** — domain exceptions instead of `HTTPException` in services | TD-041 | L | High | Medium | Done |
 
 **P2 exit criteria:** Template handles 100k-user admin workloads without pagination/table-bloat cliffs; file and worker paths are observable and efficient; forks inherit clearer extension patterns.
 

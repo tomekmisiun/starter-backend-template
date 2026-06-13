@@ -1,7 +1,7 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from fastapi import HTTPException
+from app.core.domain_errors import UnauthorizedError
 
 from app.core.ids import uuid7
 from app.core.job_queue import dequeue_job, enqueue_job
@@ -72,7 +72,7 @@ def test_concurrent_refresh_token_rotation_allows_single_success(client):
         try:
             rotate_refresh_token(session, refresh_token)
             return "success"
-        except HTTPException as exc:
+        except UnauthorizedError as exc:
             return exc.status_code
         finally:
             session.close()

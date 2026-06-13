@@ -4,7 +4,9 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.domain_errors import DomainError
 from app.core.exception_handlers import (
+    domain_error_handler,
     http_exception_handler,
     unhandled_exception_handler,
     validation_exception_handler,
@@ -46,6 +48,7 @@ configure_openapi(app)
 
 app.add_middleware(RequestContextMiddleware)
 configure_runtime_middleware(app, settings)
+app.add_exception_handler(DomainError, domain_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)

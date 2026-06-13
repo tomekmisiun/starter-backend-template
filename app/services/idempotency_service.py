@@ -3,11 +3,11 @@ import json
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.domain_errors import BadRequestError, ConflictError
 from app.core.redis import redis_client
 from app.models.idempotency_record import IdempotencyRecord
 
@@ -20,10 +20,7 @@ def build_scope_key(scope: str, idempotency_key: str) -> str:
     normalized_key = idempotency_key.strip()
 
     if not normalized_key:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Idempotency-Key header is required",
-        )
+        raise BadRequestError("Idempotency-Key header is required")
 
     digest = hashlib.sha256(
         f"{scope}:{normalized_key}".encode("utf-8")
@@ -125,10 +122,7 @@ def begin_idempotent_request(db: Session, scope_key: str):
         if cached_record is not None:
             return cached_record, False
 
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Duplicate request is already in progress",
-        )
+        raise ConflictError("Duplicate request is already in progress")
 
     return None, True
 

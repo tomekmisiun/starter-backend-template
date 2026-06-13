@@ -1,11 +1,11 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.domain_errors import ConflictError, PayloadTooLargeError, UnauthorizedError
 from app.core.webhook_security import (
     WebhookSignatureError,
     hash_payload,
@@ -18,10 +18,7 @@ logger = logging.getLogger("app.webhooks")
 
 def enforce_webhook_body_size(raw_body: bytes) -> None:
     if len(raw_body) > settings.webhook_max_body_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-            detail="Webhook payload too large",
-        )
+        raise PayloadTooLargeError("Webhook payload too large")
 
 
 def persist_webhook_event(
@@ -43,10 +40,7 @@ def persist_webhook_event(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Webhook event already processed",
-        )
+        raise ConflictError("Webhook event already processed")
 
     db.refresh(event)
 
@@ -78,10 +72,7 @@ def verify_inbound_webhook_signature(
     tolerance_seconds: int,
 ) -> None:
     if signature is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Webhook signature header is required",
-        )
+        raise UnauthorizedError("Webhook signature header is required")
 
     parsed_timestamp: int | None = None
 
@@ -89,9 +80,8 @@ def verify_inbound_webhook_signature(
         try:
             parsed_timestamp = int(timestamp.strip())
         except ValueError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Webhook timestamp must be a Unix timestamp",
+            raise UnauthorizedError(
+                "Webhook timestamp must be a Unix timestamp",
             ) from exc
 
     try:
@@ -103,7 +93,4 @@ def verify_inbound_webhook_signature(
             tolerance_seconds=tolerance_seconds,
         )
     except WebhookSignatureError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
-        ) from exc
+        raise UnauthorizedError(str(exc)) from exc

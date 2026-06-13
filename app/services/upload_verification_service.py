@@ -2,10 +2,10 @@ import logging
 
 from sqlalchemy.orm import Session
 
+from app.core.domain_errors import DomainError
 from app.core.job_queue import Job, enqueue_job
 from app.models.uploaded_file import UploadedFile, UploadVerificationStatus
 from app.services.storage_service import (
-    StorageVerificationError,
     get_storage_service,
     verify_stored_object_content,
 )
@@ -51,11 +51,11 @@ def verify_presigned_upload_in_worker(
             declared_size_bytes=uploaded_file.size_bytes,
             filename=uploaded_file.filename,
         )
-    except StorageVerificationError as exc:
+    except DomainError as exc:
         logger.warning(
             "presigned_upload_verification_failed uploaded_file_id=%s detail=%s",
             uploaded_file.id,
-            exc.detail,
+            exc.message,
         )
 
         try:

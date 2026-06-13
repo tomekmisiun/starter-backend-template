@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from fastapi import HTTPException
+
+from app.core.domain_errors import BadRequestError
 
 from app.core.ids import uuid7
 from app.models.idempotency_record import IdempotencyRecord
@@ -21,7 +22,7 @@ def test_build_scope_key_normalizes_input():
 
 
 def test_build_scope_key_requires_non_empty_key():
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(BadRequestError) as exc_info:
         build_scope_key("webhooks:inbound", "   ")
 
     assert exc_info.value.status_code == 400

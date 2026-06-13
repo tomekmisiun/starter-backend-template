@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException, status
+from app.core.domain_errors import BadRequestError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -249,10 +249,7 @@ def confirm_password_reset(db: Session, reset_confirm: PasswordResetConfirm) -> 
 
 
 def raise_invalid_reset_token() -> None:
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=INVALID_RESET_TOKEN_MESSAGE,
-    )
+    raise BadRequestError(INVALID_RESET_TOKEN_MESSAGE)
 
 
 def cleanup_expired_password_reset_tokens(db: Session) -> int:

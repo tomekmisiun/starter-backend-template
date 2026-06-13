@@ -68,7 +68,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-038 | Promtail config hardcodes Docker container name (`observability/promtail/promtail.yml`). | Log collection fails after compose project rename. | Use compose service discovery labels. | S | Done |
 | TD-039 | Tenant `default` was seeded with fixed `id=1` in migration (`a1b2c3d4e5f6`). | Migration/assumption conflicts in multi-environment clones. | App seed command plus slug-based backfill without hardcoded tenant id. | M | Done |
 | TD-040 | `platform_admin` is a tenant-bound user row, not a separate operator model. | Every fork re-implements operator/security model. | Separate operator table or explicit demo-only documentation. | L | Done |
-| TD-041 | Services raise `HTTPException` directly throughout service layer. | Hard to reuse from workers/CLI; inconsistent error handling in forks. | Domain exceptions translated at route boundary. | L | Open |
+| TD-041 | Services raised `HTTPException` directly throughout service layer. | Hard to reuse from workers/CLI; inconsistent error handling in forks. | Domain exceptions translated at route boundary. | L | Done |
 | TD-042 | Worker loop runs maintenance and `promote_delayed_jobs` on every iteration. | Redis overhead under high queue depth. | Separate maintenance ticker; batch promote with limits. | S | Done |
 | TD-043 | Possible double migration on deploy (SSH script + runner `deploy_migrate.sh`). | Redundant Alembic runs confuse runbooks. | Deduplicate migration step in deploy workflow. | S | Done |
 | TD-044 | `release.yml` publishes `latest` tag while production deploy discourages it. | Easy misuse of mutable tag in production. | Document tension or stop tagging `latest`. | S | Done |
@@ -99,10 +99,9 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | Severity | Open | Done |
 |----------|------|------|
 | Critical | 0 | 4 |
-| High | 1 | 12 |
 | High | 0 | 13 |
 | Medium | 4 | 31 |
 | Low | 8 | 0 |
-| **Total** | **10** | **46** |
+| **Total** | **9** | **47** |
 
 Open counts reflect post-P1 state (346 tests, June 2026).
