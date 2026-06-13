@@ -31,6 +31,7 @@ Run threshold-enforced profiles:
 make load-smoke-thresholds
 make load-smoke-ready-thresholds
 make load-validate
+make load-smoke-auth-login-thresholds
 ```
 
 Override defaults when needed:
@@ -104,6 +105,16 @@ Example:
 Record results in project notes or CI artifacts when comparing changes over
 time. Default profile thresholds are generous for local Docker environments.
 Tighten them for your hosting target.
+
+Named profiles in `perf/profiles.json`:
+
+| Profile | Request | Default thresholds |
+|---------|---------|-------------------|
+| `health` | `GET /health` | `p95 <= 500ms`, `throughput >= 10 rps` |
+| `health-ready` | `GET /health/ready` | `p95 <= 2000ms`, `throughput >= 5 rps` |
+| `auth-login` | `POST /api/v1/auth/login` | `p95 <= 5000ms`, `throughput >= 2 rps` |
+
+Multi-worker sync scaling benchmarks: `docs/sync-scaling-benchmark.md`.
 
 See `docs/load-concurrency-testing.md` for concurrency regression coverage and
 the manual GitHub Actions workflow.

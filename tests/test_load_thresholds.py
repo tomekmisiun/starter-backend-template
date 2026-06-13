@@ -49,15 +49,41 @@ def test_evaluate_thresholds_reports_latency_and_throughput_violations():
 def test_resolve_profile_loads_json_profiles_file(tmp_path: Path):
     profiles_file = tmp_path / "profiles.json"
     profiles_file.write_text(
-        '{"custom": {"max_p95_ms": 42, "min_throughput_rps": 3}}',
+        (
+            '{"custom": {"path": "/ready", "max_p95_ms": 42, '
+            '"min_throughput_rps": 3}}'
+        ),
         encoding="utf-8",
     )
 
-    thresholds, path = resolve_profile("custom", profiles_file=profiles_file)
+    profile = resolve_profile("custom", profiles_file=profiles_file)
 
-    assert thresholds.max_p95_ms == 42.0
-    assert thresholds.min_throughput_rps == 3.0
-    assert path == "/health"
+    assert profile.thresholds.max_p95_ms == 42.0
+    assert profile.thresholds.min_throughput_rps == 3.0
+    assert profile.request.path == "/ready"
+    assert profile.request.method == "GET"
+
+
+def test_resolve_profile_loads_post_login_request_metadata(tmp_path: Path):
+    profiles_file = tmp_path / "profiles.json"
+    profiles_file.write_text(
+        (
+            '{"auth-login": {"path": "/api/v1/auth/login", "method": "POST", '
+            '"headers": {"Content-Type": "application/json"}, '
+            '"json_body": {"email": "user@example.local", "password": "secret"}, '
+            '"max_p95_ms": 5000, "min_throughput_rps": 2}}'
+        ),
+        encoding="utf-8",
+    )
+
+    profile = resolve_profile("auth-login", profiles_file=profiles_file)
+
+    assert profile.request.method == "POST"
+    assert profile.request.headers["Content-Type"] == "application/json"
+    assert profile.request.json_body == {
+        "email": "user@example.local",
+        "password": "secret",
+    }
 
 
 def test_resolve_profile_rejects_unknown_profile():

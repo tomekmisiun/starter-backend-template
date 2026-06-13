@@ -40,6 +40,13 @@ Run both profiles:
 make load-validate
 ```
 
+Run the bcrypt/login profile (requires dev seed and relaxed auth rate limits for
+larger workloads — see `docs/sync-scaling-benchmark.md`):
+
+```bash
+make load-smoke-auth-login-thresholds
+```
+
 Override workload size or thresholds when needed:
 
 ```bash
@@ -53,6 +60,7 @@ Profiles live in `perf/profiles.json`:
 |---------|------|--------------------|
 | `health` | `/health` | `p95 <= 500ms`, `throughput >= 10 rps` |
 | `health-ready` | `/health/ready` | `p95 <= 2000ms`, `throughput >= 5 rps` |
+| `auth-login` | `POST /api/v1/auth/login` | `p95 <= 5000ms`, `throughput >= 2 rps` |
 
 The script exits with status `1` when thresholds fail.
 
@@ -111,3 +119,5 @@ verification outside the default PR smoke job.
 - Downstream projects should tighten profiles for their hosting target.
 - Load thresholds complement, but do not replace, dedicated load-testing tools
   such as k6 or Locust for large-scale capacity planning.
+- Multi-worker sync scaling benchmarks and login load profiles:
+  `docs/sync-scaling-benchmark.md`.
