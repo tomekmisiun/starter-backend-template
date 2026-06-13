@@ -3,8 +3,11 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from fastapi import HTTPException
 
+from app.core.ids import uuid7
+from app.models.idempotency_record import IdempotencyRecord
 from app.services.idempotency_service import (
     build_scope_key,
+    cleanup_expired_idempotency_records,
     get_cached_response,
     store_response,
 )
@@ -36,3 +39,41 @@ def test_get_cached_response_ignores_expired_records(db):
     db.commit()
 
     assert get_cached_response(db, scope_key) is None
+
+
+def test_cleanup_expired_idempotency_records_deletes_only_expired_rows(db):
+    suffix = uuid7().hex
+    active_scope = build_scope_key("webhooks:inbound", f"active-key-{suffix}")
+    expired_scope = build_scope_key("webhooks:inbound", f"expired-key-{suffix}")
+
+    store_response(
+        db,
+        scope_key=active_scope,
+        status_code=200,
+        response_body={"status": "accepted"},
+    )
+    expired_record = store_response(
+        db,
+        scope_key=expired_scope,
+        status_code=200,
+        response_body={"status": "accepted"},
+    )
+    expired_record.expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    db.commit()
+
+    assert (
+        db.query(IdempotencyRecord)
+        .filter(IdempotencyRecord.scope_key == expired_scope)
+        .count()
+        == 1
+    )
+
+    cleanup_expired_idempotency_records(db)
+
+    assert (
+        db.query(IdempotencyRecord)
+        .filter(IdempotencyRecord.scope_key == expired_scope)
+        .count()
+        == 0
+    )
+    assert get_cached_response(db, active_scope) is not None
