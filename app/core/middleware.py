@@ -8,6 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.ids import uuid7
 from app.core.metrics import get_route_path, observe_request
 from app.core.request_context import request_id_var
+from app.core.shutdown import decrement_in_flight_requests, increment_in_flight_requests
 
 
 logger = logging.getLogger("app.requests")
@@ -20,6 +21,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         request.state.request_id = request_id
         request_id_token = request_id_var.set(request_id)
         sentry_sdk.set_tag("request_id", request_id)
+        increment_in_flight_requests()
 
         try:
             logger.info(
@@ -58,4 +60,5 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
             return response
         finally:
+            decrement_in_flight_requests()
             request_id_var.reset(request_id_token)

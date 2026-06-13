@@ -19,6 +19,7 @@ from app.api.v1 import api_v1_router
 from app.core.config import settings
 from app.core.metrics import configure_metrics
 from app.core.runtime import configure_runtime_middleware
+from app.core.shutdown import wait_for_in_flight_requests
 from app.db.pool_config import log_db_pool_configuration
 
 configure_logging()
@@ -31,6 +32,7 @@ async def lifespan(application: FastAPI):
     del application
     log_db_pool_configuration()
     yield
+    await wait_for_in_flight_requests(settings.api_shutdown_grace_seconds)
 
 
 app = FastAPI(

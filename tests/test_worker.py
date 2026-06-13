@@ -333,3 +333,26 @@ def test_scheduled_maintenance_can_be_disabled(monkeypatch):
 
     assert did_run is False
     assert cleanup_calls == []
+
+
+def test_run_worker_stops_after_shutdown_request(monkeypatch):
+    from app.core.shutdown import request_worker_shutdown, _worker_shutdown_requested
+    from app.worker import run_worker
+
+    _worker_shutdown_requested.clear()
+
+    loop_iterations = {"count": 0}
+
+    def fake_process_next_job():
+        loop_iterations["count"] += 1
+        request_worker_shutdown()
+        return False
+
+    monkeypatch.setattr("app.worker.run_scheduled_maintenance", lambda: False)
+    monkeypatch.setattr("app.worker.process_next_job", fake_process_next_job)
+    monkeypatch.setattr("app.worker.register_worker_shutdown_handlers", lambda: None)
+    monkeypatch.setattr("app.worker.wait_for_worker_job_completion", lambda seconds: None)
+
+    run_worker()
+
+    assert loop_iterations["count"] == 1

@@ -15,6 +15,13 @@ from app.core.job_queue import (
 from app.core.log_helpers import job_log_extra
 from app.core.logging import configure_logging
 from app.core.metrics import configure_metrics, observe_worker_job, observe_worker_maintenance
+from app.core.shutdown import (
+    mark_worker_job_finished,
+    mark_worker_job_started,
+    register_worker_shutdown_handlers,
+    wait_for_worker_job_completion,
+    worker_shutdown_requested,
+)
 from app.db.session import SessionLocal
 from app.services.password_reset_service import (
     SEND_PASSWORD_RESET_EMAIL_JOB,
@@ -64,6 +71,8 @@ def process_next_job() -> bool:
         extra={**job_log_extra(job), "attempts": job.attempts},
     )
 
+    mark_worker_job_started()
+
     try:
         handle_job(job)
     except UnknownJobTypeError as exc:
@@ -97,6 +106,8 @@ def process_next_job() -> bool:
             extra={**job_log_extra(failed_job), "attempts": failed_job.attempts},
         )
         return True
+    finally:
+        mark_worker_job_finished()
 
     ack_job(job)
     observe_worker_job(job_type=job.type, status="completed")
@@ -135,11 +146,19 @@ def run_scheduled_maintenance(now: float | None = None) -> bool:
 def run_worker() -> None:
     configure_logging()
     configure_metrics()
+    register_worker_shutdown_handlers()
     logger.info("worker_started queue=%s", settings.worker_queue_name)
 
-    while True:
+    while not worker_shutdown_requested():
         run_scheduled_maintenance()
+
+        if worker_shutdown_requested():
+            break
+
         process_next_job()
+
+    wait_for_worker_job_completion(settings.worker_shutdown_grace_seconds)
+    logger.info("worker_shutdown_complete")
 
 
 if __name__ == "__main__":

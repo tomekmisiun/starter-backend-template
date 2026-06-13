@@ -126,6 +126,8 @@ class Settings(BaseSettings):
     webhook_signature_tolerance_seconds: int = Field(default=300, gt=0)
     idempotency_ttl_seconds: int = Field(default=86400, gt=0)
     idempotency_processing_lock_ttl_seconds: int = Field(default=60, gt=0)
+    api_shutdown_grace_seconds: float = Field(default=30.0, ge=0)
+    worker_shutdown_grace_seconds: float = Field(default=60.0, ge=0)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

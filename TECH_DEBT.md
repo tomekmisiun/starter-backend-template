@@ -44,7 +44,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | ID | Issue | Impact | Recommendation | Effort | Status |
 |----|-------|--------|----------------|--------|--------|
 | TD-016 | No Docker `HEALTHCHECK` or compose healthchecks. | Orchestrators route traffic to hung containers; slow incident detection. | Add healthcheck hitting `/health/live`; wire compose conditions. | S | Open |
-| TD-017 | No graceful shutdown for API or worker (`app/worker.py`, `app/main.py`). | Deployments drop in-flight work; jobs remain in processing queue. | SIGTERM handlers, drain timeout, FastAPI lifespan hooks. | M | Open |
+| TD-017 | No graceful shutdown for API or worker (`app/worker.py`, `app/main.py`). | Deployments drop in-flight work; jobs remain in processing queue. | SIGTERM handlers, drain timeout, FastAPI lifespan hooks. | M | Done |
 | TD-018 | Python 3.14 base image (`Dockerfile`). | Hosting/ecosystem lag across hundreds of forks. | Pin to 3.12/3.13 LTS unless 3.14 is intentional. | S | Open |
 | TD-019 | Webhook ingress has no rate limit or max body size (`app/api/routes/webhooks.py`). | DoS via large payloads or high request volume. | Body size middleware; rate limit by provider/IP. | S | Open |
 | TD-020 | No global handler for unhandled exceptions (`app/main.py`). | Possible internal detail leakage depending on debug settings. | Generic 500 handler; enforce `debug=False` in production docs. | S | Open |
