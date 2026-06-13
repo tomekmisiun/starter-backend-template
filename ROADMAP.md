@@ -104,7 +104,7 @@ repo, and TTL-backed tables have retention jobs.
 | 28 | **Storage performance** — cached boto3 client; streaming multipart upload; async scan worker for presigned completes | TD-029, TD-030, TD-031 | M | Medium | High | Not started |
 | 29 | **Audit log lifecycle** — retention, partitioning, or export job | TD-025 | M | Medium | Medium | Done |
 | 30 | **Transaction integrity** — single transaction for user update + audit log (or outbox) | TD-033 | M | Medium | Medium | Done |
-| 31 | **Request pipeline hygiene** — pure ASGI logging middleware; replace `BaseHTTPMiddleware` | TD-045 | M | Medium | Medium | Not started |
+| 31 | **Request pipeline hygiene** — pure ASGI logging middleware; replace `BaseHTTPMiddleware` | TD-045 | M | Medium | Medium | Done |
 | 32 | **Python runtime baseline** — evaluate 3.12/3.13 LTS as default Docker base | TD-018 | S | Medium | Medium | Not started |
 | 33 | **Schema consolidation** — merge duplicate `UserRead` definitions | TD-047 | S | Low | Medium | Done |
 | 34 | **Tenant seed refactor** — move default tenant out of migration bulk insert | TD-039 | M | High | Medium | Not started |
