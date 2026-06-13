@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -9,6 +10,8 @@ from app.core.webhook_security import (
     compute_timestamped_hmac_signature,
     verify_timestamped_hmac_signature,
 )
+from app.models.webhook_event import WebhookEvent
+from app.services.webhook_service import cleanup_old_webhook_events, persist_webhook_event
 from app.services.idempotency_service import (
     build_scope_key,
     store_response,
@@ -276,3 +279,32 @@ def test_store_response_returns_existing_record_on_unique_conflict(db):
     )
 
     assert first_record.id == second_record.id
+
+
+def test_cleanup_old_webhook_events_deletes_events_past_retention(db, monkeypatch):
+    monkeypatch.setattr("app.services.webhook_service.settings.webhook_event_retention_days", 30)
+
+    old_event = persist_webhook_event(
+        db,
+        provider="payments",
+        event_id=f"evt_old_{uuid7().hex}",
+        payload=b'{"provider":"payments"}',
+    )
+    old_event.received_at = datetime.now(timezone.utc) - timedelta(days=31)
+    db.commit()
+
+    recent_event = persist_webhook_event(
+        db,
+        provider="payments",
+        event_id=f"evt_recent_{uuid7().hex}",
+        payload=b'{"provider":"payments"}',
+    )
+
+    old_event_id = old_event.id
+    recent_event_id = recent_event.id
+
+    deleted_count = cleanup_old_webhook_events(db)
+
+    assert deleted_count == 1
+    assert db.query(WebhookEvent).filter(WebhookEvent.id == old_event_id).first() is None
+    assert db.query(WebhookEvent).filter(WebhookEvent.id == recent_event_id).first() is not None

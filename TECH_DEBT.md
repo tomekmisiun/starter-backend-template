@@ -51,7 +51,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-021 | Tenant isolation is application-layer only (no PostgreSQL RLS). | Raw SQL or ORM bypass in forks can cross tenants. | Document requirement; optional RLS migration example. | L | Open |
 | TD-022 | Password-reset worker idempotency marker set after DB commit (`app/services/password_reset_service.py`). | Crash between commit and Redis SET can duplicate tokens/emails on retry. | DB-level idempotency keyed by `job_id` or reorder side effects. | M | Open |
 | TD-023 | Worker Prometheus metrics not scrapeable in default prod layout (metrics HTTP on API only). | Silent worker/backlog failures in operations. | Sidecar exporter, pushgateway, or shared `PROMETHEUS_MULTIPROC_DIR`. | M | Open |
-| TD-024 | `webhook_events` table is insert-only with no retention (`app/services/webhook_service.py`). | Storage and query cost grow unbounded on high-volume forks. | Retention job and archival policy. | S | Open |
+| TD-024 | `webhook_events` table is insert-only with no retention (`app/services/webhook_service.py`). | Storage and query cost grow unbounded on high-volume forks. | Retention job and archival policy. | S | Done |
 | TD-025 | Audit logs are append-only with no retention (`app/services/audit_log_service.py`). | Admin queries slow; compliance storage grows. | Partition or export-to-cold-storage job. | M | Open |
 | TD-026 | User and audit lists use offset pagination (`app/api/routes/users.py`). | Deep pages become expensive at large tenant sizes. | Keyset/cursor pagination. | M | Open |
 | TD-027 | User email search uses `%term%` ILIKE (`app/services/user_service.py`). | Sequential scans under admin search load. | Trigram index or prefix-only search. | M | Open |
