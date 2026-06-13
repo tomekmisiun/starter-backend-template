@@ -82,7 +82,7 @@ default in production.
 | 18 | **Webhook ingress baseline** — max body size; per-IP/provider rate limits | TD-019 | S | Low | Medium | Done |
 | 19 | **Global error handler** — generic 500 handler; enforce non-debug production guidance | TD-020 | S | Low | Medium | Done |
 | 20 | **Tenant ContextVar reset** — clear tenant context at request entry in middleware | TD-034 | S | Low | Medium | Done |
-| 21 | **Password-reset idempotency race** — DB-level dedup keyed by `job_id` across commit/marker window | TD-022 | M | Medium | Medium | Not started |
+| 21 | **Password-reset idempotency race** — DB-level dedup keyed by `job_id` across commit/marker window | TD-022 | M | Medium | Medium | Done |
 | 22 | **Webhook event retention** — scheduled purge/archival for `webhook_events` | TD-024 | S | Low | Medium | Done |
 
 **P1 exit criteria:** Rolling deploys are safe; session revocation window is minimized; CI cannot ship broken images; observability docs match repo; tables with TTL do not grow unbounded.

@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.job_queue import enqueue_job
@@ -12,6 +13,7 @@ from app.core.security import (
     hash_password,
     hash_password_reset_token,
 )
+from app.models.password_reset_job_completion import PasswordResetJobCompletion
 from app.models.password_reset_token import PasswordResetToken
 from app.models.audit_log import AuditAction
 from app.models.user import User
@@ -75,6 +77,22 @@ def is_password_reset_job_completed(job_id: str) -> bool:
     return redis_client.exists(password_reset_job_completed_key(job_id)) == 1
 
 
+def is_password_reset_job_completed_in_db(db: Session, job_id: str) -> bool:
+    return (
+        db.query(PasswordResetJobCompletion)
+        .filter(PasswordResetJobCompletion.job_id == job_id)
+        .first()
+        is not None
+    )
+
+
+def is_password_reset_job_done(db: Session, job_id: str) -> bool:
+    return is_password_reset_job_completed(job_id) or is_password_reset_job_completed_in_db(
+        db,
+        job_id,
+    )
+
+
 def mark_password_reset_job_completed(job_id: str) -> None:
     redis_client.set(
         password_reset_job_completed_key(job_id),
@@ -89,7 +107,9 @@ def create_password_reset_token_and_send_email(
     *,
     job_id: str | None = None,
 ) -> None:
-    if job_id is not None and is_password_reset_job_completed(job_id):
+    if job_id is not None and is_password_reset_job_done(db, job_id):
+        if not is_password_reset_job_completed(job_id):
+            mark_password_reset_job_completed(job_id)
         logger.info(
             "password_reset_email_job_skipped reason=already_completed job_id=%s user_id=%s",
             job_id,
@@ -139,7 +159,20 @@ def create_password_reset_token_and_send_email(
         )
         raise
 
-    db.commit()
+    if job_id is not None:
+        db.add(PasswordResetJobCompletion(job_id=job_id))
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        logger.info(
+            "password_reset_email_job_skipped reason=concurrent_completion job_id=%s user_id=%s",
+            job_id,
+            user_id,
+        )
+        return
+
     if job_id is not None:
         mark_password_reset_job_completed(job_id)
 
