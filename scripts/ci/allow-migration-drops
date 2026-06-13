@@ -1,2 +1,1 @@
-# Leave this file comment-only unless a PR adds an approved destructive migration.
-# To bypass the CI check, replace this line with a one-line reason in the same PR.
+Drop redundant indexes only; no columns or tables removed (b3c4d5e6f7a8).

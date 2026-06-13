@@ -15,7 +15,7 @@ class UploadVerificationStatus(StrEnum):
 class UploadedFile(Base):
     __tablename__ = "uploaded_files"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tenant_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("tenants.id"),
@@ -26,7 +26,6 @@ class UploadedFile(Base):
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     object_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     filename: Mapped[str] = mapped_column(String, nullable=False)
@@ -42,5 +41,4 @@ class UploadedFile(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
-        index=True,
     )

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -6,15 +6,17 @@ from app.db.base import Base
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        Index("ix_users_tenant_id_email", "tenant_id", "email", unique=True),
+    )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tenant_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("tenants.id"),
         nullable=False,
-        index=True,
     )
-    email: Mapped[str] = mapped_column(String, index=True)
+    email: Mapped[str] = mapped_column(String)
     hashed_password: Mapped[str] = mapped_column(String)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     role: Mapped[str] = mapped_column(String, nullable=False, default="user")

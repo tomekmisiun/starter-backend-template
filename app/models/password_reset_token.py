@@ -11,7 +11,7 @@ class PasswordResetToken(Base):
         Index("ix_password_reset_tokens_token_hash", "token_hash", unique=True),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
