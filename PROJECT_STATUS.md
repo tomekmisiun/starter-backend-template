@@ -1,15 +1,16 @@
 # Project Status
 
-Verified implementation state of the starter backend template.  
+Verified implementation state of **FastAPI Production Foundation** — an
+AI-ready, production-oriented FastAPI foundation for SaaS/API projects.
 Planned work: `ROADMAP.md`. Known issues: `TECH_DEBT.md`.
 
 Do not treat this file as a roadmap or debt register.
 
 ## Overview
 
-Reusable, **AI-ready** FastAPI backend template for SaaS/API projects — a testable
-foundation, not a finished multi-tenant SaaS platform or enterprise-grade
-product.
+Reusable, **AI-ready** FastAPI production foundation for SaaS/API projects — a
+testable foundation, not a finished multi-tenant SaaS platform or
+enterprise-grade product.
 
 **Stack:** FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, S3-compatible
 storage, Docker Compose, pytest, Ruff, uv, GitHub Actions.
