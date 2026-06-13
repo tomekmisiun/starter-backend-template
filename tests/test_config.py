@@ -356,6 +356,22 @@ def test_settings_rejects_invalid_worker_maintenance_interval():
         )
 
 
+def test_settings_accepts_worker_observability_config():
+    settings = Settings(
+        _env_file=None,
+        secret_key="development-secret",
+        worker_metrics_enabled=False,
+        worker_metrics_port=9200,
+        worker_queue_maintenance_interval_seconds=15,
+        worker_queue_promote_batch_size=25,
+    )
+
+    assert settings.worker_metrics_enabled is False
+    assert settings.worker_metrics_port == 9200
+    assert settings.worker_queue_maintenance_interval_seconds == 15
+    assert settings.worker_queue_promote_batch_size == 25
+
+
 def test_settings_accepts_worker_retry_backoff_config():
     settings = Settings(
         _env_file=None,

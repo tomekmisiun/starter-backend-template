@@ -6,7 +6,8 @@ metrics and traces as per-instance signals that are aggregated externally.
 
 ## Metrics Model
 
-The API and worker expose Prometheus metrics from `/metrics`.
+The API exposes Prometheus metrics from `/metrics`. The worker exposes the same
+Prometheus text format from a dedicated HTTP server (default `:9100/metrics`).
 
 Production defaults:
 
@@ -97,7 +98,8 @@ tracing optional and environment-driven.
 After deployment:
 
 - verify `/metrics` on every API replica
-- verify worker metrics if the worker runs as a separate process
+- verify `worker:9100/metrics` (or your configured `WORKER_METRICS_PORT`) when the
+  worker runs as a separate process
 - confirm logs include `request_id`
 - confirm Sentry receives a test event with request correlation when enabled
 - confirm Alertmanager routes alerts to the expected destination

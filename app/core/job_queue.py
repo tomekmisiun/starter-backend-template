@@ -214,12 +214,16 @@ def promote_delayed_jobs(
     queue_name: str = settings.worker_queue_name,
     delayed_queue_name: str = settings.worker_delayed_queue_name,
     now: float | None = None,
+    limit: int | None = None,
 ) -> int:
     current_time = now if now is not None else time.time()
     raw_jobs = redis.zrangebyscore(delayed_queue_name, 0, current_time)
     promoted_count = 0
 
     for raw_job in raw_jobs:
+        if limit is not None and promoted_count >= limit:
+            break
+
         if redis.zrem(delayed_queue_name, raw_job):
             redis.lpush(queue_name, raw_job)
             promoted_count += 1

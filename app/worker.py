@@ -1,4 +1,5 @@
 import logging
+import time
 
 from app.core.config import settings
 from app.core.job_queue import (
@@ -15,6 +16,7 @@ from app.core.job_queue import (
 from app.core.log_helpers import job_log_extra
 from app.core.logging import configure_logging
 from app.core.metrics import configure_metrics, observe_worker_job, observe_worker_maintenance
+from app.core.metrics_server import start_metrics_server
 from app.core.shutdown import (
     mark_worker_job_finished,
     mark_worker_job_started,
@@ -34,6 +36,9 @@ from app.services.webhook_service import cleanup_old_webhook_events
 
 
 logger = logging.getLogger("app.worker")
+
+_last_maintenance_attempt_at = 0.0
+_last_queue_maintenance_at = 0.0
 
 
 class UnknownJobTypeError(Exception):
@@ -62,8 +67,6 @@ def handle_job(job: Job) -> None:
 
 
 def process_next_job() -> bool:
-    reclaim_stale_processing_jobs()
-    promote_delayed_jobs()
     job = dequeue_job()
 
     if job is None:
@@ -156,18 +159,62 @@ def run_scheduled_maintenance(now: float | None = None) -> bool:
     return True
 
 
+def maybe_run_scheduled_maintenance(now: float | None = None) -> bool:
+    global _last_maintenance_attempt_at
+
+    current_time = now if now is not None else time.monotonic()
+
+    if (
+        current_time - _last_maintenance_attempt_at
+        < settings.worker_maintenance_interval_seconds
+    ):
+        return False
+
+    _last_maintenance_attempt_at = current_time
+    return run_scheduled_maintenance()
+
+
+def maybe_run_queue_maintenance(now: float | None = None) -> None:
+    global _last_queue_maintenance_at
+
+    current_time = now if now is not None else time.monotonic()
+
+    if (
+        current_time - _last_queue_maintenance_at
+        < settings.worker_queue_maintenance_interval_seconds
+    ):
+        return
+
+    _last_queue_maintenance_at = current_time
+    reclaim_stale_processing_jobs()
+    promote_delayed_jobs(limit=settings.worker_queue_promote_batch_size)
+
+
 def run_worker() -> None:
     configure_logging()
     configure_metrics()
     register_worker_shutdown_handlers()
+
+    if settings.worker_metrics_enabled:
+        start_metrics_server(
+            host=settings.worker_metrics_host,
+            port=settings.worker_metrics_port,
+        )
+        logger.info(
+            "worker_metrics_server_started host=%s port=%s",
+            settings.worker_metrics_host,
+            settings.worker_metrics_port,
+        )
+
     logger.info("worker_started queue=%s", settings.worker_queue_name)
 
     while not worker_shutdown_requested():
-        run_scheduled_maintenance()
+        maybe_run_scheduled_maintenance()
 
         if worker_shutdown_requested():
             break
 
+        maybe_run_queue_maintenance()
         process_next_job()
 
     wait_for_worker_job_completion(settings.worker_shutdown_grace_seconds)

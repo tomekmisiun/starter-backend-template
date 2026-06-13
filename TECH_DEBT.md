@@ -50,7 +50,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-020 | No global handler for unhandled exceptions (`app/main.py`). | Possible internal detail leakage depending on debug settings. | Generic 500 handler; enforce `debug=False` in production docs. | S | Done |
 | TD-021 | Tenant isolation is application-layer only (no PostgreSQL RLS). | Raw SQL or ORM bypass in forks can cross tenants. | Document requirement; optional RLS migration example. | L | Open |
 | TD-022 | Password-reset worker idempotency marker set after DB commit (`app/services/password_reset_service.py`). | Crash between commit and Redis SET can duplicate tokens/emails on retry. | DB-level idempotency keyed by `job_id` or reorder side effects. | M | Done |
-| TD-023 | Worker Prometheus metrics not scrapeable in default prod layout (metrics HTTP on API only). | Silent worker/backlog failures in operations. | Sidecar exporter, pushgateway, or shared `PROMETHEUS_MULTIPROC_DIR`. | M | Open |
+| TD-023 | Worker Prometheus metrics not scrapeable in default prod layout (metrics HTTP on API only). | Silent worker/backlog failures in operations. | Sidecar exporter, pushgateway, or shared `PROMETHEUS_MULTIPROC_DIR`. | M | Done |
 | TD-024 | `webhook_events` table is insert-only with no retention (`app/services/webhook_service.py`). | Storage and query cost grow unbounded on high-volume forks. | Retention job and archival policy. | S | Done |
 | TD-025 | Audit logs are append-only with no retention (`app/services/audit_log_service.py`). | Admin queries slow; compliance storage grows. | Scheduled purge by `created_at` retention window. | M | Done |
 | TD-026 | User and audit lists use offset pagination (`app/api/routes/users.py`). | Deep pages become expensive at large tenant sizes. | Keyset/cursor pagination. | M | Open |
@@ -69,7 +69,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-039 | Tenant `default` seeded with fixed `id=1` in migration (`a1b2c3d4e5f6`). | Migration/assumption conflicts in multi-environment clones. | Seed via app command instead of migration bulk insert. | M | Open |
 | TD-040 | `platform_admin` is a tenant-bound user row, not a separate operator model. | Every fork re-implements operator/security model. | Separate operator table or explicit demo-only documentation. | L | Done |
 | TD-041 | Services raise `HTTPException` directly throughout service layer. | Hard to reuse from workers/CLI; inconsistent error handling in forks. | Domain exceptions translated at route boundary. | L | Open |
-| TD-042 | Worker loop runs maintenance and `promote_delayed_jobs` on every iteration. | Redis overhead under high queue depth. | Separate maintenance ticker; batch promote with limits. | S | Open |
+| TD-042 | Worker loop runs maintenance and `promote_delayed_jobs` on every iteration. | Redis overhead under high queue depth. | Separate maintenance ticker; batch promote with limits. | S | Done |
 | TD-043 | Possible double migration on deploy (SSH script + runner `deploy_migrate.sh`). | Redundant Alembic runs confuse runbooks. | Deduplicate migration step in deploy workflow. | S | Done |
 | TD-044 | `release.yml` publishes `latest` tag while production deploy discourages it. | Easy misuse of mutable tag in production. | Document tension or stop tagging `latest`. | S | Done |
 | TD-045 | `BaseHTTPMiddleware` used for request logging (`app/core/middleware.py`). | Extra latency under high load (known Starlette overhead). | Pure ASGI middleware. | M | Done |
@@ -100,8 +100,8 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 |----------|------|------|
 | Critical | 0 | 4 |
 | High | 1 | 12 |
-| Medium | 11 | 22 |
+| Medium | 9 | 24 |
 | Low | 8 | 0 |
-| **Total** | **20** | **37** |
+| **Total** | **18** | **39** |
 
 Open counts reflect post-P1 state (346 tests, June 2026).

@@ -661,6 +661,11 @@ Worker configuration:
 - `WORKER_MAINTENANCE_INTERVAL_SECONDS`
 - `WORKER_MAINTENANCE_LOCK_KEY`
 - `WORKER_MAINTENANCE_LOCK_TTL_SECONDS`
+- `WORKER_METRICS_ENABLED`
+- `WORKER_METRICS_HOST`
+- `WORKER_METRICS_PORT` (default `9100`, scraped at `/metrics`)
+- `WORKER_QUEUE_MAINTENANCE_INTERVAL_SECONDS`
+- `WORKER_QUEUE_PROMOTE_BATCH_SIZE`
 
 Failed jobs are retried with exponential backoff until `WORKER_MAX_RETRIES` is
 reached. Jobs move through a processing queue for acknowledgement semantics and

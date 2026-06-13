@@ -7,7 +7,14 @@ from app.core.job_queue import (
     requeue_failed_jobs,
 )
 from app.core.request_context import request_id_var
-from app.worker import UnknownJobTypeError, handle_job, process_next_job, run_scheduled_maintenance
+from app.worker import (
+    UnknownJobTypeError,
+    handle_job,
+    maybe_run_queue_maintenance,
+    maybe_run_scheduled_maintenance,
+    process_next_job,
+    run_scheduled_maintenance,
+)
 from tests.test_job_queue import FakeRedis
 
 
@@ -365,7 +372,8 @@ def test_run_worker_stops_after_shutdown_request(monkeypatch):
         request_worker_shutdown()
         return False
 
-    monkeypatch.setattr("app.worker.run_scheduled_maintenance", lambda: False)
+    monkeypatch.setattr("app.worker.maybe_run_scheduled_maintenance", lambda: False)
+    monkeypatch.setattr("app.worker.maybe_run_queue_maintenance", lambda: None)
     monkeypatch.setattr("app.worker.process_next_job", fake_process_next_job)
     monkeypatch.setattr("app.worker.register_worker_shutdown_handlers", lambda: None)
     monkeypatch.setattr("app.worker.wait_for_worker_job_completion", lambda seconds: None)
@@ -373,3 +381,41 @@ def test_run_worker_stops_after_shutdown_request(monkeypatch):
     run_worker()
 
     assert loop_iterations["count"] == 1
+
+
+def test_maybe_run_scheduled_maintenance_respects_interval(monkeypatch):
+    monkeypatch.setattr("app.worker.settings.worker_maintenance_interval_seconds", 60)
+    monkeypatch.setattr("app.worker._last_maintenance_attempt_at", 100.0)
+    monkeypatch.setattr(
+        "app.worker.run_scheduled_maintenance",
+        lambda: (_ for _ in ()).throw(AssertionError("should not run")),
+    )
+
+    did_run = maybe_run_scheduled_maintenance(now=120.0)
+
+    assert did_run is False
+
+
+def test_maybe_run_queue_maintenance_batches_promotion(monkeypatch):
+    from app.core.config import settings
+
+    calls = {"count": 0}
+
+    monkeypatch.setattr("app.worker.settings.worker_queue_maintenance_interval_seconds", 5)
+    monkeypatch.setattr("app.worker._last_queue_maintenance_at", 0.0)
+    monkeypatch.setattr(
+        "app.worker.reclaim_stale_processing_jobs",
+        lambda: calls.__setitem__("reclaim", calls.get("reclaim", 0) + 1),
+    )
+
+    def fake_promote(**kwargs):
+        calls["count"] += 1
+        assert kwargs["limit"] == settings.worker_queue_promote_batch_size
+        return 0
+
+    monkeypatch.setattr("app.worker.promote_delayed_jobs", fake_promote)
+
+    maybe_run_queue_maintenance(now=10.0)
+
+    assert calls["count"] == 1
+    assert calls["reclaim"] == 1

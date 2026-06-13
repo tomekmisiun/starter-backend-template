@@ -1,4 +1,8 @@
 services:
+  worker:
+    ports:
+      - "9100:9100"
+
   loki:
     image: grafana/loki:3.2.1
     command: ["-config.file=/etc/loki/loki.yml"]
