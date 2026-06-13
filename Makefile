@@ -58,6 +58,9 @@ db-backup-dry-run:
 db-restore-check-dry-run:
 	DRY_RUN=true bash scripts/db_restore_rehearsal.sh
 
+seed-tenant:
+	docker compose run --rm api python -m app.seed_default_tenant
+
 seed:
 	docker compose run --rm api python -m app.seed_dev_data
 
@@ -83,7 +86,7 @@ validate:
 policy-guards:
 	bash scripts/ci/run_policy_guards.sh
 
-bootstrap: docker-up migration-upgrade seed smoke
+bootstrap: docker-up migration-upgrade seed-tenant seed smoke
 
 LOAD_REQUESTS ?= 50
 LOAD_CONCURRENCY ?= 5

@@ -14,10 +14,17 @@ from tests.database import (  # noqa: E402
     reset_test_database,
     run_test_migrations,
 )
+from app.services.tenant_seed_service import ensure_default_tenant  # noqa: E402
 
 
 reset_test_database()
 run_test_migrations()
+
+_seed_session = TestingSessionLocal()
+try:
+    ensure_default_tenant(_seed_session)
+finally:
+    _seed_session.close()
 
 
 @pytest.fixture()

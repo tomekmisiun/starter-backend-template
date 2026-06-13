@@ -66,7 +66,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-036 | Scheduled backup workflow exits successfully when secrets are missing. | False confidence that backups run. | Fail cron when required secrets absent. | S | Done |
 | TD-037 | Observability docs reference missing assets (`.env.observability.example`, Grafana Prometheus datasource, dashboards). | Hundreds of clones waste time on broken local observability setup. | Add files or remove incorrect README/PROJECT_STATUS claims. | M | Done |
 | TD-038 | Promtail config hardcodes Docker container name (`observability/promtail/promtail.yml`). | Log collection fails after compose project rename. | Use compose service discovery labels. | S | Done |
-| TD-039 | Tenant `default` seeded with fixed `id=1` in migration (`a1b2c3d4e5f6`). | Migration/assumption conflicts in multi-environment clones. | Seed via app command instead of migration bulk insert. | M | Open |
+| TD-039 | Tenant `default` was seeded with fixed `id=1` in migration (`a1b2c3d4e5f6`). | Migration/assumption conflicts in multi-environment clones. | App seed command plus slug-based backfill without hardcoded tenant id. | M | Done |
 | TD-040 | `platform_admin` is a tenant-bound user row, not a separate operator model. | Every fork re-implements operator/security model. | Separate operator table or explicit demo-only documentation. | L | Done |
 | TD-041 | Services raise `HTTPException` directly throughout service layer. | Hard to reuse from workers/CLI; inconsistent error handling in forks. | Domain exceptions translated at route boundary. | L | Open |
 | TD-042 | Worker loop runs maintenance and `promote_delayed_jobs` on every iteration. | Redis overhead under high queue depth. | Separate maintenance ticker; batch promote with limits. | S | Done |
@@ -101,8 +101,8 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | Critical | 0 | 4 |
 | High | 1 | 12 |
 | High | 0 | 13 |
-| Medium | 5 | 30 |
+| Medium | 4 | 31 |
 | Low | 8 | 0 |
-| **Total** | **11** | **45** |
+| **Total** | **10** | **46** |
 
 Open counts reflect post-P1 state (346 tests, June 2026).

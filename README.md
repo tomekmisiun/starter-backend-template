@@ -168,8 +168,14 @@ Bootstrap a fresh local environment:
 make bootstrap
 ```
 
-This starts Docker Compose, applies migrations, seeds development users, and
-runs HTTP smoke checks against the API.
+This starts Docker Compose, applies migrations, ensures the default tenant
+exists, seeds development users, and runs HTTP smoke checks against the API.
+
+Ensure the default tenant only:
+
+```bash
+make seed-tenant
+```
 
 Seed development users only:
 
@@ -740,7 +746,8 @@ see `docs/webhook-idempotency.md` for provider-specific patterns.
 
 The template includes tenant-aware data isolation:
 
-- `tenants` table with a seeded `default` tenant for local development.
+- `tenants` table; the default tenant is provisioned via `make seed-tenant`
+  (also run as part of `make bootstrap`).
 - Users, audit logs, uploads, cache keys, and object storage keys are scoped by
   `tenant_id`.
 - Auth endpoints resolve the tenant from `X-Tenant-Slug` (default: `default`).

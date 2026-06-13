@@ -1,1 +1,2 @@
-P2 #28: downgrade drops uploaded_files.verification_status column only.
+# Leave this file comment-only unless a PR adds an approved destructive migration.
+# To bypass the CI check, replace this line with a one-line reason in the same PR.

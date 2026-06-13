@@ -3,10 +3,9 @@ from dataclasses import dataclass
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.core.security import hash_password
-from app.core.tenant_context import DEFAULT_TENANT_SLUG
 from app.db.session import SessionLocal
-from app.models.tenant import Tenant
 from app.models.user import User
+from app.services.tenant_seed_service import ensure_default_tenant
 
 
 DEV_PASSWORD = "devpassword123"
@@ -25,10 +24,7 @@ DEV_USERS = (
 
 
 def seed_dev_users(db, *, commit: bool = True) -> dict[str, str]:
-    tenant = db.query(Tenant).filter(Tenant.slug == DEFAULT_TENANT_SLUG).first()
-
-    if tenant is None:
-        raise RuntimeError(f"tenant '{DEFAULT_TENANT_SLUG}' was not found")
+    tenant = ensure_default_tenant(db, commit=False)
 
     results: dict[str, str] = {}
 
