@@ -61,7 +61,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-031 | Presigned upload complete re-downloads object from S3 for sniff/scan. | 2× bandwidth; API acts as proxy at scale. | Scan at bucket edge or async worker. | M | Open |
 | TD-032 | Readiness checks DB and Redis only, not S3 (`app/api/routes/health.py`). | Load balancer marks ready while uploads fail at runtime. | Optional S3 head-bucket in readiness when file features enabled. | S | Open |
 | TD-033 | User update and audit log are separate DB commits (`app/api/routes/users.py`). | User changed without audit row on partial failure. | Single transaction or outbox pattern. | M | Open |
-| TD-034 | Tenant `ContextVar` tokens stored but never reset (`app/api/dependencies/tenant.py`). | Stale tenant context under thread-reuse edge cases. | Reset in middleware `finally`. | S | Open |
+| TD-034 | Tenant `ContextVar` tokens stored but never reset (`app/api/dependencies/tenant.py`). | Stale tenant context under thread-reuse edge cases. | Clear tenant context at request entry in middleware. | S | Done |
 | TD-035 | CI `docker-build` job does not depend on `test` (`.github/workflows/ci.yml`). | Image can pass Trivy while tests fail on same commit. | Add `needs: [test]`. | S | Open |
 | TD-036 | Scheduled backup workflow exits successfully when secrets are missing. | False confidence that backups run. | Fail cron when required secrets absent. | S | Open |
 | TD-037 | Observability docs reference missing assets (`.env.observability.example`, Grafana Prometheus datasource, dashboards). | Hundreds of clones waste time on broken local observability setup. | Add files or remove incorrect README/PROJECT_STATUS claims. | M | Open |

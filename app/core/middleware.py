@@ -9,6 +9,7 @@ from app.core.ids import uuid7
 from app.core.metrics import get_route_path, observe_request
 from app.core.request_context import request_id_var
 from app.core.shutdown import decrement_in_flight_requests, increment_in_flight_requests
+from app.core.tenant_context import clear_tenant_context
 
 
 logger = logging.getLogger("app.requests")
@@ -21,6 +22,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         request.state.request_id = request_id
         request_id_token = request_id_var.set(request_id)
         sentry_sdk.set_tag("request_id", request_id)
+        clear_tenant_context()
         increment_in_flight_requests()
 
         try:

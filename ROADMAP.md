@@ -81,7 +81,7 @@ default in production.
 | 17 | **Observability asset and doc repair** — add `.env.observability.example`, Grafana Prometheus datasource, dashboard stub or fix README; fix Promtail target; document Alertmanager stub | TD-037, TD-038, TD-048 | M | Low | High | Not started |
 | 18 | **Webhook ingress baseline** — max body size; per-IP/provider rate limits | TD-019 | S | Low | Medium | Not started |
 | 19 | **Global error handler** — generic 500 handler; enforce non-debug production guidance | TD-020 | S | Low | Medium | Not started |
-| 20 | **Tenant ContextVar reset** — reset tenant tokens in middleware `finally` | TD-034 | S | Low | Medium | Not started |
+| 20 | **Tenant ContextVar reset** — clear tenant context at request entry in middleware | TD-034 | S | Low | Medium | Done |
 | 21 | **Password-reset idempotency race** — DB-level dedup keyed by `job_id` across commit/marker window | TD-022 | M | Medium | Medium | Not started |
 | 22 | **Webhook event retention** — scheduled purge/archival for `webhook_events` | TD-024 | S | Low | Medium | Not started |
 

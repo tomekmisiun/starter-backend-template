@@ -12,3 +12,8 @@ def get_tenant_id() -> int | None:
 
 def get_tenant_slug() -> str | None:
     return tenant_slug_var.get()
+
+
+def clear_tenant_context() -> None:
+    tenant_id_var.set(None)
+    tenant_slug_var.set(None)
