@@ -143,21 +143,18 @@ coverage floor enforced in CI and `make validate`.
   instrumentation in-process
 - Optional Prometheus multiprocess aggregation via `PROMETHEUS_MULTIPROC_DIR`
 
-### Local observability stack (partial)
+### Local observability stack
 
 Verified in repo:
 
 - `docker-compose.observability.yml`
+- `.env.observability.example` (copy to `.env.observability` for local Grafana auth)
 - Prometheus (`observability/prometheus/`) with scrape config and alert rules
-- Loki, Promtail, Alertmanager configs
-- Grafana with **Loki datasource provisioning only**
+- Loki, Promtail (compose service discovery for the `api` container), Alertmanager
+- Grafana with Loki and Prometheus datasource provisioning
+- Provisioned `FastAPI Overview` dashboard under `observability/grafana/dashboards`
 
-Not present in repo (README references them incorrectly — see `TECH_DEBT.md`
-TD-037):
-
-- `.env.observability.example`
-- Grafana Prometheus datasource provisioning
-- Provisioned Grafana dashboards
+Local Alertmanager uses a no-op receiver stub; see `observability/alertmanager/README.md`.
 
 ### Docker and CI/CD
 
@@ -187,14 +184,9 @@ TD-037):
 
 See `ROADMAP.md` (P1–P3) and `TECH_DEBT.md` for tracked gaps. Examples:
 
-- Refresh-token `token_version`, refresh/logout rate limits, env-driven JWT TTLs
-  (P1)
 - Redis resilience beyond the production contract (TD-004 implementation, P1 #14)
-- Graceful shutdown, Docker healthchecks, idempotency/webhook/audit retention jobs
 - Real malware scanner service (integration boundary only; operator must wire URL)
 - Webhook processing pipeline, OAuth/MFA, PostgreSQL RLS
-- Managed hosting, secret manager, PITR, or live backup targets
-- Complete local Grafana/Prometheus dashboard provisioning (TD-037)
 
 ---
 
