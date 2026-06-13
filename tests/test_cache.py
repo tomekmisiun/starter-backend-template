@@ -27,7 +27,7 @@ def test_increment_cache_version_starts_at_one():
 
 
 def test_invalidate_users_list_cache_bumps_version_key():
-    tenant_id = 999_001
+    tenant_id = int(uuid7().hex[:8], 16)
     version_key = build_users_list_cache_version_key(tenant_id)
     cache_key = build_users_list_cache_key(
         tenant_id=tenant_id,

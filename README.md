@@ -29,7 +29,7 @@ production adoption.
 
 ## Requirements
 
-- Python 3.14
+- Python 3.13 (Docker base image; `requires-python >=3.13`)
 - uv
 - Docker and Docker Compose
 - Make
