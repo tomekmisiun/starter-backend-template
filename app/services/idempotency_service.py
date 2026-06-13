@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
@@ -9,6 +10,8 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.redis import redis_client
 from app.models.idempotency_record import IdempotencyRecord
+
+logger = logging.getLogger("app.idempotency")
 
 IDEMPOTENCY_LOCK_PREFIX = "idempotency:processing:"
 
@@ -128,3 +131,16 @@ def begin_idempotent_request(db: Session, scope_key: str):
         )
 
     return None, True
+
+
+def cleanup_expired_idempotency_records(db: Session) -> int:
+    deleted_count = (
+        db.query(IdempotencyRecord)
+        .filter(IdempotencyRecord.expires_at < datetime.now(timezone.utc))
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+
+    logger.info("idempotency_expired_records_cleaned count=%s", deleted_count)
+
+    return deleted_count
