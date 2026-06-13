@@ -36,7 +36,7 @@ Update at minimum:
 | Application name | `APP_NAME` / `settings.app_name` via env or `app/core/config.py` default |
 | README title and links | `README.md` |
 | Container image path | `.github/workflows/release.yml`, `deploy.yml`, `Makefile` `deploy-dry-run` |
-| Default tenant slug (optional) | Alembic seed / tenant provisioning policy |
+| Default tenant slug (optional) | `make seed-tenant` / `app/seed_default_tenant.py` |
 | Dev seed accounts | `app/seed_dev_data.py` — change emails before any shared staging |
 
 Remove or replace example GHCR paths such as

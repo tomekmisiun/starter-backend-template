@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "tenants",
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), sa.Identity(), nullable=False),
         sa.Column("slug", sa.String(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
@@ -31,28 +31,11 @@ def upgrade() -> None:
     op.create_index(op.f("ix_tenants_id"), "tenants", ["id"], unique=False)
     op.create_index(op.f("ix_tenants_slug"), "tenants", ["slug"], unique=True)
 
-    tenants_table = sa.table(
-        "tenants",
-        sa.column("id", sa.Integer),
-        sa.column("slug", sa.String),
-        sa.column("name", sa.String),
-        sa.column("is_active", sa.Boolean),
-    )
-    op.bulk_insert(
-        tenants_table,
-        [
-            {
-                "id": 1,
-                "slug": "default",
-                "name": "Default Tenant",
-                "is_active": True,
-            }
-        ],
-    )
     op.execute(
         sa.text(
-            "SELECT setval(pg_get_serial_sequence('tenants', 'id'), "
-            "(SELECT MAX(id) FROM tenants))"
+            "INSERT INTO tenants (slug, name, is_active) "
+            "SELECT 'default', 'Default Tenant', true "
+            "WHERE NOT EXISTS (SELECT 1 FROM tenants WHERE slug = 'default')"
         )
     )
 
@@ -60,7 +43,13 @@ def upgrade() -> None:
         "users",
         sa.Column("tenant_id", sa.Integer(), nullable=True),
     )
-    op.execute("UPDATE users SET tenant_id = 1")
+    op.execute(
+        sa.text(
+            "UPDATE users SET tenant_id = "
+            "(SELECT id FROM tenants WHERE slug = 'default') "
+            "WHERE tenant_id IS NULL"
+        )
+    )
     op.alter_column("users", "tenant_id", nullable=False)
     op.create_foreign_key(
         "fk_users_tenant_id_tenants",
@@ -82,7 +71,13 @@ def upgrade() -> None:
         "audit_logs",
         sa.Column("tenant_id", sa.Integer(), nullable=True),
     )
-    op.execute("UPDATE audit_logs SET tenant_id = 1")
+    op.execute(
+        sa.text(
+            "UPDATE audit_logs SET tenant_id = "
+            "(SELECT id FROM tenants WHERE slug = 'default') "
+            "WHERE tenant_id IS NULL"
+        )
+    )
     op.alter_column("audit_logs", "tenant_id", nullable=False)
     op.create_foreign_key(
         "fk_audit_logs_tenant_id_tenants",
@@ -110,7 +105,13 @@ def upgrade() -> None:
         WHERE uploaded_files.owner_id = users.id
         """
     )
-    op.execute("UPDATE uploaded_files SET tenant_id = 1 WHERE tenant_id IS NULL")
+    op.execute(
+        sa.text(
+            "UPDATE uploaded_files SET tenant_id = "
+            "(SELECT id FROM tenants WHERE slug = 'default') "
+            "WHERE tenant_id IS NULL"
+        )
+    )
     op.alter_column("uploaded_files", "tenant_id", nullable=False)
     op.create_foreign_key(
         "fk_uploaded_files_tenant_id_tenants",

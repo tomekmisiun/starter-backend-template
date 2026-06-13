@@ -52,9 +52,10 @@ def test_same_email_can_exist_in_different_tenants(db, client):
     assert second_response.status_code == 200
 
     users = db.query(User).filter(User.email == "shared@example.com").all()
+    default_tenant = db.query(Tenant).filter(Tenant.slug == "default").one()
 
     assert len(users) == 2
-    assert {user.tenant_id for user in users} == {1, second_tenant.id}
+    assert {user.tenant_id for user in users} == {default_tenant.id, second_tenant.id}
 
 
 def test_tenant_cache_prefix_is_namespaced():
