@@ -91,11 +91,12 @@ def test_cleanup_old_audit_logs_deletes_rows_past_retention(db, monkeypatch):
     )
     db.add_all([old_log, recent_log])
     db.commit()
+    initial_count = db.query(AuditLog).count()
 
     deleted_count = cleanup_old_audit_logs(db)
 
     assert deleted_count == 1
-    assert db.query(AuditLog).count() == 1
+    assert db.query(AuditLog).count() == initial_count - 1
 
 
 def test_admin_update_user_creates_audit_log(
