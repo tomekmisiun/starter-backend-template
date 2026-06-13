@@ -29,6 +29,7 @@ from app.services.password_reset_service import (
     cleanup_expired_password_reset_tokens,
     create_password_reset_token_and_send_email,
 )
+from app.services.webhook_service import cleanup_old_webhook_events
 
 
 logger = logging.getLogger("app.worker")
@@ -133,15 +134,18 @@ def run_scheduled_maintenance(now: float | None = None) -> bool:
     try:
         password_reset_deleted = cleanup_expired_password_reset_tokens(db)
         idempotency_deleted = cleanup_expired_idempotency_records(db)
+        webhook_events_deleted = cleanup_old_webhook_events(db)
     finally:
         db.close()
 
     logger.info(
         "worker_maintenance_completed "
         "expired_password_reset_tokens_deleted=%s "
-        "expired_idempotency_records_deleted=%s",
+        "expired_idempotency_records_deleted=%s "
+        "old_webhook_events_deleted=%s",
         password_reset_deleted,
         idempotency_deleted,
+        webhook_events_deleted,
     )
     observe_worker_maintenance(status="completed")
 
