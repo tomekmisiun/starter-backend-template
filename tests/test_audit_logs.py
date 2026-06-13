@@ -65,6 +65,40 @@ def get_latest_audit_log(db) -> AuditLog:
     return db.query(AuditLog).order_by(AuditLog.id.desc()).first()
 
 
+def test_cleanup_old_audit_logs_deletes_rows_past_retention(db, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+
+    from app.models.audit_log import AuditLog
+    from app.services.audit_log_service import cleanup_old_audit_logs
+
+    monkeypatch.setattr(
+        "app.services.audit_log_service.settings.audit_log_retention_days",
+        30,
+    )
+
+    old_log = AuditLog(
+        tenant_id=1,
+        admin_id=None,
+        action=AuditAction.USER_UPDATED.value,
+        target_user_id=2,
+        created_at=datetime.now(timezone.utc) - timedelta(days=45),
+    )
+    recent_log = AuditLog(
+        tenant_id=1,
+        admin_id=None,
+        action=AuditAction.USER_UPDATED.value,
+        target_user_id=2,
+    )
+    db.add_all([old_log, recent_log])
+    db.commit()
+    initial_count = db.query(AuditLog).count()
+
+    deleted_count = cleanup_old_audit_logs(db)
+
+    assert deleted_count == 1
+    assert db.query(AuditLog).count() == initial_count - 1
+
+
 def test_admin_update_user_creates_audit_log(
     db,
     client,

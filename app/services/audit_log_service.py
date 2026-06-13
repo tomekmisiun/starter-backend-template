@@ -1,6 +1,12 @@
+import logging
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.audit_log import AuditAction, AuditLog
+
+logger = logging.getLogger("app.audit_logs")
 
 
 def create_audit_log(
@@ -57,3 +63,23 @@ def get_audit_logs(
         .limit(limit)
         .all()
     )
+
+
+def cleanup_old_audit_logs(db: Session) -> int:
+    cutoff = datetime.now(timezone.utc) - timedelta(
+        days=settings.audit_log_retention_days,
+    )
+    deleted_count = (
+        db.query(AuditLog)
+        .filter(AuditLog.created_at < cutoff)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+
+    logger.info(
+        "audit_logs_cleaned count=%s cutoff=%s",
+        deleted_count,
+        cutoff.isoformat(),
+    )
+
+    return deleted_count

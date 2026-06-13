@@ -125,6 +125,7 @@ class Settings(BaseSettings):
     webhook_signature_secret: str = ""
     webhook_signature_tolerance_seconds: int = Field(default=300, gt=0)
     webhook_event_retention_days: int = Field(default=90, gt=0)
+    audit_log_retention_days: int = Field(default=365, gt=0)
     webhook_max_body_bytes: int = Field(default=1_048_576, gt=0)
     webhook_ingress_rate_limit_limit: int = Field(default=60, gt=0)
     webhook_ingress_rate_limit_window_seconds: int = Field(default=60, gt=0)

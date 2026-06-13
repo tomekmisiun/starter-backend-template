@@ -52,7 +52,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-022 | Password-reset worker idempotency marker set after DB commit (`app/services/password_reset_service.py`). | Crash between commit and Redis SET can duplicate tokens/emails on retry. | DB-level idempotency keyed by `job_id` or reorder side effects. | M | Done |
 | TD-023 | Worker Prometheus metrics not scrapeable in default prod layout (metrics HTTP on API only). | Silent worker/backlog failures in operations. | Sidecar exporter, pushgateway, or shared `PROMETHEUS_MULTIPROC_DIR`. | M | Open |
 | TD-024 | `webhook_events` table is insert-only with no retention (`app/services/webhook_service.py`). | Storage and query cost grow unbounded on high-volume forks. | Retention job and archival policy. | S | Done |
-| TD-025 | Audit logs are append-only with no retention (`app/services/audit_log_service.py`). | Admin queries slow; compliance storage grows. | Partition or export-to-cold-storage job. | M | Open |
+| TD-025 | Audit logs are append-only with no retention (`app/services/audit_log_service.py`). | Admin queries slow; compliance storage grows. | Scheduled purge by `created_at` retention window. | M | Done |
 | TD-026 | User and audit lists use offset pagination (`app/api/routes/users.py`). | Deep pages become expensive at large tenant sizes. | Keyset/cursor pagination. | M | Open |
 | TD-027 | User email search uses `%term%` ILIKE (`app/services/user_service.py`). | Sequential scans under admin search load. | Trigram index or prefix-only search. | M | Open |
 | TD-028 | User list cache invalidation uses Redis `SCAN` + bulk delete (`app/core/cache.py`). | Redis CPU spikes under high admin write churn. | Versioned cache keys or tag-based invalidation. | M | Open |
@@ -100,8 +100,8 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 |----------|------|------|
 | Critical | 0 | 4 |
 | High | 1 | 10 |
-| Medium | 15 | 18 |
+| Medium | 14 | 19 |
 | Low | 8 | 0 |
-| **Total** | **24** | **32** |
+| **Total** | **23** | **33** |
 
 Open counts reflect post-P1 state (346 tests, June 2026).

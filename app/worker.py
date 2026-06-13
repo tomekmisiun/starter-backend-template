@@ -23,6 +23,7 @@ from app.core.shutdown import (
     worker_shutdown_requested,
 )
 from app.db.session import SessionLocal
+from app.services.audit_log_service import cleanup_old_audit_logs
 from app.services.idempotency_service import cleanup_expired_idempotency_records
 from app.services.password_reset_service import (
     SEND_PASSWORD_RESET_EMAIL_JOB,
@@ -135,6 +136,7 @@ def run_scheduled_maintenance(now: float | None = None) -> bool:
         password_reset_deleted = cleanup_expired_password_reset_tokens(db)
         idempotency_deleted = cleanup_expired_idempotency_records(db)
         webhook_events_deleted = cleanup_old_webhook_events(db)
+        audit_logs_deleted = cleanup_old_audit_logs(db)
     finally:
         db.close()
 
@@ -142,10 +144,12 @@ def run_scheduled_maintenance(now: float | None = None) -> bool:
         "worker_maintenance_completed "
         "expired_password_reset_tokens_deleted=%s "
         "expired_idempotency_records_deleted=%s "
-        "old_webhook_events_deleted=%s",
+        "old_webhook_events_deleted=%s "
+        "old_audit_logs_deleted=%s",
         password_reset_deleted,
         idempotency_deleted,
         webhook_events_deleted,
+        audit_logs_deleted,
     )
     observe_worker_maintenance(status="completed")
 
