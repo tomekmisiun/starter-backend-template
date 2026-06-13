@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -13,6 +15,7 @@ ERROR_CODES_BY_STATUS = {
     status.HTTP_409_CONFLICT: "conflict",
     422: "validation_error",
     status.HTTP_429_TOO_MANY_REQUESTS: "rate_limit_exceeded",
+    status.HTTP_500_INTERNAL_SERVER_ERROR: "internal_server_error",
 }
 
 
@@ -67,4 +70,23 @@ async def validation_exception_handler(
         code="validation_error",
         message="Request validation failed",
         details=exc.errors(),
+    )
+
+
+logger = logging.getLogger("app.errors")
+
+
+async def unhandled_exception_handler(
+    request: Request,
+    exc: Exception,
+) -> JSONResponse:
+    logger.exception(
+        "unhandled_exception",
+        extra={"method": request.method, "path": request.url.path},
+    )
+
+    return error_response(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        code="internal_server_error",
+        message="An unexpected error occurred",
     )

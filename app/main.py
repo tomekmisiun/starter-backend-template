@@ -6,6 +6,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.exception_handlers import (
     http_exception_handler,
+    unhandled_exception_handler,
     validation_exception_handler,
 )
 from app.core.error_tracking import initialize_error_tracking
@@ -47,6 +48,7 @@ app.add_middleware(RequestContextMiddleware)
 configure_runtime_middleware(app, settings)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 
 def include_application_routers(application: FastAPI) -> None:

@@ -1,6 +1,10 @@
+from unittest.mock import MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
+from app.core.exception_handlers import unhandled_exception_handler
 from app.core.redis import redis_client
 from app.main import app
 from tests.test_users import create_user_and_login, make_admin
@@ -89,6 +93,24 @@ def test_unknown_route_error_uses_standard_envelope(client):
             "message": "Not Found",
         }
     }
+
+
+@pytest.mark.anyio
+async def test_unhandled_exception_uses_standard_envelope():
+    request = MagicMock()
+    request.method = "GET"
+    request.url.path = "/health/live"
+
+    response = await unhandled_exception_handler(
+        request,
+        RuntimeError("secret internal details"),
+    )
+
+    assert response.status_code == 500
+    assert response.body == (
+        b'{"error":{"code":"internal_server_error",'
+        b'"message":"An unexpected error occurred"}}'
+    )
 
 
 def test_rate_limit_error_uses_standard_envelope():
