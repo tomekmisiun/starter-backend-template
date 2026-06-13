@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,7 @@ from app.api.dependencies.rate_limit import (
 )
 from app.api.openapi import AUTH_ERROR_RESPONSES
 from app.core.config import settings
+from app.core.domain_errors import ConflictError
 from app.db.session import get_db
 from app.schemas.webhook import WebhookInboundRequest, WebhookInboundResponse
 from app.services.idempotency_service import (
@@ -75,25 +76,22 @@ async def inbound_webhook(
                 event_id=payload.event_id,
                 payload=raw_body,
             )
-        except HTTPException as exc:
-            if exc.status_code == status.HTTP_409_CONFLICT:
-                response_body = {
-                    "status": "duplicate",
-                    "provider": payload.provider,
-                    "event_id": payload.event_id,
-                }
-                stored_record = store_response(
-                    db,
-                    scope_key=scope_key,
-                    status_code=status.HTTP_409_CONFLICT,
-                    response_body=response_body,
-                )
-                return JSONResponse(
-                    status_code=stored_record.status_code,
-                    content=parse_cached_response_body(stored_record),
-                )
-
-            raise
+        except ConflictError:
+            response_body = {
+                "status": "duplicate",
+                "provider": payload.provider,
+                "event_id": payload.event_id,
+            }
+            stored_record = store_response(
+                db,
+                scope_key=scope_key,
+                status_code=status.HTTP_409_CONFLICT,
+                response_body=response_body,
+            )
+            return JSONResponse(
+                status_code=stored_record.status_code,
+                content=parse_cached_response_body(stored_record),
+            )
 
         response_body = {
             "status": "accepted",

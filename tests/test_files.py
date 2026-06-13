@@ -1,10 +1,10 @@
 from botocore.exceptions import ClientError
 
+from app.core.domain_errors import BadRequestError, PayloadTooLargeError
 from app.models.uploaded_file import UploadedFile, UploadVerificationStatus
 from app.services.storage_service import (
     PresignedUrl,
     StorageService,
-    StorageVerificationError,
     StoredObjectMetadata,
 )
 from app.services.upload_verification_service import verify_presigned_upload_in_worker
@@ -55,7 +55,7 @@ class FakeStorageProvider:
         stored_object = self.objects.get(object_key)
 
         if stored_object is None:
-            raise StorageVerificationError(
+            raise BadRequestError(
                 "Uploaded object was not found in storage",
             )
 
@@ -71,7 +71,7 @@ class FakeStorageProvider:
         stored_object = self.objects.get(object_key)
 
         if stored_object is None:
-            raise StorageVerificationError(
+            raise BadRequestError(
                 "Uploaded object could not be verified",
             )
 
@@ -79,10 +79,7 @@ class FakeStorageProvider:
         assert isinstance(body, bytes)
 
         if len(body) > max_bytes:
-            raise StorageVerificationError(
-                "File too large",
-                status_code=413,
-            )
+            raise PayloadTooLargeError("File too large")
 
         return body
 

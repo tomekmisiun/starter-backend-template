@@ -1,6 +1,7 @@
-from fastapi import HTTPException, Request, status
+from fastapi import Request
 from sqlalchemy.orm import Session
 
+from app.core.domain_errors import BadRequestError, NotFoundError
 from app.core.tenant_context import DEFAULT_TENANT_SLUG, get_tenant_id
 from app.models.audit_log import AuditAction
 from app.models.tenant import Tenant
@@ -23,10 +24,7 @@ def get_active_tenant_by_slug(db: Session, slug: str) -> Tenant:
     tenant = get_tenant_by_slug(db, slug)
 
     if tenant is None or not tenant.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Tenant not found",
-        )
+        raise NotFoundError("Tenant not found")
 
     return tenant
 
@@ -35,10 +33,7 @@ def get_required_tenant_id() -> int:
     tenant_id = get_tenant_id()
 
     if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tenant context is required",
-        )
+        raise BadRequestError("Tenant context is required")
 
     return tenant_id
 
@@ -55,10 +50,7 @@ def create_tenant(db: Session, slug: str, name: str) -> Tenant:
     existing_tenant = get_tenant_by_slug(db, slug)
 
     if existing_tenant is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tenant with this slug already exists",
-        )
+        raise BadRequestError("Tenant with this slug already exists")
 
     tenant = Tenant(slug=slug, name=name, is_active=True)
     db.add(tenant)

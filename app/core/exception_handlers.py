@@ -5,6 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.domain_errors import DomainError
+
 
 ERROR_CODES_BY_STATUS = {
     status.HTTP_400_BAD_REQUEST: "bad_request",
@@ -46,6 +48,17 @@ def error_response(
 
 def get_error_code(status_code: int) -> str:
     return ERROR_CODES_BY_STATUS.get(status_code, "api_error")
+
+
+async def domain_error_handler(
+    request: Request,
+    exc: DomainError,
+) -> JSONResponse:
+    return error_response(
+        status_code=exc.status_code,
+        code=get_error_code(exc.status_code),
+        message=exc.message,
+    )
 
 
 async def http_exception_handler(
