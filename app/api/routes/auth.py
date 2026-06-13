@@ -24,8 +24,8 @@ from app.schemas.auth import (
     Token,
     UserCreate,
     UserLogin,
-    UserRead,
 )
+from app.schemas.user import UserRead
 from app.services.auth_service import (
     create_user,
     login_user,

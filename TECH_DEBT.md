@@ -74,7 +74,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-044 | `release.yml` publishes `latest` tag while production deploy discourages it. | Easy misuse of mutable tag in production. | Document tension or stop tagging `latest`. | S | Done |
 | TD-045 | `BaseHTTPMiddleware` used for request logging (`app/core/middleware.py`). | Extra latency under high load (known Starlette overhead). | Pure ASGI middleware. | M | Open |
 | TD-046 | JWT access/refresh TTLs hardcoded (30 min / 7 days). | Product policy changes require code edits across forks. | Env-driven TTL settings. | S | Done |
-| TD-047 | Duplicate `UserRead` schema in `app/schemas/auth.py` and `app/schemas/user.py`. | API contract drift risk. | Consolidate to single schema module. | S | Open |
+| TD-047 | Duplicate `UserRead` schema in `app/schemas/auth.py` and `app/schemas/user.py`. | API contract drift risk. | Consolidate to single schema module. | S | Done |
 | TD-048 | Alertmanager receiver is empty stub (`observability/alertmanager/alertmanager.yml`). | Local alerts go nowhere; forks assume routing works. | Document as stub; provide example receiver config. | S | Done |
 
 ---
@@ -100,8 +100,8 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 |----------|------|------|
 | Critical | 0 | 4 |
 | High | 1 | 10 |
-| Medium | 17 | 16 |
+| Medium | 16 | 17 |
 | Low | 8 | 0 |
-| **Total** | **26** | **30** |
+| **Total** | **25** | **31** |
 
 Open counts reflect post-P1 state (346 tests, June 2026).

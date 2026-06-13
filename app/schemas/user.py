@@ -15,8 +15,9 @@ class UserRead(BaseModel):
     is_active: bool
     role: str
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+    }
 
 
 class UserSelfUpdate(BaseModel):
