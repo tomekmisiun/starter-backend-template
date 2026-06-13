@@ -97,7 +97,7 @@ repo, and TTL-backed tables have retention jobs.
 | # | Task | Debt IDs | Effort | Risk | ROI | Status |
 |---|------|----------|--------|------|-----|--------|
 | 23 | **Sync scaling path (short term)** — official multi-worker benchmark doc and load-test profiles for bcrypt/login path | TD-012 | M | Low | High | Done |
-| 24 | **Async architecture spike (long term)** — evaluate async SQLAlchemy + async routes; decision record for forks | TD-012 | XL | High | Medium | Not started |
+| 24 | **Async architecture spike (long term)** — evaluate async SQLAlchemy + async routes; decision record for forks | TD-012 | XL | High | Medium | Done |
 | 25 | **Worker observability** — scrape worker metrics in prod topology; tune maintenance/promote loop | TD-023, TD-042 | M | Medium | High | Not started |
 | 26 | **Pagination and admin search at scale** — keyset pagination; pg_trgm or prefix-only email search | TD-026, TD-027 | M | Medium | High | Not started |
 | 27 | **Cache invalidation redesign** — versioned keys instead of Redis `SCAN` pattern delete | TD-028 | M | Medium | Medium | Done |

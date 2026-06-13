@@ -3,8 +3,8 @@
 Guide for measuring how this template scales with multiple Uvicorn workers while
 routes remain synchronous (`def`) and the auth path uses bcrypt password checks.
 
-For the long-term async rewrite decision, track P2 #24 in `ROADMAP.md`
-(`docs/adr/0001-sync-vs-async-architecture.md` once the spike ADR lands).
+For the long-term async rewrite decision, see
+`docs/adr/0001-sync-vs-async-architecture.md`.
 
 ## Why This Matters
 
