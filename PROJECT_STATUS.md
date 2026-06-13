@@ -47,7 +47,7 @@ coverage floor enforced in CI and `make validate`.
 
 **Documentation and rules:**
 
-- `README.md` — setup, API, Docker, env vars, operations
+- `README.md` — landing page, quick start, doc navigation
 - `docs/` — deployment, security, workers, tenancy, backups, load testing
 - `.ai-rules/` — binding AI/project rules (source of truth for agent behavior)
 - `docs/ai-workflows.md` — how `.ai-rules/`, `agents/`, and `.commands/` fit together

@@ -4,7 +4,7 @@ Copy everything below the line into your agent chat.
 
 ---
 
-Update project tracking files after **completed, verified work** in starter-backend-template.
+Update project tracking files after **completed, verified work** in fastapi-production-foundation.
 
 **Merged PR or work summary:**  
 <PASTE PR LINK OR BULLET LIST OF CHANGES>

@@ -91,8 +91,8 @@ BACKUP_MODE=provider-hook \
 Use cron on the host:
 
 ```cron
-0 3 * * * cd /srv/starter-backend && BACKUP_FILE=backups/nightly.dump make db-backup
-30 3 * * 1 cd /srv/starter-backend && make db-restore-check
+0 3 * * * cd /srv/fastapi-production-foundation && BACKUP_FILE=backups/nightly.dump make db-backup
+30 3 * * 1 cd /srv/fastapi-production-foundation && make db-restore-check
 ```
 
 ### GitHub Actions

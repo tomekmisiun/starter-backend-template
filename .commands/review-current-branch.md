@@ -4,7 +4,7 @@ Copy everything below the line into your agent chat.
 
 ---
 
-You are reviewing the **current branch** before a PR in starter-backend-template.
+You are reviewing the **current branch** before a PR in fastapi-production-foundation.
 
 **Base branch:** main (unless user specified otherwise)
 

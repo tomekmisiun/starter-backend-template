@@ -1,7 +1,7 @@
 [project]
-name = "starter-backend-template"
+name = "fastapi-production-foundation"
 version = "0.1.0"
-description = "Production-oriented FastAPI backend template."
+description = "AI-ready FastAPI production foundation for SaaS/API projects with auth, PostgreSQL, Redis, Docker, CI/CD, observability, and agent workflow rules."
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.136,<0.137",

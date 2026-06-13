@@ -107,7 +107,7 @@ def configure_metrics(app_settings: "Settings | None" = None) -> None:
 
     app_info_labels = ["service", "environment"]
     app_info_label_values = {
-        "service": "starter-backend-template",
+        "service": "fastapi-production-foundation",
         "environment": active_settings.environment,
     }
 

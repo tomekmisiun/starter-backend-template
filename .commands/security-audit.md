@@ -4,7 +4,7 @@ Copy everything below the line into your agent chat.
 
 ---
 
-Perform a **security review** of starter-backend-template.
+Perform a **security review** of fastapi-production-foundation.
 
 **Scope:**  
 <REPO FULL | CURRENT BRANCH DIFF | SPECIFIC AREA e.g. auth, uploads, webhooks>

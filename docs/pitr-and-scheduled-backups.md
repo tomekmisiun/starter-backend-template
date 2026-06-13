@@ -51,7 +51,7 @@ provider credentials.
 For VM deployments, use cron on the host:
 
 ```cron
-0 3 * * * cd /srv/starter-backend && BACKUP_FILE=backups/nightly.dump make db-backup
+0 3 * * * cd /srv/fastapi-production-foundation && BACKUP_FILE=backups/nightly.dump make db-backup
 ```
 
 For managed PostgreSQL, prefer the provider's native backup schedule over

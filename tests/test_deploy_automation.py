@@ -23,7 +23,7 @@ def run_deploy_promote(**env: str) -> subprocess.CompletedProcess[str]:
 def test_deploy_promote_dry_run_prints_plan():
     result = run_deploy_promote(
         ENVIRONMENT="staging",
-        IMAGE_REF="ghcr.io/example/starter-backend-template/api:ci-sha",
+        IMAGE_REF="ghcr.io/example/fastapi-production-foundation/api:ci-sha",
         DRY_RUN="true",
         RUN_MIGRATIONS="true",
     )
@@ -36,7 +36,7 @@ def test_deploy_promote_dry_run_prints_plan():
 def test_deploy_promote_rejects_latest_in_production():
     result = run_deploy_promote(
         ENVIRONMENT="production",
-        IMAGE_REF="ghcr.io/example/starter-backend-template/api:latest",
+        IMAGE_REF="ghcr.io/example/fastapi-production-foundation/api:latest",
         DRY_RUN="true",
         RUN_MIGRATIONS="true",
     )
@@ -48,7 +48,7 @@ def test_deploy_promote_rejects_latest_in_production():
 def test_deploy_promote_requires_a_backend_outside_dry_run():
     result = run_deploy_promote(
         ENVIRONMENT="staging",
-        IMAGE_REF="ghcr.io/example/starter-backend-template/api:1.2.3",
+        IMAGE_REF="ghcr.io/example/fastapi-production-foundation/api:1.2.3",
         DRY_RUN="false",
         RUN_MIGRATIONS="true",
     )

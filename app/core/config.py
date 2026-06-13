@@ -30,7 +30,7 @@ def parse_csv_setting(value: str) -> list[str]:
 
 
 class Settings(BaseSettings):
-    app_name: str = "Starter Backend Template"
+    app_name: str = "FastAPI Production Foundation"
     environment: str = "development"
     database_url: str = Field(default=LOCAL_DATABASE_URL)
     secret_key: str = Field(min_length=1)

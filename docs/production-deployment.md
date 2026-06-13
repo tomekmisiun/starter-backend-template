@@ -274,7 +274,7 @@ The `Dockerfile` defines two build targets:
 Build the production image:
 
 ```bash
-docker build --target production -t starter-backend-template-api:production .
+docker build --target production -t fastapi-production-foundation-api:production .
 ```
 
 Local Docker Compose explicitly builds the `development` target for `api` and

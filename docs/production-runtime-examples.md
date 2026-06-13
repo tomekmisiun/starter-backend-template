@@ -267,7 +267,7 @@ deployments instead of trusting all forwarded headers.
 Minimal TLS reverse proxy in front of the Compose `api` service:
 
 ```nginx
-upstream starter_api {
+upstream fpf_api {
     server 127.0.0.1:8000;
     keepalive 32;
 }
@@ -288,16 +288,16 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header Connection "";
-        proxy_pass http://starter_api;
+        proxy_pass http://fpf_api;
     }
 
     location = /health/live {
-        proxy_pass http://starter_api/health/live;
+        proxy_pass http://fpf_api/health/live;
         access_log off;
     }
 
     location = /health/ready {
-        proxy_pass http://starter_api/health/ready;
+        proxy_pass http://fpf_api/health/ready;
         access_log off;
     }
 }
@@ -344,10 +344,10 @@ services:
       - .env
     labels:
       - traefik.enable=true
-      - traefik.http.routers.starter-api.rule=Host(`api.example.com`)
-      - traefik.http.routers.starter-api.entrypoints=websecure
-      - traefik.http.routers.starter-api.tls.certresolver=letsencrypt
-      - traefik.http.services.starter-api.loadbalancer.server.port=8000
+      - traefik.http.routers.fpf-api.rule=Host(`api.example.com`)
+      - traefik.http.routers.fpf-api.entrypoints=websecure
+      - traefik.http.routers.fpf-api.tls.certresolver=letsencrypt
+      - traefik.http.services.fpf-api.loadbalancer.server.port=8000
     networks:
       - edge
 

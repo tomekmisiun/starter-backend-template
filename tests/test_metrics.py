@@ -6,7 +6,7 @@ def test_metrics_endpoint_exposes_prometheus_text(client):
     assert "# HELP http_requests_total" in response.text
     assert "# TYPE http_request_duration_seconds histogram" in response.text
     assert 'app_info{environment="' in response.text
-    assert 'service="starter-backend-template"' in response.text
+    assert 'service="fastapi-production-foundation"' in response.text
 
 
 def test_metrics_record_requests(client):

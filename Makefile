@@ -71,7 +71,7 @@ ENVIRONMENT ?= staging
 IMAGE_TAG ?= latest
 
 deploy-dry-run:
-	ENVIRONMENT=$(ENVIRONMENT) IMAGE_REF=ghcr.io/example/starter-backend-template/api:$(IMAGE_TAG) DRY_RUN=true RUN_MIGRATIONS=true bash scripts/deploy_promote.sh
+	ENVIRONMENT=$(ENVIRONMENT) IMAGE_REF=ghcr.io/example/fastapi-production-foundation/api:$(IMAGE_TAG) DRY_RUN=true RUN_MIGRATIONS=true bash scripts/deploy_promote.sh
 
 COVERAGE_FAIL_UNDER ?= 85
 

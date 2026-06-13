@@ -4,7 +4,7 @@ Copy everything below the line into your agent chat.
 
 ---
 
-Help me use **starter-backend-template** as a fresh project.
+Help me use FastAPI Production Foundation as a fresh project.
 
 **New product name:**  
 <PASTE e.g. example-app>

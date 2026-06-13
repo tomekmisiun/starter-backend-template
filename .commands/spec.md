@@ -4,7 +4,7 @@ Copy everything below the line into your agent chat.
 
 ---
 
-You are working in the starter-backend-template FastAPI repository.
+You are working in the fastapi-production-foundation FastAPI repository.
 
 Create a **feature spec** for the following work:
 

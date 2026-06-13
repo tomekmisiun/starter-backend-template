@@ -208,8 +208,8 @@ jobs:
           push: false
           load: true
           tags: |
-            starter-backend-template-api:ci-${{ github.sha }}
-            starter-backend-template-api:latest
+            fastapi-production-foundation-api:ci-${{ github.sha }}
+            fastapi-production-foundation-api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -218,23 +218,23 @@ jobs:
           docker run --rm \
             -e SECRET_KEY=test-secret-key-for-ci-only \
             -e ENVIRONMENT=test \
-            starter-backend-template-api:latest \
+            fastapi-production-foundation-api:latest \
             python -c "import importlib.util; assert importlib.util.find_spec('pytest') is None"
 
           docker run --rm \
             -e SECRET_KEY=test-secret-key-for-ci-only \
             -e ENVIRONMENT=test \
-            starter-backend-template-api:latest \
+            fastapi-production-foundation-api:latest \
             python -c "import fastapi, uvicorn, app.main"
 
           docker run --rm \
-            starter-backend-template-api:latest \
+            fastapi-production-foundation-api:latest \
             python -c "import sys; assert sys.version_info[:2] == (3, 13), sys.version"
 
       - name: Enforce Trivy policy on API image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: starter-backend-template-api:latest
+          image-ref: fastapi-production-foundation-api:latest
           format: table
           severity: CRITICAL,HIGH
           ignore-unfixed: true
@@ -245,7 +245,7 @@ jobs:
         if: always()
         continue-on-error: true
         with:
-          image-ref: starter-backend-template-api:latest
+          image-ref: fastapi-production-foundation-api:latest
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH

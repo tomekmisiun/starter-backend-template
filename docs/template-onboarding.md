@@ -40,7 +40,7 @@ Update at minimum:
 | Dev seed accounts | `app/seed_dev_data.py` — change emails before any shared staging |
 
 Remove or replace example GHCR paths such as
-`ghcr.io/example/starter-backend-template/api`.
+`ghcr.io/example/fastapi-production-foundation/api`.
 
 ## 3. Configure Environment
 
