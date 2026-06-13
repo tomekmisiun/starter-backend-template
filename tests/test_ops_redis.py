@@ -1,11 +1,11 @@
-import pytest
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app.core.cache import get_json_cache, set_json_cache
 from app.core.ids import uuid7
 from tests.test_users import auth_headers, create_user_and_login, make_admin
 
 
-def test_admin_list_users_propagates_cache_read_failures(
+def test_admin_list_users_degrades_when_cache_read_fails(
     db,
     client,
     monkeypatch,
@@ -14,19 +14,21 @@ def test_admin_list_users_propagates_cache_read_failures(
     token, _ = create_user_and_login(db, client, email)
     make_admin(db, email)
 
-    def failing_get_json_cache(*args, **kwargs):
-        raise ConnectionError("redis unavailable")
+    class UnavailableRedis:
+        def get(self, *args, **kwargs):
+            raise RedisConnectionError("redis unavailable")
 
-    monkeypatch.setattr(
-        "app.services.user_service.get_json_cache",
-        failing_get_json_cache,
-    )
+        def set(self, *args, **kwargs):
+            raise RedisConnectionError("redis unavailable")
 
-    with pytest.raises(ConnectionError, match="redis unavailable"):
-        client.get("/users/", headers=auth_headers(token))
+    monkeypatch.setattr("app.core.cache.redis_client", UnavailableRedis())
+
+    response = client.get("/users/", headers=auth_headers(token))
+
+    assert response.status_code == 200
 
 
-def test_admin_list_users_propagates_cache_write_failures(
+def test_admin_list_users_degrades_when_cache_write_fails(
     db,
     client,
     monkeypatch,
@@ -35,16 +37,18 @@ def test_admin_list_users_propagates_cache_write_failures(
     token, _ = create_user_and_login(db, client, email)
     make_admin(db, email)
 
-    def failing_set_json_cache(*args, **kwargs):
-        raise ConnectionError("redis unavailable")
+    class UnavailableRedis:
+        def get(self, *args, **kwargs):
+            return None
 
-    monkeypatch.setattr(
-        "app.services.user_service.set_json_cache",
-        failing_set_json_cache,
-    )
+        def set(self, *args, **kwargs):
+            raise RedisConnectionError("redis unavailable")
 
-    with pytest.raises(ConnectionError, match="redis unavailable"):
-        client.get("/users/", headers=auth_headers(token))
+    monkeypatch.setattr("app.core.cache.redis_client", UnavailableRedis())
+
+    response = client.get("/users/", headers=auth_headers(token))
+
+    assert response.status_code == 200
 
 
 def test_users_list_cache_misses_return_consistent_results(db, client, monkeypatch):
@@ -70,24 +74,46 @@ def test_users_list_cache_misses_return_consistent_results(db, client, monkeypat
     assert first_response.json() == second_response.json()
 
 
-def test_limited_endpoint_returns_server_error_when_redis_is_unavailable(
+def test_limited_endpoint_returns_service_unavailable_when_redis_is_unavailable(
     client,
     monkeypatch,
 ):
     class UnavailableRedis:
         def incr(self, *args, **kwargs):
-            raise ConnectionError("redis unavailable")
+            raise RedisConnectionError("redis unavailable")
 
         def expire(self, *args, **kwargs):
-            raise ConnectionError("redis unavailable")
+            raise RedisConnectionError("redis unavailable")
 
     monkeypatch.setattr(
         "app.api.dependencies.rate_limit.redis_client",
         UnavailableRedis(),
     )
 
-    with pytest.raises(ConnectionError):
-        client.get("/health/limited")
+    response = client.get("/health/limited")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["message"] == "Service temporarily unavailable"
+
+
+def test_json_cache_helpers_degrade_when_redis_is_unavailable(monkeypatch):
+    class UnavailableRedis:
+        def get(self, *args, **kwargs):
+            raise RedisConnectionError("redis unavailable")
+
+        def set(self, *args, **kwargs):
+            raise RedisConnectionError("redis unavailable")
+
+    cache_key = f"ops-redis-smoke:{uuid7().hex}"
+    unavailable_redis = UnavailableRedis()
+
+    set_json_cache(
+        cache_key,
+        {"ok": True},
+        ttl_seconds=30,
+        redis=unavailable_redis,
+    )
+    assert get_json_cache(cache_key, redis=unavailable_redis) is None
 
 
 def test_json_cache_helpers_require_working_redis():

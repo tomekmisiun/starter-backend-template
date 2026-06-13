@@ -30,8 +30,8 @@ timeouts, and related variables).
 | Refresh token rotation | `SET` with `NX` on `revoked_refresh_token:{jti}` (`app/core/redis.py`) | **Fail-closed** — rotation returns `401` when the token was already rotated; Redis errors surface as request failures instead of issuing duplicate refresh tokens |
 | Refresh token revocation check | `EXISTS` on revoked keys | **Fail-closed** — refresh requests fail rather than accepting tokens that cannot be checked |
 | Logout | `SET` revoked key | Best-effort revoke; Redis errors propagate |
-| Auth rate limits (`/auth/login`, `/auth/register`) | `INCR` + `EXPIRE` (`app/api/dependencies/rate_limit.py`) | **Fail-closed** — limit counters cannot be updated; requests error instead of bypassing limits |
-| User list cache | get/set/delete (`app/core/cache.py`) | Cache miss path hits PostgreSQL; Redis outages add load but remain correct |
+| User list cache | get/set/delete (`app/core/cache.py`) | **Degraded** — cache helpers swallow Redis errors; requests fall back to PostgreSQL |
+| Auth and ingress rate limits | `INCR` + `EXPIRE` (`app/api/dependencies/rate_limit.py`) | **Fail-closed** — returns `503 Service temporarily unavailable` when counters cannot be updated |
 | Idempotency locks | short-lived `SET`/`DELETE` (`app/services/idempotency_service.py`) | **Fail-closed** for mutating endpoints that require idempotency |
 | Worker job queue | lists, delayed queue, processing queue, failed queue (`app/core/job_queue.py`) | **Fail-closed** — workers cannot dequeue, ack, or retry jobs |
 | Worker maintenance lock | `SET` with TTL (`app/core/job_queue.py`) | Maintenance skipped when lock cannot be acquired |
