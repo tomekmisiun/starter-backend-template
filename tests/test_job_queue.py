@@ -193,6 +193,31 @@ def test_promote_delayed_jobs_moves_due_jobs_back_to_main_queue():
     assert redis.sorted_sets["test_delayed"] == {}
 
 
+def test_promote_delayed_jobs_respects_batch_limit():
+    redis = FakeRedis()
+    first_job = Job(id="job-1", type="demo", payload={"value": 1}, attempts=1)
+    second_job = Job(id="job-2", type="demo", payload={"value": 2}, attempts=1)
+    redis.zadd(
+        "test_delayed",
+        {
+            first_job.to_json(): 50.0,
+            second_job.to_json(): 50.0,
+        },
+    )
+
+    promoted_count = promote_delayed_jobs(
+        redis=redis,
+        queue_name="test_jobs",
+        delayed_queue_name="test_delayed",
+        now=100.0,
+        limit=1,
+    )
+
+    assert promoted_count == 1
+    assert len(redis.queues["test_jobs"]) == 1
+    assert len(redis.sorted_sets["test_delayed"]) == 1
+
+
 def test_move_job_to_failed_queue_persists_dead_letter_metadata():
     redis = FakeRedis()
     job = Job(

@@ -100,6 +100,11 @@ class Settings(BaseSettings):
     worker_maintenance_interval_seconds: int = Field(default=3600, gt=0)
     worker_maintenance_lock_key: str = "app_jobs_maintenance_lock"
     worker_maintenance_lock_ttl_seconds: int = Field(default=300, gt=0)
+    worker_metrics_enabled: bool = True
+    worker_metrics_host: str = "0.0.0.0"
+    worker_metrics_port: int = Field(default=9100, gt=0)
+    worker_queue_maintenance_interval_seconds: int = Field(default=5, gt=0)
+    worker_queue_promote_batch_size: int = Field(default=100, gt=0)
     users_cache_enabled: bool = True
     users_cache_ttl_seconds: int = Field(default=60, gt=0)
     s3_endpoint_url: str = "http://minio:9000"
