@@ -108,7 +108,7 @@ repo, and TTL-backed tables have retention jobs.
 | 32 | **Python runtime baseline** — evaluate 3.12/3.13 LTS as default Docker base | TD-018 | S | Medium | Medium | Not started |
 | 33 | **Schema consolidation** — merge duplicate `UserRead` definitions | TD-047 | S | Low | Medium | Done |
 | 34 | **Tenant seed refactor** — move default tenant out of migration bulk insert | TD-039 | M | High | Medium | Not started |
-| 35 | **Platform admin model clarity** — document demo-only boundary or separate operator table design | TD-040 | L | High | Medium | Not started |
+| 35 | **Platform admin model clarity** — document demo-only boundary or separate operator table design | TD-040 | L | High | Medium | Done |
 | 36 | **Service layer decoupling** — domain exceptions instead of `HTTPException` in services | TD-041 | L | High | Medium | Not started |
 
 **P2 exit criteria:** Template handles 100k-user admin workloads without pagination/table-bloat cliffs; file and worker paths are observable and efficient; forks inherit clearer extension patterns.

@@ -66,6 +66,11 @@ Regular `user` role accounts cannot access tenant lifecycle endpoints. Tenant
 Provision platform operators in the seeded `default` tenant (or your chosen
 platform tenant) with role `platform_admin`.
 
+**Production note:** The template treats this as a **demo convenience**, not a
+finished operator security model. See `docs/platform-admin-model.md` for fork
+decision paths (dedicated platform tenant, separate operator table, or external
+IdP).
+
 ## Admin Permissions
 
 Tenant admins receive tenant-scoped permissions such as `users.*`,
