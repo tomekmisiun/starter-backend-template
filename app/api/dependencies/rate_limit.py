@@ -1,10 +1,41 @@
 import hashlib
+import logging
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, status
+from redis.exceptions import RedisError
 
 from app.core.client_ip import get_client_ip
 from app.core.config import settings
 from app.core.redis import redis_client
+
+logger = logging.getLogger("app.rate_limit")
+
+REDIS_UNAVAILABLE_DETAIL = "Service temporarily unavailable"
+
+
+def enforce_rate_limit_counter(
+    *,
+    key: str,
+    limit: int,
+    window_seconds: int,
+) -> None:
+    try:
+        current_count = redis_client.incr(key)
+
+        if current_count == 1:
+            redis_client.expire(key, window_seconds)
+    except RedisError as exc:
+        logger.warning("rate_limit_redis_unavailable key=%s", key, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=REDIS_UNAVAILABLE_DETAIL,
+        ) from exc
+
+    if current_count > limit:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests",
+        )
 
 
 def rate_limit(
@@ -31,16 +62,11 @@ def rate_limit(
         client_ip = get_client_ip(request)
         key = f"{key_prefix}:{client_ip}"
 
-        current_count = redis_client.incr(key)
-
-        if current_count == 1:
-            redis_client.expire(key, effective_window_seconds)
-
-        if current_count > effective_limit:
-            raise HTTPException(
-                status_code=429,
-                detail="Too many requests",
-            )
+        enforce_rate_limit_counter(
+            key=key,
+            limit=effective_limit,
+            window_seconds=effective_window_seconds,
+        )
 
     return dependency
 
@@ -88,38 +114,22 @@ def password_reset_rate_limit(request: Request):
 
     email_hash = hashlib.sha256(email.encode("utf-8")).hexdigest()
     key = f"rate_limit:password_reset:{client_ip}:{email_hash}"
-    current_count = redis_client.incr(key)
-
-    if current_count == 1:
-        redis_client.expire(
-            key,
-            settings.password_reset_rate_limit_window_seconds,
-        )
-
-    if current_count > settings.password_reset_rate_limit_limit:
-        raise HTTPException(
-            status_code=429,
-            detail="Too many requests",
-        )
+    enforce_rate_limit_counter(
+        key=key,
+        limit=settings.password_reset_rate_limit_limit,
+        window_seconds=settings.password_reset_rate_limit_window_seconds,
+    )
 
 
 def webhook_ingress_rate_limit():
     def dependency(request: Request):
         client_ip = get_client_ip(request)
         key = f"rate_limit:webhook_ingress:{client_ip}"
-        current_count = redis_client.incr(key)
-
-        if current_count == 1:
-            redis_client.expire(
-                key,
-                settings.webhook_ingress_rate_limit_window_seconds,
-            )
-
-        if current_count > settings.webhook_ingress_rate_limit_limit:
-            raise HTTPException(
-                status_code=429,
-                detail="Too many requests",
-            )
+        enforce_rate_limit_counter(
+            key=key,
+            limit=settings.webhook_ingress_rate_limit_limit,
+            window_seconds=settings.webhook_ingress_rate_limit_window_seconds,
+        )
 
     return dependency
 
@@ -131,13 +141,8 @@ def enforce_webhook_provider_rate_limit(provider: str) -> None:
         return
 
     key = f"rate_limit:webhook_provider:{normalized_provider}"
-    current_count = redis_client.incr(key)
-
-    if current_count == 1:
-        redis_client.expire(key, settings.webhook_provider_rate_limit_window_seconds)
-
-    if current_count > settings.webhook_provider_rate_limit_limit:
-        raise HTTPException(
-            status_code=429,
-            detail="Too many requests",
-        )
+    enforce_rate_limit_counter(
+        key=key,
+        limit=settings.webhook_provider_rate_limit_limit,
+        window_seconds=settings.webhook_provider_rate_limit_window_seconds,
+    )

@@ -1,16 +1,26 @@
 import json
+import logging
 
 from redis import Redis
+from redis.exceptions import RedisError
 
 from app.core.redis import redis_client
+
+logger = logging.getLogger("app.cache")
 
 
 def get_json_cache(
     key: str,
     *,
-    redis: Redis = redis_client,
+    redis: Redis | None = None,
 ):
-    cached_value = redis.get(key)
+    client = redis if redis is not None else redis_client
+
+    try:
+        cached_value = client.get(key)
+    except RedisError:
+        logger.warning("cache_read_failed key=%s", key, exc_info=True)
+        return None
 
     if cached_value is None:
         return None
@@ -23,19 +33,34 @@ def set_json_cache(
     value,
     *,
     ttl_seconds: int,
-    redis: Redis = redis_client,
+    redis: Redis | None = None,
 ) -> None:
-    redis.set(key, json.dumps(value), ex=ttl_seconds)
+    client = redis if redis is not None else redis_client
+
+    try:
+        client.set(key, json.dumps(value), ex=ttl_seconds)
+    except RedisError:
+        logger.warning("cache_write_failed key=%s", key, exc_info=True)
 
 
 def delete_cache_pattern(
     pattern: str,
     *,
-    redis: Redis = redis_client,
+    redis: Redis | None = None,
 ) -> int:
-    keys = list(redis.scan_iter(match=pattern))
+    client = redis if redis is not None else redis_client
+
+    try:
+        keys = list(client.scan_iter(match=pattern))
+    except RedisError:
+        logger.warning("cache_delete_scan_failed pattern=%s", pattern, exc_info=True)
+        return 0
 
     if not keys:
         return 0
 
-    return redis.delete(*keys)
+    try:
+        return client.delete(*keys)
+    except RedisError:
+        logger.warning("cache_delete_failed pattern=%s", pattern, exc_info=True)
+        return 0
