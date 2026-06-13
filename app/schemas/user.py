@@ -1,12 +1,17 @@
 from enum import StrEnum
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserRole(StrEnum):
     user = "user"
     admin = "admin"
     platform_admin = "platform_admin"
+
+
+class UserSearchMode(StrEnum):
+    prefix = "prefix"
+    contains = "contains"
 
 
 class UserRead(BaseModel):
@@ -18,6 +23,14 @@ class UserRead(BaseModel):
     model_config = {
         "from_attributes": True,
     }
+
+
+class UserListPage(BaseModel):
+    items: list[UserRead]
+    next_cursor: str | None = Field(
+        default=None,
+        description="Opaque cursor for the next keyset page, when available.",
+    )
 
 
 class UserSelfUpdate(BaseModel):

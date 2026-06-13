@@ -1,2 +1,1 @@
-# Leave this file comment-only unless a PR adds an approved destructive migration.
-# To bypass the CI check, replace this line with a one-line reason in the same PR.
+P2 #26: downgrade drops new ix_users_email_trgm index only (reversible index add).
