@@ -129,6 +129,24 @@ load-smoke-ready-thresholds:
 
 load-validate: load-smoke-thresholds load-smoke-ready-thresholds
 
+load-smoke-auth-login:
+	docker compose run --rm api python -m perf.load_baseline \
+		--base-url $(LOAD_API_BASE_URL) \
+		--profile auth-login \
+		--requests $(LOAD_REQUESTS) \
+		--concurrency $(LOAD_CONCURRENCY)
+
+load-smoke-auth-login-thresholds:
+	docker compose run --rm api python -m perf.load_baseline \
+		--base-url $(LOAD_API_BASE_URL) \
+		--profile auth-login \
+		--check-thresholds \
+		--requests 8 \
+		--concurrency 2 \
+		$(if $(LOAD_MAX_P95_MS),--max-p95-ms $(LOAD_MAX_P95_MS),) \
+		$(if $(LOAD_MAX_P99_MS),--max-p99-ms $(LOAD_MAX_P99_MS),) \
+		$(if $(LOAD_MIN_THROUGHPUT_RPS),--min-throughput-rps $(LOAD_MIN_THROUGHPUT_RPS),)
+
 # Lighter threshold check used by CI pull-request smoke (see .github/workflows/ci.yml).
 load-smoke-ci:
 	docker compose run --rm api python -m perf.load_baseline \

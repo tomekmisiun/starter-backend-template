@@ -10,6 +10,8 @@ from pathlib import Path
 import httpx
 
 from perf.thresholds import (
+    LoadProfile,
+    LoadProfileRequest,
     LoadThresholds,
     evaluate_thresholds,
     merge_thresholds,
@@ -27,9 +29,40 @@ def percentile(values: list[float], pct: float) -> float:
     return sorted_values[index]
 
 
-def run_request(client: httpx.Client, url: str) -> float:
+def apply_login_env_overrides(json_body: dict | None) -> dict | None:
+    if json_body is None:
+        return None
+
+    email = os.getenv("LOAD_LOGIN_EMAIL")
+    password = os.getenv("LOAD_LOGIN_PASSWORD")
+
+    if email is None and password is None:
+        return json_body
+
+    updated = dict(json_body)
+
+    if email is not None:
+        updated["email"] = email
+
+    if password is not None:
+        updated["password"] = password
+
+    return updated
+
+
+def run_request(
+    client: httpx.Client,
+    url: str,
+    *,
+    request: LoadProfileRequest,
+) -> float:
     start = time.perf_counter()
-    response = client.get(url)
+    response = client.request(
+        request.method,
+        url,
+        headers=request.headers or None,
+        json=request.json_body,
+    )
     response.raise_for_status()
 
     return time.perf_counter() - start
@@ -37,17 +70,17 @@ def run_request(client: httpx.Client, url: str) -> float:
 
 def collect_latencies(
     base_url: str,
-    path: str,
+    request: LoadProfileRequest,
     requests: int,
     concurrency: int,
 ) -> list[float]:
-    url = f"{base_url.rstrip('/')}{path}"
+    url = f"{base_url.rstrip('/')}{request.path}"
     latencies: list[float] = []
 
     with httpx.Client(timeout=10.0) as client:
         with ThreadPoolExecutor(max_workers=concurrency) as executor:
             futures = [
-                executor.submit(run_request, client, url)
+                executor.submit(run_request, client, url, request=request)
                 for _ in range(requests)
             ]
 
@@ -101,6 +134,20 @@ def build_result_payload(
     return payload
 
 
+def prepare_profile_request(profile: LoadProfile) -> LoadProfileRequest:
+    request = profile.request
+
+    if request.json_body is None:
+        return request
+
+    return LoadProfileRequest(
+        path=request.path,
+        method=request.method,
+        headers=request.headers,
+        json_body=apply_login_env_overrides(request.json_body),
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Lightweight local load baseline for HTTP endpoints.",
@@ -127,17 +174,17 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    path = args.path
+    request = LoadProfileRequest(path=args.path)
     thresholds: LoadThresholds | None = None
 
     if args.profile:
-        profile_thresholds, profile_path = resolve_profile(
+        profile = resolve_profile(
             args.profile,
             profiles_file=Path(args.profiles_file),
         )
-        path = profile_path
+        request = prepare_profile_request(profile)
         thresholds = merge_thresholds(
-            profile_thresholds,
+            profile.thresholds,
             max_p95_ms=args.max_p95_ms,
             max_p99_ms=args.max_p99_ms,
             min_throughput_rps=args.min_throughput_rps,
@@ -158,12 +205,12 @@ def main() -> None:
     started = time.perf_counter()
     latencies = collect_latencies(
         args.base_url,
-        path,
+        request,
         args.requests,
         args.concurrency,
     )
     elapsed_seconds = time.perf_counter() - started
-    target = f"{args.base_url.rstrip('/')}{path}"
+    target = f"{args.base_url.rstrip('/')}{request.path}"
     summary = summarize(latencies, elapsed_seconds=elapsed_seconds, target=target)
     payload = build_result_payload(
         summary,
