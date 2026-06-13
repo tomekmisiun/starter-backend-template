@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=scripts/ci/_lib.sh
 source "$ROOT/scripts/ci/_lib.sh"
 
-OVERRIDE="$ROOT/scripts/ci/allow-migration-drops"
+OVERRIDE="scripts/ci/allow-migration-drops"
 
 mapfile -t added_migrations < <(added_files | grep -E '^alembic/versions/.*\.py$' || true)
 
