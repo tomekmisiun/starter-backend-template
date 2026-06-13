@@ -32,7 +32,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-009 | Malware scanning disabled by default; fallback scanner checks filename only (`app/core/config.py`, `app/services/malware_scanner.py`). | Malicious uploads stored if forks enable files without wiring a scanner. | Fail production startup when uploads enabled without real scanner URL. | S | Done |
 | TD-010 | Idempotency records expire logically but are never deleted (`app/services/idempotency_service.py`). | Table bloat slows lookups and increases backup/storage cost. | Scheduled purge of rows where `expires_at < now()`. | S | Done |
 | TD-011 | Unknown worker job types log a warning then are acknowledged (`app/worker.py`). | Schema drift or typos silently drop jobs. | Route unknown types to DLQ instead of ack. | S | Done |
-| TD-012 | Nearly all routes are sync `def` with sync SQLAlchemy sessions. | Thread pool exhaustion under concurrent DB-bound load before DB maxes out. | Async SQLAlchemy + async routes, or explicit multi-worker sync sizing. | XL | Open |
+| TD-012 | Nearly all routes are sync `def` with sync SQLAlchemy sessions. | Thread pool exhaustion under concurrent DB-bound load before DB maxes out. | Async SQLAlchemy + async routes, or explicit multi-worker sync sizing. | XL | Done |
 | TD-013 | Default DB pool (`pool_size=5`, `max_overflow=10`) with no startup visibility. | Naive horizontal scaling exhausts Postgres `max_connections`. | Log effective pool; document `(workers × replicas × pool)` formula. | S | Done |
 | TD-014 | Refresh tokens omit `token_version` (`app/core/security.py`). | Compromised refresh remains valid until rotation after role change/password reset. | Embed and validate `token_version` on refresh. | M | Done |
 | TD-015 | `/auth/refresh` and `/auth/logout` have no rate limits (`app/api/routes/auth.py`). | Refresh grinding amplifies Redis and DB load. | Add per-IP and per-token-hash limits. | S | Done |
@@ -99,9 +99,9 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | Severity | Open | Done |
 |----------|------|------|
 | Critical | 0 | 4 |
-| High | 1 | 10 |
+| High | 1 | 11 |
 | Medium | 12 | 21 |
 | Low | 8 | 0 |
-| **Total** | **21** | **35** |
+| **Total** | **21** | **36** |
 
 Open counts reflect post-P1 state (346 tests, June 2026).
