@@ -74,7 +74,7 @@ default in production.
 |---|------|----------|--------|------|-----|--------|
 | 11 | **Refresh/session hardening** — embed `token_version` in refresh tokens; rate limits on `/auth/refresh` and `/auth/logout`; env-driven JWT TTLs | TD-014, TD-015, TD-046 | M | Medium | High | Done |
 | 12 | **Graceful shutdown** — SIGTERM drain for API and worker; reduce in-flight job loss on deploy | TD-017 | M | Medium | High | Done |
-| 13 | **Idempotency retention job** — purge expired `idempotency_records` rows in worker maintenance | TD-010 | S | Low | High | Not started |
+| 13 | **Idempotency retention job** — purge expired `idempotency_records` rows in worker maintenance | TD-010 | S | Low | High | Done |
 | 14 | **Redis resilience implementation** — circuit breaker or bounded retry for non-auth-critical cache paths; clearer error responses when Redis is down | TD-004 | L | High | High | Not started |
 | 15 | **Container health and readiness** — Docker `HEALTHCHECK`; optional S3 head-bucket when uploads enabled | TD-016, TD-032 | S | Low | High | Not started |
 | 16 | **CI and deploy reliability** — gate `docker-build` on tests; fail silent backup cron; dedupe migration steps; clarify `latest` tag policy | TD-035, TD-036, TD-043, TD-044 | S | Low | High | Not started |

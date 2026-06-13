@@ -23,6 +23,7 @@ from app.core.shutdown import (
     worker_shutdown_requested,
 )
 from app.db.session import SessionLocal
+from app.services.idempotency_service import cleanup_expired_idempotency_records
 from app.services.password_reset_service import (
     SEND_PASSWORD_RESET_EMAIL_JOB,
     cleanup_expired_password_reset_tokens,
@@ -130,13 +131,17 @@ def run_scheduled_maintenance(now: float | None = None) -> bool:
     db = SessionLocal()
 
     try:
-        deleted_count = cleanup_expired_password_reset_tokens(db)
+        password_reset_deleted = cleanup_expired_password_reset_tokens(db)
+        idempotency_deleted = cleanup_expired_idempotency_records(db)
     finally:
         db.close()
 
     logger.info(
-        "worker_maintenance_completed expired_password_reset_tokens_deleted=%s",
-        deleted_count,
+        "worker_maintenance_completed "
+        "expired_password_reset_tokens_deleted=%s "
+        "expired_idempotency_records_deleted=%s",
+        password_reset_deleted,
+        idempotency_deleted,
     )
     observe_worker_maintenance(status="completed")
 
