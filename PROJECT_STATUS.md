@@ -14,7 +14,7 @@ product.
 **Stack:** FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, S3-compatible
 storage, Docker Compose, pytest, Ruff, uv, GitHub Actions.
 
-**Test baseline (verified):** 370 pytest tests, ~89% line coverage, 85%
+**Test baseline (verified):** 374 pytest tests, ~88% line coverage, 85%
 coverage floor enforced in CI and `make validate`.
 
 **Production readiness (June 2026):**
@@ -105,8 +105,9 @@ coverage floor enforced in CI and `make validate`.
 
 ### Multi-tenancy
 
-- Tenant model with default tenant provisioned via `ensure_default_tenant()` /
-  `make seed-tenant` (no fixed `id=1` in migration)
+- Tenant model with default tenant via `ensure_default_tenant()` / `make seed-tenant`;
+  migration `a1b2c3d4e5f6` also idempotently backfills `default` on upgrade (no
+  fixed `id=1`)
 - `X-Tenant-Slug` resolution for unauthenticated flows; JWT `tenant_id` on
   authenticated requests with optional header cross-check
 - Tenant-scoped users (unique `(tenant_id, email)`), audit logs, uploads, cache
@@ -118,7 +119,7 @@ coverage floor enforced in CI and `make validate`.
 - Multipart upload and presigned upload/complete/download/delete flows
 - Presigned complete returns `verification_status` (`pending` → worker verify);
   download blocked with 409 until verified
-- S3-compatible storage abstraction with lifespan-cached boto3 client (MinIO in
+- S3-compatible storage abstraction with module-level cached boto3 client (MinIO in
   local Compose)
 - Streaming multipart upload for direct uploads (no full in-memory buffer)
 - Size limits, content-type allowlist, magic-byte sniffing (PNG/JPEG/PDF)

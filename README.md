@@ -746,7 +746,8 @@ see `docs/webhook-idempotency.md` for provider-specific patterns.
 The template includes tenant-aware data isolation:
 
 - `tenants` table; the default tenant is provisioned via `make seed-tenant`
-  (also run as part of `make bootstrap`).
+  (also run as part of `make bootstrap`). Upgrades also idempotently backfill
+  `default` in migration `a1b2c3d4e5f6` — see `docs/tenant-isolation.md`.
 - Users, audit logs, uploads, cache keys, and object storage keys are scoped by
   `tenant_id`.
 - Auth endpoints resolve the tenant from `X-Tenant-Slug` (default: `default`).
@@ -772,7 +773,9 @@ configured window.
 ## Redis Caching
 
 Admin user listing supports explicit Redis-backed caching. Cache keys include
-the list query parameters, pagination, sorting, filters, and search value.
+the list query parameters, pagination, sorting, filters, search value, and
+`search_mode` (`prefix` default; `contains` for substring search with pg_trgm
+index when enabled in migrations).
 
 Current cache configuration:
 

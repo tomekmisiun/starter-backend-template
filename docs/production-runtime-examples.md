@@ -1,8 +1,185 @@
 # Production Runtime Examples
 
 This guide complements `docs/production-deployment.md` with concrete reverse-proxy
-patterns and a GitHub Actions environment checklist. It does not replace your
-hosting provider's runbook.
+patterns, **API process scaling examples**, and a GitHub Actions environment
+checklist. It does not replace your hosting provider's runbook.
+
+## Default API Process Model
+
+The production Docker image (`Dockerfile` production target) intentionally starts
+**single-process Uvicorn** with `--proxy-headers`:
+
+```dockerfile
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+```
+
+This default is deliberate:
+
+- **Horizontal scaling** — run multiple API replicas behind a load balancer; each
+  replica uses one process and a sized DB pool (see pool formula in
+  `docs/production-deployment.md`).
+- **Operator choice** — forks pick in-process workers (Uvicorn or Gunicorn) or
+  replica count without the template forcing one model in the image.
+- **Worker separation** — background jobs stay in the `worker` service, not in
+  API worker processes.
+
+**Production expectation:** treat the Dockerfile `CMD` as a safe baseline. Override
+the command when your sizing guide or load tests require multi-process Uvicorn or
+Gunicorn on a single host.
+
+Restrict `--forwarded-allow-ips` to your proxy subnet in real deployments
+(Uvicorn defaults can trust all forwarded headers when `--proxy-headers` is set).
+
+## Uvicorn and Gunicorn Examples
+
+### Single-process Uvicorn (image default)
+
+Use as-is for small deployments, staging, or when you scale by **replica count**
+instead of in-process workers:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers
+```
+
+Docker Compose (same as image default — no override required):
+
+```yaml
+services:
+  api:
+    image: ${API_IMAGE}
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+```
+
+### Multi-worker Uvicorn (single host)
+
+When one VM runs one API container but needs multiple CPU-bound workers **inside**
+that container:
+
+```bash
+uvicorn app.main:app \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --workers 2 \
+  --proxy-headers
+```
+
+Docker Compose override (`docker-compose.prod.yml` or a host-specific override file):
+
+```yaml
+services:
+  api:
+    image: ${API_IMAGE}
+    env_file:
+      - .env
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --workers
+      - "2"
+      - --proxy-headers
+    ports:
+      - "8000:8000"
+```
+
+Before raising `--workers`, confirm Postgres `max_connections` can absorb
+`workers × (DB_POOL_SIZE + DB_MAX_OVERFLOW)` per replica. The API logs effective
+pool settings at startup (`app/db/pool_config.py`).
+
+### Gunicorn with Uvicorn workers
+
+Use Gunicorn when you want a mature parent process manager (graceful reload,
+worker lifecycle) in front of Uvicorn workers. Install `gunicorn` in your fork
+if not already present in the image.
+
+```bash
+gunicorn app.main:app \
+  -k uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:8000 \
+  --workers 2 \
+  --timeout 120 \
+  --graceful-timeout 30 \
+  --keep-alive 5
+```
+
+Docker Compose command override:
+
+```yaml
+services:
+  api:
+    image: ${API_IMAGE}
+    env_file:
+      - .env
+    command:
+      - gunicorn
+      - app.main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - --bind
+      - 0.0.0.0:8000
+      - --workers
+      - "2"
+      - --timeout
+      - "120"
+      - --graceful-timeout
+      - "30"
+      - --keep-alive
+      - "5"
+    ports:
+      - "8000:8000"
+```
+
+Pass Uvicorn proxy settings through Gunicorn when behind a reverse proxy, for
+example:
+
+```yaml
+command:
+  - gunicorn
+  - app.main:app
+  - -k
+  - uvicorn.workers.UvicornWorker
+  - --bind
+  - 0.0.0.0:8000
+  - --workers
+  - "2"
+  - --timeout
+  - "120"
+  - --env
+  - FORWARDED_ALLOW_IPS=10.0.0.0/8
+  - --env
+  - PROXY_HEADERS=true
+```
+
+Adjust env names and values to match your Uvicorn/Gunicorn version and network
+layout.
+
+### Multiple API replicas (recommended at scale)
+
+Prefer **replicas + single-process Uvicorn** over very large in-process worker
+counts when load is mixed (I/O + CPU):
+
+```yaml
+services:
+  api:
+    image: ${API_IMAGE}
+    env_file:
+      - .env
+    deploy:
+      replicas: 2
+    ports:
+      - "8000:8000"
+```
+
+On a single VM without Swarm/Kubernetes, run two Compose services or systemd units
+with different host ports and load-balance in Nginx/Traefik.
+
+See also `docs/sync-scaling-benchmark.md` for load-test profiles and sizing notes.
 
 ## What `docker-compose.prod.yml` Is
 

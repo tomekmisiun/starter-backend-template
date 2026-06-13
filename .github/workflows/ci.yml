@@ -227,6 +227,10 @@ jobs:
             starter-backend-template-api:latest \
             python -c "import fastapi, uvicorn, app.main"
 
+          docker run --rm \
+            starter-backend-template-api:latest \
+            python -c "import sys; assert sys.version_info[:2] == (3, 13), sys.version"
+
       - name: Enforce Trivy policy on API image
         uses: aquasecurity/trivy-action@v0.36.0
         with:

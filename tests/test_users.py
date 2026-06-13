@@ -296,6 +296,44 @@ def test_admin_can_list_users_with_keyset_cursor(db, client, admin_user):
     assert first_ids.isdisjoint(second_ids)
 
 
+def test_admin_can_search_users_with_contains_mode(db, client, admin_user):
+    marker = f"contains-{uuid7().hex}"
+    matching_email = f"alpha-{marker}-beta@example.com"
+    non_matching_email = f"gamma-{uuid7().hex}@example.com"
+    create_user_in_db(db, matching_email)
+    create_user_in_db(db, non_matching_email)
+
+    response = client.get(
+        f"/users/?search={marker}&search_mode=contains&size=100",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 200
+    emails = {user["email"] for user in users_page_items(response)}
+    assert matching_email in emails
+    assert non_matching_email not in emails
+
+
+def test_admin_prefix_search_does_not_match_middle_substring(db, client, admin_user):
+    marker = f"prefix-{uuid7().hex}"
+    email = f"start-{marker}-end@example.com"
+    create_user_in_db(db, email)
+
+    prefix_response = client.get(
+        f"/users/?search={marker}&search_mode=prefix&size=100",
+        headers=admin_user["headers"],
+    )
+    contains_response = client.get(
+        f"/users/?search={marker}&search_mode=contains&size=100",
+        headers=admin_user["headers"],
+    )
+
+    assert prefix_response.status_code == 200
+    assert contains_response.status_code == 200
+    assert users_page_items(prefix_response) == []
+    assert {user["email"] for user in users_page_items(contains_response)} == {email}
+
+
 def test_list_users_rejects_cursor_with_legacy_page(client, admin_user):
     response = client.get(
         "/users/?page=2&cursor=invalid&size=5",

@@ -30,6 +30,23 @@ Tenant isolation is enforced at multiple layers:
 4. Admin tenant provisioning endpoints require explicit tenant-management
    permissions.
 
+## Default Tenant Provisioning
+
+The `default` tenant is provisioned through two complementary, idempotent paths:
+
+1. **Migration backfill (upgrade safety)** — revision
+   `a1b2c3d4e5f6_add_multi_tenancy_foundation` inserts the `default` tenant only
+   when no row with `slug = 'default'` exists, then backfills `tenant_id` on
+   existing users. This keeps databases that applied earlier revisions consistent
+   without assuming a fixed numeric tenant id (`Identity` assigns ids).
+2. **Application seed (canonical for fresh installs)** — `ensure_default_tenant()`
+   in `app/services/tenant_seed_service.py`, invoked by `make seed-tenant`,
+   `make bootstrap`, test fixtures, and dev seed scripts.
+
+For new environments, run `make seed-tenant` (or `make bootstrap`) after
+migrations. The migration insert remains intentional so upgrades from pre-tenant
+schemas never end up with users lacking a tenant row.
+
 ## Provisioning Lifecycle
 
 Recommended lifecycle for new tenants:
