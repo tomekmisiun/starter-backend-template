@@ -7,7 +7,7 @@ Do not treat this file as a roadmap or debt register.
 
 ## Overview
 
-Reusable FastAPI backend template for SaaS/API projects — a testable
+Reusable, **AI-ready** FastAPI backend template for SaaS/API projects — a testable
 foundation, not a finished multi-tenant SaaS platform or enterprise-grade
 product.
 
@@ -29,6 +29,8 @@ coverage floor enforced in CI and `make validate`.
   forks still choose hosting, secrets, backups, scanners, and product policies.
 - **Next engineering priority** — ROADMAP **P3** (enterprise-scale optional
   improvements). See `ROADMAP.md`.
+- **Template freeze (June 2026)** — suitable as a cloneable, AI-ready foundation;
+  see `TEMPLATE_FREEZE_CHECKLIST.md` and `docs/ai-workflows.md`.
 
 **Architecture:**
 
@@ -46,8 +48,11 @@ coverage floor enforced in CI and `make validate`.
 
 - `README.md` — setup, API, Docker, env vars, operations
 - `docs/` — deployment, security, workers, tenancy, backups, load testing
-- `.ai-rules/` — AI/project rules (source of truth for agent behavior)
-- `AGENTS.md`, `.cursor/rules/*.mdc` — thin wrappers pointing to `.ai-rules`
+- `.ai-rules/` — binding AI/project rules (source of truth for agent behavior)
+- `docs/ai-workflows.md` — how `.ai-rules/`, `agents/`, and `.commands/` fit together
+- `agents/`, `.commands/` — optional review personas and copy-paste prompts
+- `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*.mdc` — thin wrappers pointing to `.ai-rules`
+- `TEMPLATE_FREEZE_CHECKLIST.md` — template reuse and validation checklist
 
 ---
 

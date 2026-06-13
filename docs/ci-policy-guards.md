@@ -18,6 +18,19 @@ make policy-guards
 On pull requests, guards compare `origin/<base>...HEAD`. On pushes to `main`,
 they compare against the previous commit.
 
+### AI workflow file presence
+
+`scripts/validate-ai-workflows.sh` verifies required agent workflow files
+(`.ai-rules/` workflow rules, `agents/`, `.commands/`, `docs/ai-workflows.md`).
+
+Run locally with:
+
+```bash
+make validate-ai-workflows
+```
+
+Included in `make policy-guards`.
+
 ### Model change requires migration
 
 If any file under `app/models/` changes, the PR must add a new file under

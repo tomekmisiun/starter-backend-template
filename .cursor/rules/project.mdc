@@ -1,26 +1,25 @@
 ---
-description: Source of truth index for all project AI rules
+description: Source of truth index for project AI rules and workflows
 globs:
   - "**/*"
 alwaysApply: true
 ---
 
-Read `.ai-rules/` before making changes. Do not duplicate rule bodies here.
+Binding rules: **`.ai-rules/`** — read before making changes. Do not duplicate rule bodies here.
 
-Required index:
+Workflow guide: **`docs/ai-workflows.md`**
 
-- `.ai-rules/repository.md`
-- `.ai-rules/architecture.md`
-- `.ai-rules/api.md`
-- `.ai-rules/database.md`
-- `.ai-rules/security.md`
-- `.ai-rules/tenancy.md`
-- `.ai-rules/workers.md`
-- `.ai-rules/testing.md`
-- `.ai-rules/docker.md`
-- `.ai-rules/documentation.md`
-- `.ai-rules/git.md`
+Start tasks with `.ai-rules/agent-orchestration.md` and `.ai-rules/context-map.md`.
+
+Optional (review / prompts, not binding):
+
+- `agents/**/*.md`
+- `.commands/**/*.md`
+- `docs/specs/**/*.md`
+- `docs/decisions/**/*.md` (ADRs live in `docs/adr/`)
+
+Entry indexes: `AGENTS.md`, `CLAUDE.md`.
+
+Validation: `make validate` (app), `make policy-guards`, `make validate-ai-workflows`.
 
 Mechanical checks: `docs/ci-policy-guards.md`.
-
-Entry points `AGENTS.md` and `CLAUDE.md` mirror this index only.

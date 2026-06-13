@@ -4,9 +4,9 @@ Use this guide when starting a new project from this repository.
 
 ## What This Template Is
 
-- A **production-oriented foundation** with P0 blockers closed and P1 hardening
-  remaining — auth, users, audit logs, Redis, workers, uploads, observability
-  hooks, CI, and deployment scripts.
+- A **production-oriented foundation** with P0, P1, and P2 roadmap work complete
+  — auth, users, audit logs, Redis, workers, uploads, observability hooks, CI,
+  and deployment scripts. Optional P3 improvements remain non-blocking.
 - A **local/dev stack** with Docker Compose, pytest, migrations, and smoke
   checks.
 
@@ -101,7 +101,8 @@ floor locally.
 
 1. Create GitHub Environments: `staging`, `production`.
 2. Configure secrets/variables documented in `docs/production-deployment.md`
-   and `docs/github-environments-checklist.md` (when present).
+   and the GitHub Environments checklist in
+   `docs/production-runtime-examples.md`.
 3. Publish an image with a version tag:
 
    ```bash
@@ -135,6 +136,8 @@ patterns, not your provider accounts.
 
 | Topic | Document |
 |-------|----------|
+| Template reuse / freeze | `TEMPLATE_FREEZE_CHECKLIST.md`, `docs/template-usage.md` |
+| AI rules and agent workflows | `docs/ai-workflows.md`, `AGENTS.md`, `.ai-rules/`, `agents/`, `.commands/` |
 | Production deployment | `docs/production-deployment.md` |
 | Redis production contract | `docs/redis-production-contract.md` |
 | Reverse proxy / runtime examples | `docs/production-runtime-examples.md` |

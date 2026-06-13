@@ -4,12 +4,16 @@ FastAPI backend template for building **production-oriented API foundations**
 with authentication, user management, audit logging, PostgreSQL, Redis, Docker,
 and pytest.
 
-This repository is a **production-oriented foundation**, not a finished SaaS
-platform or enterprise-grade product. P0 production-readiness blockers and **P1**
+This repository is a **cloneable, AI-ready production-oriented foundation**, not a
+finished SaaS platform or enterprise-grade product. P0 production-readiness blockers and **P1**
 adoption hardening from the June 2026 audit are closed (see `PROJECT_STATUS.md`
 and `ROADMAP.md`); **P2** scale and maintainability work is also complete.
 
 **New project?** Start with `docs/template-onboarding.md`.
+**Template freeze / reuse:** See `TEMPLATE_FREEZE_CHECKLIST.md` and
+`docs/template-usage.md`.
+**AI agents (Cursor / Claude / Codex):** See `docs/ai-workflows.md`, `AGENTS.md`,
+`.ai-rules/`, `agents/`, `.commands/`.
 
 ## Tech Stack
 

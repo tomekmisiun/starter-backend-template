@@ -104,4 +104,6 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | Low | 8 | 0 |
 | **Total** | **9** | **47** |
 
-Open counts reflect post-P2 state (374 tests, June 2026).
+Open counts reflect post-P2 state (374 tests, June 2026). These items are
+**non-blocking** for using the repository as a frozen template; see
+`TEMPLATE_FREEZE_CHECKLIST.md`.

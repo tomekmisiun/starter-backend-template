@@ -121,6 +121,9 @@ repo, and TTL-backed tables have retention jobs.
 
 ## P3 — Enterprise-scale or optional
 
+Optional post-freeze improvements for forks that need deeper enterprise gates.
+The template foundation (P0–P2) is complete and cloneable without P3.
+
 | # | Task | Debt IDs | Effort | Risk | ROI | Status |
 |---|------|----------|--------|------|-----|--------|
 | 37 | **PostgreSQL RLS example** — optional migration + security guide for defense-in-depth tenancy | TD-021 | L | High | Medium | Not started |

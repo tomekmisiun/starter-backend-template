@@ -86,6 +86,9 @@ validate:
 policy-guards:
 	bash scripts/ci/run_policy_guards.sh
 
+validate-ai-workflows:
+	bash scripts/validate-ai-workflows.sh
+
 bootstrap: docker-up migration-upgrade seed-tenant seed smoke
 
 LOAD_REQUESTS ?= 50

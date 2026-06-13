@@ -21,7 +21,7 @@
 
 ## Source Of Truth For AI Rules
 
-- `.ai-rules/` is the only source of truth for AI/project rules.
+- `.ai-rules/` is the only source of truth for **binding** AI/project rules.
 - `AGENTS.md`, `CLAUDE.md`, and `.cursor/rules/*.mdc` MUST only point to
-  `.ai-rules/`.
-- MUST NOT duplicate rule bodies in tool-specific wrapper files.
+  `.ai-rules/` and workflow indexes — MUST NOT duplicate rule bodies.
+- `agents/` and `.commands/` are optional workflow aids (see `docs/ai-workflows.md`).

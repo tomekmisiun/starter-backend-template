@@ -33,8 +33,16 @@ configuration, migrations, or workflows.
 - `TECH_DEBT.md`: when closing an item, update its Status to Done in the same
   change set.
 - `ROADMAP.md`: planned work and priorities only.
-- README known gaps MUST stay aligned with `ROADMAP.md` P0/P1 and MUST NOT claim
-  production-ready while Critical or High debt remains open in `TECH_DEBT.md`.
+- README known gaps MUST stay aligned with closed ROADMAP tiers (P0–P2) and
+  optional P3 / open `TECH_DEBT.md` items. MUST NOT claim production-ready while
+  Critical or High debt remains open in `TECH_DEBT.md`.
+
+## AI Rules And Workflows
+
+- Binding rules: `.ai-rules/` (see `AGENTS.md`, `docs/ai-workflows.md`).
+- Optional personas: `agents/`; optional prompts: `.commands/`.
+- Feature specs: `docs/specs/`; ADRs: `docs/adr/` (see `docs/decisions/README.md`).
+- After changing workflow files, run `make validate-ai-workflows`.
 
 ## Enforcement vs Policy
 
