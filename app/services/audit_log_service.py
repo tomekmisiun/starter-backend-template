@@ -9,6 +9,8 @@ def create_audit_log(
     admin_id: int | None,
     action: AuditAction,
     target_user_id: int | None = None,
+    *,
+    commit: bool = True,
 ) -> AuditLog:
     audit_log = AuditLog(
         tenant_id=tenant_id,
@@ -18,8 +20,12 @@ def create_audit_log(
     )
 
     db.add(audit_log)
-    db.commit()
-    db.refresh(audit_log)
+
+    if commit:
+        db.commit()
+        db.refresh(audit_log)
+    else:
+        db.flush()
 
     return audit_log
 

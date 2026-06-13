@@ -60,7 +60,7 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-030 | Direct uploads buffer entire file in memory (`read_upload_body_limited`). | Memory spikes with concurrent max-size uploads. | Stream to S3 multipart upload. | M | Open |
 | TD-031 | Presigned upload complete re-downloads object from S3 for sniff/scan. | 2× bandwidth; API acts as proxy at scale. | Scan at bucket edge or async worker. | M | Open |
 | TD-032 | Readiness checks DB and Redis only, not S3 (`app/api/routes/health.py`). | Load balancer marks ready while uploads fail at runtime. | Optional S3 head-bucket in readiness when file features enabled. | S | Done |
-| TD-033 | User update and audit log are separate DB commits (`app/api/routes/users.py`). | User changed without audit row on partial failure. | Single transaction or outbox pattern. | M | Open |
+| TD-033 | User update and audit log are separate DB commits (`app/api/routes/users.py`). | User changed without audit row on partial failure. | Single transaction or outbox pattern. | M | Done |
 | TD-034 | Tenant `ContextVar` tokens stored but never reset (`app/api/dependencies/tenant.py`). | Stale tenant context under thread-reuse edge cases. | Clear tenant context at request entry in middleware. | S | Done |
 | TD-035 | CI `docker-build` job does not depend on `test` (`.github/workflows/ci.yml`). | Image can pass Trivy while tests fail on same commit. | Add `needs: [test]`. | S | Done |
 | TD-036 | Scheduled backup workflow exits successfully when secrets are missing. | False confidence that backups run. | Fail cron when required secrets absent. | S | Done |
@@ -100,8 +100,8 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 |----------|------|------|
 | Critical | 0 | 4 |
 | High | 1 | 10 |
-| Medium | 16 | 17 |
+| Medium | 15 | 18 |
 | Low | 8 | 0 |
-| **Total** | **25** | **31** |
+| **Total** | **24** | **32** |
 
 Open counts reflect post-P1 state (346 tests, June 2026).

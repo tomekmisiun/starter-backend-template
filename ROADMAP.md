@@ -103,7 +103,7 @@ repo, and TTL-backed tables have retention jobs.
 | 27 | **Cache invalidation redesign** — versioned keys instead of Redis `SCAN` pattern delete | TD-028 | M | Medium | Medium | Not started |
 | 28 | **Storage performance** — cached boto3 client; streaming multipart upload; async scan worker for presigned completes | TD-029, TD-030, TD-031 | M | Medium | High | Not started |
 | 29 | **Audit log lifecycle** — retention, partitioning, or export job | TD-025 | M | Medium | Medium | Not started |
-| 30 | **Transaction integrity** — single transaction for user update + audit log (or outbox) | TD-033 | M | Medium | Medium | Not started |
+| 30 | **Transaction integrity** — single transaction for user update + audit log (or outbox) | TD-033 | M | Medium | Medium | Done |
 | 31 | **Request pipeline hygiene** — pure ASGI logging middleware; replace `BaseHTTPMiddleware` | TD-045 | M | Medium | Medium | Not started |
 | 32 | **Python runtime baseline** — evaluate 3.12/3.13 LTS as default Docker base | TD-018 | S | Medium | Medium | Not started |
 | 33 | **Schema consolidation** — merge duplicate `UserRead` definitions | TD-047 | S | Low | Medium | Done |

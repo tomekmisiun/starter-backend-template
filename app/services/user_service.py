@@ -142,6 +142,8 @@ def update_user(
     db: Session,
     user: User,
     user_update: UserAdminUpdate | UserSelfUpdate,
+    *,
+    commit: bool = True,
 ) -> User:
     update_data = user_update.model_dump(exclude_unset=True)
     should_invalidate_tokens = (
@@ -154,21 +156,34 @@ def update_user(
     if should_invalidate_tokens:
         user.token_version += 1
 
-    db.commit()
-    db.refresh(user)
-    invalidate_users_list_cache(user.tenant_id)
+    if commit:
+        db.commit()
+        db.refresh(user)
+        invalidate_users_list_cache(user.tenant_id)
+    else:
+        db.flush()
 
     return user
 
 
-def delete_user(db: Session, user: User) -> None:
+def delete_user(db: Session, user: User, *, commit: bool = True) -> None:
     tenant_id = user.tenant_id
     db.delete(user)
-    db.commit()
-    invalidate_users_list_cache(tenant_id)
+
+    if commit:
+        db.commit()
+        invalidate_users_list_cache(tenant_id)
+    else:
+        db.flush()
 
 
-def deactivate_user(db: Session, user_id: int, tenant_id: int) -> User | None:
+def deactivate_user(
+    db: Session,
+    user_id: int,
+    tenant_id: int,
+    *,
+    commit: bool = True,
+) -> User | None:
     user = get_user_by_id(db, user_id, tenant_id)
 
     if not user:
@@ -176,22 +191,36 @@ def deactivate_user(db: Session, user_id: int, tenant_id: int) -> User | None:
 
     user.is_active = False
     user.token_version += 1
-    db.commit()
-    db.refresh(user)
-    invalidate_users_list_cache(tenant_id)
+
+    if commit:
+        db.commit()
+        db.refresh(user)
+        invalidate_users_list_cache(tenant_id)
+    else:
+        db.flush()
 
     return user
 
 
-def activate_user(db: Session, user_id: int, tenant_id: int) -> User | None:
+def activate_user(
+    db: Session,
+    user_id: int,
+    tenant_id: int,
+    *,
+    commit: bool = True,
+) -> User | None:
     user = get_user_by_id(db, user_id, tenant_id)
 
     if not user:
         return None
 
     user.is_active = True
-    db.commit()
-    db.refresh(user)
-    invalidate_users_list_cache(tenant_id)
+
+    if commit:
+        db.commit()
+        db.refresh(user)
+        invalidate_users_list_cache(tenant_id)
+    else:
+        db.flush()
 
     return user

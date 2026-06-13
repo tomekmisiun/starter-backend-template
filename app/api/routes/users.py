@@ -22,6 +22,7 @@ from app.services.user_service import (
     delete_user,
     get_user_by_id,
     get_users,
+    invalidate_users_list_cache,
     update_user,
 )
 
@@ -39,6 +40,26 @@ class SortOrder(str, Enum):
 
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+def commit_user_mutation_with_audit(
+    db: Session,
+    *,
+    tenant_id: int,
+    admin_id: int,
+    action: AuditAction,
+    target_user_id: int,
+) -> None:
+    create_audit_log(
+        db=db,
+        tenant_id=tenant_id,
+        admin_id=admin_id,
+        action=action,
+        target_user_id=target_user_id,
+        commit=False,
+    )
+    db.commit()
+    invalidate_users_list_cache(tenant_id)
 
 
 @router.get(
@@ -138,16 +159,18 @@ def patch_user(
     else:
         update_data = UserSelfUpdate(**user_update.model_dump(exclude_unset=True))
 
-    updated_user = update_user(db, user, update_data)
-
     if user_has_permission(current_user, Permission.USERS_UPDATE):
-        create_audit_log(
-            db=db,
+        updated_user = update_user(db, user, update_data, commit=False)
+        commit_user_mutation_with_audit(
+            db,
             tenant_id=current_user.tenant_id,
             admin_id=current_user.id,
             action=AuditAction.USER_UPDATED,
             target_user_id=user_id,
         )
+        db.refresh(updated_user)
+    else:
+        updated_user = update_user(db, user, update_data)
 
     return updated_user
 
@@ -163,7 +186,12 @@ def deactivate_user_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.USERS_DEACTIVATE)),
 ):
-    user = deactivate_user(db, user_id, current_user.tenant_id)
+    user = deactivate_user(
+        db,
+        user_id,
+        current_user.tenant_id,
+        commit=False,
+    )
 
     if user is None:
         raise HTTPException(
@@ -171,13 +199,14 @@ def deactivate_user_endpoint(
             detail="User not found",
         )
 
-    create_audit_log(
-        db=db,
+    commit_user_mutation_with_audit(
+        db,
         tenant_id=current_user.tenant_id,
         admin_id=current_user.id,
         action=AuditAction.USER_DEACTIVATED,
         target_user_id=user_id,
     )
+    db.refresh(user)
 
     return user
 
@@ -193,7 +222,12 @@ def activate_user_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.USERS_ACTIVATE)),
 ):
-    user = activate_user(db, user_id, current_user.tenant_id)
+    user = activate_user(
+        db,
+        user_id,
+        current_user.tenant_id,
+        commit=False,
+    )
 
     if user is None:
         raise HTTPException(
@@ -201,13 +235,14 @@ def activate_user_endpoint(
             detail="User not found",
         )
 
-    create_audit_log(
-        db=db,
+    commit_user_mutation_with_audit(
+        db,
         tenant_id=current_user.tenant_id,
         admin_id=current_user.id,
         action=AuditAction.USER_ACTIVATED,
         target_user_id=user_id,
     )
+    db.refresh(user)
 
     return user
 
@@ -231,11 +266,12 @@ def remove_user(
             detail="User not found",
         )
 
-    delete_user(db, user)
-    create_audit_log(
-        db=db,
+    target_user_id = user_id
+    delete_user(db, user, commit=False)
+    commit_user_mutation_with_audit(
+        db,
         tenant_id=current_user.tenant_id,
         admin_id=current_user.id,
         action=AuditAction.USER_DELETED,
-        target_user_id=user_id,
+        target_user_id=target_user_id,
     )

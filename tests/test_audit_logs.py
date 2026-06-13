@@ -86,6 +86,47 @@ def test_admin_update_user_creates_audit_log(
     assert audit_log.target_user_id == regular_user["id"]
 
 
+def test_admin_update_user_rolls_back_when_audit_write_fails(
+    db,
+    client,
+    admin_user,
+    regular_user,
+    monkeypatch,
+):
+    original_user = (
+        db.query(User)
+        .filter(User.id == regular_user["id"])
+        .first()
+    )
+    original_email = original_user.email
+
+    def failing_create_audit_log(*args, **kwargs):
+        if kwargs.get("commit") is False:
+            raise RuntimeError("audit write failed")
+
+        from app.services.audit_log_service import create_audit_log
+
+        return create_audit_log(*args, **kwargs)
+
+    monkeypatch.setattr(
+        "app.api.routes.users.create_audit_log",
+        failing_create_audit_log,
+    )
+
+    with pytest.raises(RuntimeError, match="audit write failed"):
+        client.patch(
+            f"/users/{regular_user['id']}",
+            json={"email": "audit-should-not-persist@example.com"},
+            headers=admin_user["headers"],
+        )
+
+    db.rollback()
+    db.expire_all()
+    user = db.query(User).filter(User.id == regular_user["id"]).first()
+
+    assert user.email == original_email
+
+
 def test_self_update_does_not_create_audit_log(db, client, regular_user):
     audit_log_count = db.query(AuditLog).count()
 
