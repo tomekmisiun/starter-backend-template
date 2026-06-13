@@ -142,6 +142,6 @@ patterns, not your provider accounts.
 | Backups | `docs/backup-restore-automation.md`, `docs/database-backup-restore.md`, `docs/pitr-and-scheduled-backups.md` |
 | Tenant isolation | `docs/tenant-isolation.md` |
 | Observability | `docs/observability-production.md` |
-| Load / concurrency | `docs/load-concurrency-testing.md` |
+| Load / concurrency | `docs/load-concurrency-testing.md`, `docs/sync-scaling-benchmark.md` |
 | Troubleshooting | `docs/troubleshooting.md` |
 | Current implementation state | `PROJECT_STATUS.md` |
