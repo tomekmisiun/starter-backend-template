@@ -1,6 +1,8 @@
 import hashlib
 import json
+from dataclasses import dataclass
 
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.core.cache import (
@@ -10,8 +12,9 @@ from app.core.cache import (
     set_json_cache,
 )
 from app.core.config import settings
+from app.core.keyset_pagination import decode_cursor, encode_cursor
 from app.models.user import User
-from app.schemas.user import UserAdminUpdate, UserRead, UserSelfUpdate
+from app.schemas.user import UserAdminUpdate, UserRead, UserSelfUpdate, UserSearchMode
 from app.services.tenant_service import build_tenant_cache_prefix
 
 
@@ -19,37 +22,166 @@ USERS_LIST_CACHE_NAMESPACE = "users:list:v1"
 USERS_LIST_CACHE_VERSION_SUFFIX = "users:list:version"
 
 
+@dataclass(frozen=True)
+class UserListResult:
+    items: list[User] | list[dict]
+    next_cursor: str | None
+
+
 def build_users_list_cache_version_key(tenant_id: int) -> str:
     return f"{build_tenant_cache_prefix(tenant_id)}:{USERS_LIST_CACHE_VERSION_SUFFIX}"
+
+
+def _escape_like_pattern(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    )
+
+
+def _apply_email_search_filter(query, search: str, search_mode: str):
+    escaped_search = _escape_like_pattern(search)
+
+    if search_mode == UserSearchMode.contains.value:
+        return query.filter(User.email.ilike(f"%{escaped_search}%", escape="\\"))
+
+    return query.filter(User.email.ilike(f"{escaped_search}%", escape="\\"))
+
+
+def _apply_keyset_filter(
+    query,
+    *,
+    sort_column,
+    sort_order: str,
+    cursor_id: int,
+    cursor_sort_value,
+):
+    if sort_order == "desc":
+        return query.filter(
+            or_(
+                sort_column < cursor_sort_value,
+                and_(sort_column == cursor_sort_value, User.id < cursor_id),
+            )
+        )
+
+    return query.filter(
+        or_(
+            sort_column > cursor_sort_value,
+            and_(sort_column == cursor_sort_value, User.id > cursor_id),
+        )
+    )
+
+
+def _serialize_user(user: User) -> dict:
+    return UserRead.model_validate(user).model_dump(mode="json")
+
+
+def _build_next_cursor(
+    users: list[User],
+    *,
+    limit: int,
+    sort_by: str,
+    sort_order: str,
+    role: str | None,
+    is_active: bool | None,
+    search: str | None,
+    search_mode: str,
+) -> str | None:
+    if len(users) < limit:
+        return None
+
+    last_user = users[-1]
+    sort_value = getattr(last_user, sort_by)
+
+    return encode_cursor(
+        {
+            "id": last_user.id,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
+            "sort_value": sort_value,
+            "role": role,
+            "is_active": is_active,
+            "search": search,
+            "search_mode": search_mode,
+        }
+    )
+
+
+def _validate_cursor_filters(
+    cursor_payload: dict,
+    *,
+    sort_by: str,
+    sort_order: str,
+    role: str | None,
+    is_active: bool | None,
+    search: str | None,
+    search_mode: str,
+) -> tuple[int, object]:
+    if cursor_payload.get("sort_by") != sort_by:
+        raise ValueError("cursor sort_by mismatch")
+
+    if cursor_payload.get("sort_order") != sort_order:
+        raise ValueError("cursor sort_order mismatch")
+
+    if cursor_payload.get("role") != role:
+        raise ValueError("cursor role mismatch")
+
+    if cursor_payload.get("is_active") != is_active:
+        raise ValueError("cursor is_active mismatch")
+
+    if cursor_payload.get("search") != search:
+        raise ValueError("cursor search mismatch")
+
+    if cursor_payload.get("search_mode") != search_mode:
+        raise ValueError("cursor search_mode mismatch")
+
+    cursor_id = cursor_payload.get("id")
+    cursor_sort_value = cursor_payload.get("sort_value")
+
+    if not isinstance(cursor_id, int) or cursor_sort_value is None:
+        raise ValueError("invalid cursor payload")
+
+    return cursor_id, cursor_sort_value
 
 
 def get_users(
     db: Session,
     tenant_id: int,
-    skip: int,
+    *,
     limit: int,
     sort_by: str = "id",
     sort_order: str = "asc",
     role: str | None = None,
     is_active: bool | None = None,
-    search=None,
-):
+    search: str | None = None,
+    search_mode: str = UserSearchMode.prefix.value,
+    cursor: str | None = None,
+    skip: int | None = None,
+) -> UserListResult:
+    use_offset = skip is not None and skip > 0
+
     cache_key = build_users_list_cache_key(
         tenant_id=tenant_id,
-        skip=skip,
         limit=limit,
         sort_by=sort_by,
         sort_order=sort_order,
         role=role,
         is_active=is_active,
         search=search,
+        search_mode=search_mode,
+        cursor=cursor,
+        skip=skip if use_offset else None,
     )
 
     if settings.users_cache_enabled:
         cached_users = get_json_cache(cache_key)
 
         if cached_users is not None:
-            return cached_users
+            return UserListResult(
+                items=cached_users["items"],
+                next_cursor=cached_users.get("next_cursor"),
+            )
 
     allowed_sort_fields = {
         "id": User.id,
@@ -68,56 +200,103 @@ def get_users(
     else:
         query = query.filter(User.is_active == is_active)
 
-    sort_column = allowed_sort_fields.get(sort_by, User.id)
-
-    if sort_order == "desc":
-        sort_column = sort_column.desc()
-    else:
-        sort_column = sort_column.asc()
-
     if search is not None:
-        query = query.filter(User.email.ilike(f"%{search}%"))
+        query = _apply_email_search_filter(query, search, search_mode)
 
-    users = (
-        query
-        .order_by(sort_column)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    sort_column = allowed_sort_fields.get(sort_by, User.id)
+    id_sort = User.id.asc() if sort_order == "asc" else User.id.desc()
+
+    next_cursor: str | None = None
+
+    if use_offset:
+        if sort_order == "desc":
+            sort_column = sort_column.desc()
+        else:
+            sort_column = sort_column.asc()
+
+        users = (
+            query.order_by(sort_column, id_sort)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    else:
+        if cursor is not None:
+            cursor_payload = decode_cursor(cursor)
+            cursor_id, cursor_sort_value = _validate_cursor_filters(
+                cursor_payload,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                role=role,
+                is_active=is_active,
+                search=search,
+                search_mode=search_mode,
+            )
+            query = _apply_keyset_filter(
+                query,
+                sort_column=sort_column,
+                sort_order=sort_order,
+                cursor_id=cursor_id,
+                cursor_sort_value=cursor_sort_value,
+            )
+
+        if sort_order == "desc":
+            sort_column = sort_column.desc()
+        else:
+            sort_column = sort_column.asc()
+
+        users = (
+            query.order_by(sort_column, id_sort)
+            .limit(limit)
+            .all()
+        )
+        next_cursor = _build_next_cursor(
+            users,
+            limit=limit,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            role=role,
+            is_active=is_active,
+            search=search,
+            search_mode=search_mode,
+        )
 
     if settings.users_cache_enabled:
         set_json_cache(
             cache_key,
-            [
-                UserRead.model_validate(user).model_dump(mode="json")
-                for user in users
-            ],
+            {
+                "items": [_serialize_user(user) for user in users],
+                "next_cursor": next_cursor,
+            },
             ttl_seconds=settings.users_cache_ttl_seconds,
         )
 
-    return users
+    return UserListResult(items=users, next_cursor=next_cursor)
 
 
 def build_users_list_cache_key(
     *,
     tenant_id: int,
-    skip: int,
     limit: int,
     sort_by: str,
     sort_order: str,
     role: str | None,
     is_active: bool | None,
     search: str | None,
+    search_mode: str,
+    cursor: str | None,
+    skip: int | None,
 ) -> str:
     cache_params = {
-        "skip": skip,
         "limit": limit,
         "sort_by": sort_by,
         "sort_order": sort_order,
         "role": role,
         "is_active": is_active,
         "search": search,
+        "search_mode": search_mode,
+        "cursor": cursor,
+        "skip": skip,
     }
     cache_hash = hashlib.sha256(
         json.dumps(cache_params, sort_keys=True).encode("utf-8")

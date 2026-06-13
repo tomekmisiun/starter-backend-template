@@ -38,15 +38,18 @@ def test_invalidate_users_list_cache_bumps_version_key():
         role=None,
         is_active=None,
         search=None,
+        search_mode="prefix",
+        cursor=None,
     )
 
-    set_json_cache(cache_key, [{"id": 1}], ttl_seconds=60)
-    assert get_json_cache(cache_key) == [{"id": 1}]
+    cached_payload = {"items": [{"id": 1}], "next_cursor": None}
+    set_json_cache(cache_key, cached_payload, ttl_seconds=60)
+    assert get_json_cache(cache_key) == cached_payload
 
     invalidate_users_list_cache(tenant_id)
 
     assert get_cache_version(version_key) == 1
-    assert get_json_cache(cache_key) == [{"id": 1}]
+    assert get_json_cache(cache_key) == cached_payload
 
     new_cache_key = build_users_list_cache_key(
         tenant_id=tenant_id,
@@ -57,6 +60,8 @@ def test_invalidate_users_list_cache_bumps_version_key():
         role=None,
         is_active=None,
         search=None,
+        search_mode="prefix",
+        cursor=None,
     )
 
     assert new_cache_key != cache_key

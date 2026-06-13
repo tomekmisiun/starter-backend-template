@@ -9,7 +9,7 @@ from app.core.permissions import Permission
 from app.db.session import get_db
 from app.models.audit_log import AuditAction
 from app.models.user import User
-from app.schemas.user import UserAdminUpdate, UserRead, UserRole, UserSelfUpdate
+from app.schemas.user import UserAdminUpdate, UserListPage, UserRead, UserRole, UserSearchMode, UserSelfUpdate
 from app.services.audit_log_service import create_audit_log
 from app.services.permission_service import (
     can_read_user,
@@ -39,6 +39,18 @@ class SortOrder(str, Enum):
     desc = "desc"
 
 
+def user_list_items(result) -> list[UserRead]:
+    items = []
+
+    for item in result.items:
+        if isinstance(item, dict):
+            items.append(UserRead.model_validate(item))
+        else:
+            items.append(UserRead.model_validate(item))
+
+    return items
+
+
 router = APIRouter(prefix="/users", tags=["users"])
 
 
@@ -64,34 +76,59 @@ def commit_user_mutation_with_audit(
 
 @router.get(
     "/",
-    response_model=list[UserRead],
+    response_model=UserListPage,
     summary="List users",
-    description="Admin-only paginated user listing with sorting, filters, and search.",
+    description=(
+        "Admin-only user listing with keyset pagination, sorting, filters, and "
+        "email search. Use `cursor` for scalable paging; `page` remains as a "
+        "legacy offset fallback."
+    ),
     responses=ADMIN_ERROR_RESPONSES,
 )
 def list_users(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
+    cursor: str | None = None,
     sort_by: UserSortBy = Query(UserSortBy.id),
     sort_order: SortOrder = Query(SortOrder.asc),
     role: UserRole | None = None,
     is_active: bool | None = None,
     search: str | None = None,
+    search_mode: UserSearchMode = Query(UserSearchMode.prefix),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.USERS_LIST)),
 ):
-    skip = (page - 1) * size
+    if cursor is not None and page != 1:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="cursor cannot be combined with page > 1",
+        )
 
-    return get_users(
-        db=db,
-        tenant_id=current_user.tenant_id,
-        skip=skip,
-        limit=size,
-        sort_by=sort_by.value,
-        sort_order=sort_order.value,
-        role=role.value if role else None,
-        is_active=is_active,
-        search=search,
+    skip = (page - 1) * size if page > 1 and cursor is None else None
+
+    try:
+        result = get_users(
+            db=db,
+            tenant_id=current_user.tenant_id,
+            limit=size,
+            sort_by=sort_by.value,
+            sort_order=sort_order.value,
+            role=role.value if role else None,
+            is_active=is_active,
+            search=search,
+            search_mode=search_mode.value,
+            cursor=cursor,
+            skip=skip,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    return UserListPage(
+        items=user_list_items(result),
+        next_cursor=result.next_cursor,
     )
 
 

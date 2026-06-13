@@ -29,7 +29,7 @@ Only mark **Done** when verified in code and tests.
 |------|-------|-------------|---------------|---------------------|
 | P0 | 10 | ~2–3 weeks | Security defaults, production deploy safety, auth path viability | **Complete (10/10 Done)** |
 | P1 | 12 | ~3–4 weeks | Session hardening, data lifecycle, CI/ops credibility | **Complete (12/12 Done)** |
-| P2 | 14 | ~6–10 weeks | Scale, maintainability, and fork ergonomics | Not started |
+| P2 | 14 | ~6–10 weeks | Scale, maintainability, and fork ergonomics | **In progress (11/14 Done)** |
 | P3 | 8 | ~4–6 weeks | Enterprise observability, test depth, optional hardening | Not started |
 
 **Recommended sequence:** P0 and P1 complete → P2 as scale signals appear → P3 for enterprise forks.
@@ -99,7 +99,7 @@ repo, and TTL-backed tables have retention jobs.
 | 23 | **Sync scaling path (short term)** — official multi-worker benchmark doc and load-test profiles for bcrypt/login path | TD-012 | M | Low | High | Done |
 | 24 | **Async architecture spike (long term)** — evaluate async SQLAlchemy + async routes; decision record for forks | TD-012 | XL | High | Medium | Done |
 | 25 | **Worker observability** — scrape worker metrics in prod topology; tune maintenance/promote loop | TD-023, TD-042 | M | Medium | High | Done |
-| 26 | **Pagination and admin search at scale** — keyset pagination; pg_trgm or prefix-only email search | TD-026, TD-027 | M | Medium | High | Not started |
+| 26 | **Pagination and admin search at scale** — keyset pagination; pg_trgm or prefix-only email search | TD-026, TD-027 | M | Medium | High | Done |
 | 27 | **Cache invalidation redesign** — versioned keys instead of Redis `SCAN` pattern delete | TD-028 | M | Medium | Medium | Done |
 | 28 | **Storage performance** — cached boto3 client; streaming multipart upload; async scan worker for presigned completes | TD-029, TD-030, TD-031 | M | Medium | High | Not started |
 | 29 | **Audit log lifecycle** — retention, partitioning, or export job | TD-025 | M | Medium | Medium | Done |

@@ -79,6 +79,14 @@ def auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
+def users_page_items(response) -> list:
+    return response.json()["items"]
+
+
+def users_page_payload(response) -> dict:
+    return response.json()
+
+
 def test_list_users_requires_auth(client):
     response = client.get("/users/")
 
@@ -101,7 +109,7 @@ def test_admin_can_list_users(client, admin_user):
     )
 
     assert response.status_code == 200
-    assert len(response.json()) >= 1
+    assert len(users_page_items(response)) >= 1
 
 
 def test_user_can_get_himself(client, regular_user):
@@ -259,7 +267,51 @@ def test_admin_can_list_users_with_pagination(db, client, admin_user):
     )
 
     assert response.status_code == 200
-    assert len(response.json()) == 5
+    assert len(users_page_items(response)) == 5
+
+
+def test_admin_can_list_users_with_keyset_cursor(db, client, admin_user):
+    prefix = f"keyset-user-{uuid7().hex}"
+    for i in range(12):
+        create_user_in_db(db, f"{prefix}-{i:02d}@example.com")
+
+    first_response = client.get(
+        f"/users/?size=5&search={prefix}&search_mode=prefix",
+        headers=admin_user["headers"],
+    )
+    second_response = client.get(
+        f"/users/?size=5&cursor={first_response.json()['next_cursor']}"
+        f"&search={prefix}&search_mode=prefix",
+        headers=admin_user["headers"],
+    )
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert len(users_page_items(first_response)) == 5
+    assert first_response.json()["next_cursor"] is not None
+    assert len(users_page_items(second_response)) == 5
+
+    first_ids = {user["id"] for user in users_page_items(first_response)}
+    second_ids = {user["id"] for user in users_page_items(second_response)}
+    assert first_ids.isdisjoint(second_ids)
+
+
+def test_list_users_rejects_cursor_with_legacy_page(client, admin_user):
+    response = client.get(
+        "/users/?page=2&cursor=invalid&size=5",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 422
+
+
+def test_list_users_rejects_invalid_cursor(client, admin_user):
+    response = client.get(
+        "/users/?cursor=not-a-valid-cursor&size=5",
+        headers=admin_user["headers"],
+    )
+
+    assert response.status_code == 422
 
 
 def test_admin_can_list_second_page(db, client, admin_user):
@@ -272,7 +324,7 @@ def test_admin_can_list_second_page(db, client, admin_user):
     )
 
     assert response.status_code == 200
-    assert len(response.json()) == 5
+    assert len(users_page_items(response)) == 5
 
 
 def test_pagination_page_must_be_positive(client, admin_user):
@@ -314,7 +366,7 @@ def test_admin_can_sort_users_by_email_desc(db, client, admin_user):
 
     assert response.status_code == 200
 
-    emails = [user["email"] for user in response.json()]
+    emails = [user["email"] for user in users_page_items(response)]
 
     filtered_emails = [
         email
@@ -373,7 +425,7 @@ def test_admin_can_filter_users_by_role(db, client, admin_user):
 
     assert response.status_code == 200
 
-    roles = [user["role"] for user in response.json()]
+    roles = [user["role"] for user in users_page_items(response)]
 
     assert all(role == "admin" for role in roles)
 
@@ -411,7 +463,7 @@ def test_admin_can_filter_users_by_is_active(
 
     assert response.status_code == 200
 
-    users = response.json()
+    users = users_page_items(response)
 
     assert len(users) > 0
     assert all(user["is_active"] is False for user in users)
@@ -450,7 +502,7 @@ def test_admin_can_search_users_by_email(db, client, admin_user):
 
     assert response.status_code == 200
 
-    data = response.json()
+    data = users_page_items(response)
 
     assert len(data) == 1
     assert data[0]["email"] == "tomek@example.com"
@@ -482,7 +534,7 @@ def test_admin_list_users_uses_cached_result_for_same_query(
     assert first_response.status_code == 200
     assert second_response.status_code == 200
     assert first_response.json() == second_response.json()
-    assert first_response.json()[0]["email"] == original_email
+    assert first_response.json()["items"][0]["email"] == original_email
 
 
 def test_admin_list_users_cache_is_invalidated_after_user_update(
@@ -518,8 +570,8 @@ def test_admin_list_users_cache_is_invalidated_after_user_update(
     assert update_response.status_code == 200
     assert old_search_response.status_code == 200
     assert new_search_response.status_code == 200
-    assert old_search_response.json() == []
-    assert new_search_response.json()[0]["email"] == updated_email
+    assert users_page_items(old_search_response) == []
+    assert users_page_items(new_search_response)[0]["email"] == updated_email
 
 
 def test_json_cache_expires_values():
@@ -641,7 +693,7 @@ def test_list_users_returns_only_active_users_by_default(
 
     assert response.status_code == 200
 
-    users = response.json()
+    users = users_page_items(response)
 
     user_ids = [user["id"] for user in users]
 

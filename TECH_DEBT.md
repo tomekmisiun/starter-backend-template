@@ -53,8 +53,8 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | TD-023 | Worker Prometheus metrics not scrapeable in default prod layout (metrics HTTP on API only). | Silent worker/backlog failures in operations. | Sidecar exporter, pushgateway, or shared `PROMETHEUS_MULTIPROC_DIR`. | M | Done |
 | TD-024 | `webhook_events` table is insert-only with no retention (`app/services/webhook_service.py`). | Storage and query cost grow unbounded on high-volume forks. | Retention job and archival policy. | S | Done |
 | TD-025 | Audit logs are append-only with no retention (`app/services/audit_log_service.py`). | Admin queries slow; compliance storage grows. | Scheduled purge by `created_at` retention window. | M | Done |
-| TD-026 | User and audit lists use offset pagination (`app/api/routes/users.py`). | Deep pages become expensive at large tenant sizes. | Keyset/cursor pagination. | M | Open |
-| TD-027 | User email search uses `%term%` ILIKE (`app/services/user_service.py`). | Sequential scans under admin search load. | Trigram index or prefix-only search. | M | Open |
+| TD-026 | User list used offset pagination for default admin queries (`app/api/routes/users.py`). | Deep pages become expensive at large tenant sizes. | Keyset/cursor pagination with legacy offset fallback. | M | Done |
+| TD-027 | User email search used unindexed `%term%` ILIKE by default (`app/services/user_service.py`). | Sequential scans under admin search load. | Prefix search by default; optional contains mode with pg_trgm GIN index. | M | Done |
 | TD-028 | User list cache invalidation uses Redis `SCAN` + bulk delete (`app/core/cache.py`). | Redis CPU spikes under high admin write churn. | Versioned cache keys or tag-based invalidation. | M | Done |
 | TD-029 | New boto3 S3 client created per request (`get_storage_service()` in `app/services/storage_service.py`). | Connection overhead on file endpoints under concurrency. | Lifespan-cached or module-level client. | S | Open |
 | TD-030 | Direct uploads buffer entire file in memory (`read_upload_body_limited`). | Memory spikes with concurrent max-size uploads. | Stream to S3 multipart upload. | M | Open |
@@ -101,8 +101,8 @@ For verified current capabilities, see `PROJECT_STATUS.md`.
 | Critical | 0 | 4 |
 | High | 1 | 12 |
 | High | 0 | 13 |
-| Medium | 8 | 25 |
+| Medium | 6 | 27 |
 | Low | 8 | 0 |
-| **Total** | **16** | **40** |
+| **Total** | **14** | **42** |
 
 Open counts reflect post-P1 state (346 tests, June 2026).
